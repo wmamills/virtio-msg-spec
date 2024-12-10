@@ -1,0 +1,439 @@
+\section{Virtio Over Messages}\label{sec:Virtio Transport Options / Virtio Over Messages}
+
+The goal of the messages transport is to have commands communicated between the
+frontend (driver) and backend (device) sides over a message based conduit
+allowing to reach destination endpoints such as another VM, a TEE or a remote
+compute engine using different communication channels.
+
+The messages transport is designed to work efficiently between VMs on an hypervisor
+based configuration or between heterogeneous systems by using messages to
+reduce the number of context switches between the device and the driver sides
+when each of them is in a different VM. In the same way, this is also reducing
+cross system communications required in an heterogeneous system configuration.
+
+\subsection{Messages Format}\label{sec:Virtio Transport Options / Virtio Over Messages / Messages Format}
+
+The messages have the following properties:
+\begin{itemize}
+\item A message size is 40 bytes.
+\item Most messages are driver/device initialisation messages.
+\item Messages are expected to be sent at low frequencies and quick roundtrip is
+  not necessary and should not impact global performances (as communication
+  requiring performance should use virtqueues).
+\end{itemize}
+
+The virtio-MSG messages are encoded as following:
+
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+Name & Offset & Size (bytes) & Content \\
+\hline \hline
+VIRTIO_MSG_TYPE & 0 & 1 & Bit[0]: 0=Request, 1=Answer \newline Bit[1]: 0=virtio-msg, 1=bus-msg \newline Bit[2-7]: Reserved \\
+\hline
+VIRTIO_MSG_ID & 1 & 1 & Message ID \\
+\hline
+VIRTIO_MSG_DEV_ID & 2 & 2 & Device ID \\
+\hline
+VIRTIO_MSG_PAYLOAD & 4 & 36 & Payload \\
+\hline
+\end{tabularx}
+
+\subsection{Messages Definition}\label{sec:Virtio Transport Options / Virtio Over Messages / Messages Definition}
+
+The following table is listing the different Virtio-MSG messages and the sender
+for each of them.
+
+\begin{tabular}{|l|l|l|}
+\hline
+Name & ID & Sender \\
+\hline
+\hline
+VIRTIO_MSG_CONNECT             & 0x1  & Driver \\
+\hline
+VIRTIO_MSG_DISCONNECT          & 0x2  & Driver \\
+\hline
+VIRTIO_MSG_GET_DEVICE_INFO   & 0x3  & Driver \\
+\hline
+VIRTIO_MSG_GET_FEATURES       & 0x4  & Driver \\
+\hline
+VIRTIO_MSG_SET_FEATURES       & 0x5  & Driver \\
+\hline
+VIRTIO_MSG_GET_CONFIG         & 0x6  & Driver \\
+\hline
+VIRTIO_MSG_SET_CONFIG         & 0x7  & Driver \\
+\hline
+VIRTIO_MSG_GET_CONFIG_GEN    & 0x8  & Driver \\
+\hline
+VIRTIO_MSG_GET_DEVICE_STATUS & 0x9  & Driver \\
+\hline
+VIRTIO_MSG_SET_DEVICE_STATUS & 0xA  & Driver \\
+\hline
+VIRTIO_MSG_GET_VQUEUE         & 0xB  & Driver \\
+\hline
+VIRTIO_MSG_SET_VQUEUE         & 0xC  & Driver \\
+\hline
+VIRTIO_MSG_RESET_VQUEUE       & 0xD  & Driver \\
+\hline
+VIRTIO_MSG_EVENT_CONFIG       & 0x10 & Device \\
+\hline
+VIRTIO_MSG_EVENT_AVAIL        & 0x11 & Driver \\
+\hline
+VIRTIO_MSG_EVENT_USED         & 0x12 & Device \\
+\hline
+\end{tabular}
+
+The following sections are giving more details of the usage of each message
+and the encoding of the payload for the request and answer (when applicable).
+
+\newcommand{\msgdef}[1]{\subsubsection{VIRTIO_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Messages Definition / VIRTIO_MSG_#1}}
+
+\msgdef{CONNECT}
+
+The Connect message is used to signal to the device that the driver will start
+to use it. It gives an opportunity for the device to get ready for usage.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 36 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 36 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{DISCONNECT}
+
+The Disconnect message is used to signal to the device that the driver will
+stop using it. It gives an opportunity for the device to turn down.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 36 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 36 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{GET_DEVICE_INFO}
+
+The Get device information message is used by the driver to retrieve the device
+version, device ID and vendor ID.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 36 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Device version \\
+& 4 & 4 & Device ID \\
+& 8 & 4 & Vendor ID \\
+& 12 & 24 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{GET_FEATURES}
+
+The Get features message is used to retrieve 256 bits of feature information
+from the device. The driver request features at an index and the device answers
+with the features bits at 256*index.
+
+TODO: How should a device signal that there are no features at the requested
+ index ? is it ok to just specify that 0 will be returned in that case ? can
+ we expect the driver to always know how much features a device has ?
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Feature index \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Feature index \\
+& 4 & 32 & Feature data \\
+\hline
+\end{tabular}
+
+\msgdef{SET_FEATURES}
+
+The Set features message is used by the driver to configure the features of a
+device. The driver configures 256 bits a time a given index. The device
+provides in the answer the actual features value at the index after having
+configured the bit requested giving an opportunity for the driver to detect if
+some of the bits it tried to set were not accepted.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Feature index \\
+& 4 & 32 & Feature data \\
+\hline
+Answer & 0 & 4 & Feature index \\
+& 4 & 32 & Feature data \\
+\hline
+\end{tabular}
+
+\msgdef{GET_CONFIG}
+
+The Get configuration message is used by the driver to retrieve a part of the
+configuration values of the device. The driver can request up to 256 bits at
+a given offset in the device configuration space.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 3 & Configuration offset \\
+& 3 & 1 & Number of bytes (1-32) \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 3 & Configuration offset \\
+& 3 & 1 & Number of bytes (1-32) \\
+& 4 & 32 & Configuration data \\
+\hline
+\end{tabular}
+
+\msgdef{SET_CONFIG}
+
+The Set configuration message is used by the driver to modify a part of the
+configuration values of the device. The driver can modify up to 256 bits at a
+given offset in the device configuration. The device answers with the actual
+configuration value at the offset after the modification to give a chance to the
+driver to detect changes that have not been accepted by the device.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 3 & Configuration offset \\
+& 3 & 1 & Number of bytes (1-32) \\
+& 4 & 32 & Configuration data \\
+\hline
+Answer & 0 & 3 & Configuration offset \\
+& 3 & 1 & Number of bytes (1-32) \\
+& 4 & 32 & Configuration data \\
+\hline
+\end{tabular}
+
+\msgdef{GET_CONFIG_GEN}
+
+The Get configuration generation message is used by the driver to retrieve the
+device configuration atomicity value.
+
+TODO: need help to have a complete description here.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 36 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Atomicity value \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{GET_DEVICE_STATUS}
+
+The Get device status message is used by the driver to retrieve the device
+status fields.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 36 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Device status \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{SET_DEVICE_STATUS}
+
+The Set device status message is used by the driver to modify the device status
+fields. Writing a status of 0 triggers a device reset.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Device status \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 36 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{GET_VQUEUE}
+
+The Get vqueue message is used to retrieve the maximum virtqueue size and
+information about the vqueue if it was already configured (all information are
+0 if the virtqueue was not configured).
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Virtqueue index \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Virtqueue index \\
+& 4 & 4 & Max virtqueue size \\
+& 8 & 4 & Virtqueue size \\
+& 12 & 8 & Descriptor address \\
+& 20 & 8 & Driver address \\
+& 28 & 8 & Device address \\
+\hline
+\end{tabular}
+
+\msgdef{SET_VQUEUE}
+
+The Set vqueue message is used to configure a virtqueue.
+Setting the virtqueue size to 0 is disabling the virtqueue without modifying
+the rest of the parameters (those should be ignored by the device).
+If a driver needs to complete reset a virtqueue, the RESET\_VQUEUE message
+should be used instead.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Virtqueue index \\
+& 4 & 4 & Reserved (MBZ) \\
+& 8 & 4 & Virtqueue size \\
+& 12 & 8 & Descriptor address \\
+& 20 & 8 & Driver address \\
+& 28 & 8 & Device address \\
+\hline
+Answer & 0 & 4 & Virtqueue index \\
+& 4 & 4 & Reserved (MBZ) \\
+& 8 & 4 & Virtqueue size \\
+& 12 & 8 & Descriptor address \\
+& 20 & 8 & Driver address \\
+& 28 & 8 & Device address \\
+\hline
+\end{tabular}
+
+\msgdef{RESET_VQUEUE}
+
+The Reset vqueue message is used to disable and reset a virtqueue.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Virtqueue index \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 36 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{EVENT_CONFIG}
+
+The Event config message is sent by the device to signal to the driver that one
+or several values in the device configuration have changed. The message
+contains the current device status (as encoded in the GET\_DEVICE\_STATUS
+answer) and optionally the part of the configuration that has been modified. If
+this is not provided, the driver will have to use the GET\_CONFIG to retrieve
+the configuration and discover what has changed.
+
+This message is sent by the device to the driver and does not expect any
+answer.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Device status \\
+& 4 & 3 & Configuration offset \\
+& 7 & 1 & Number of bytes (1-16) \\
+& 8 & 16 & Configuration data \\
+& 24 & 12 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{EVENT_AVAIL}
+
+The Event available message is sent by the driver to the device to signal that
+some data are available to process in a virtqueue. If the NOTIFICATION\_DATA
+was negotiated, the message can also include more details on what is actually
+available.
+
+This message is sent by the driver to the device and does not expect any
+answer.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Virtqueue index \\
+& 4 & 4 & Next offset \\
+& 8 & 4 & Next wrap \\
+& 12 & 24 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\msgdef{EVENT_USED}
+
+The event used message is sent by the device to the driver to signal that some
+data is available or has been processed in the a virtqueue.
+
+TODO: is there a case for offset/wrap in this one ?
+
+This message is sent by the device to the driver and does not expect any
+answer.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Virtqueue index \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
