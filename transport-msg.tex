@@ -479,4 +479,143 @@ principles:
 A Message Bus implementation must provide interfaces to transmit and receive
 messages from the other side.
 
+\subsubsection{Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Discovery}
+
+The Message Bus is responsible of listing the available busses and to enumerate
+all devices available on each bus.
+
+This can done in a static way using a device tree or in a more dynamic way using
+messages to communicate with the other side of the bus to discover available
+devices.
+
+\subsubsection{Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Messages}
+
+While the Bus implementation and how communication of the messages is done
+between the devices and the drivers is completely out of the scope of the
+specification, this chapter provides a set of standard Bus messages to help
+reusing as much as possible a part of the bus implementation.
+
+The Bus messages are transfered using the *bus-msg* type in VIRTIO_MSG_TYPE and
+have the following format:
+
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+Name & Offset & Size (bytes) & Content \\
+\hline \hline
+VIRTIO_MSG_TYPE & 0 & 1 & Bit[0]: 0=Request, 1=Answer \newline Bit[1]: 1=bus-msg \newline Bit[2-7]: Reserved \\
+\hline
+VIRTIO_MSG_ID & 1 & 1 & Message ID \\
+\hline
+VIRTIO_MSG_PAYLOAD & 2 & 38 & Payload \\
+\hline
+\end{tabularx}
+
+The following table is listing the different Bus messages and the sender for
+each for them.
+
+\begin{tabular}{|l|l|l|}
+\hline
+Name & ID & Sender \\
+\hline
+\hline
+BUS_MSG_ERROR               & 0x0  & Any    \\
+\hline
+BUS_MSG_GET_DEVICES         & 0x1  & Driver \\
+\hline
+BUS_MSG_DEVICE_ADDED        & 0x2  & Device \\
+\hline
+BUS_MSG_DEVICE_REMOVED      & 0x3  & Device \\
+\hline
+BUS_MSG_PING                & 0x4  & Any    \\
+\hline
+BUS_MSG_RESET               & 0x5  & Driver  \\
+\hline
+\end{tabular}
+
+Bus message ID 6-127 are reserved for future use in the specification and
+message ID 128-255 can be used for implementation specific needs.
+
+The following sections are giving more details of the usage of each message
+and the encoding of the payload for the request and answer (when applicable).
+
+\newcommand{\busdef}[1]{\paragraph{BUS_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Messages / BUS_MSG_#1}}
+
+\busdef{ERROR}
+
+The Error message is used by one side of the bus to inform the other side that
+one message could not be processed correctly. The message contains an error
+code defined using the Standard Posix Error Codes (TODO: add a reference).
+
+TODO: what cases, what content ?
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Any     & 0 & 4 & Posix Error Code \\
+        & 4 & 34 & Reserved (MBZ) \\
+\hline
+\end{tabular}
+
+\busdef{GET_DEVICES}
+
+The Get Devices message is used by the driver side to retrieve the ID of the
+devices available on the device side of the bus.
+The driver side requests the availibility at an offset and the device side of
+the bus returns a bitmap in which each bit indicates if a device is available
+or not for this ID. The device side also return a next offset that indicates
+to the driver side what offset to request next.
+
+This message shall be used in the following way:
+- driver side request devices at offset 0.
+- device side answers with the availibility of devices 0 to 31 and indicates to
+  the driver what offset to request next.
+- driver side request devices at the offset mentioned by the device side.
+This repeats until the device side gives a next offset of 0 meaning that no
+more devices are available after the currently requested offset.
+
+This message is sent by the driver side of the bus to the device side and
+expects an answer from the device side.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 2 & Offset \\
+        & 2 & 34 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 2 & Offset \\
+       & 2 & 2 & Next offset or 0 if no devices after Offset \\
+       & 4 & 2 & Reserved (MBZ) \\
+       & 6 & 32 & Bit[n]: Device[offset + n] not availble(0)/available(1) \\
+\hline
+\end{tabular}
+
+\busdef{DEVICE_ADDED}
+
+This message is sent by the device side of the bus to signal to the driver side
+that a new device appeared on the bus.
+
+TODO: when should the device side start sending those messages? how to detect
+that the driver side did scan the bus and a new device appeared since ?
+TODO: do we need a kind of init message to solve that ?
+
+\busdef{DEVICE_REMOVED}
+
+This message is sent by the device side of the bus to signal to the driver side
+that a device was removed from the bus.
+
+\busdef{PING}
+
+TODO: confirm how keep alive should work and be configured.
+
+\busdef{RESET}
+
+This message is sent by the driver side of the bus to request the device side
+to reset the bus and all devices on it.
+This message shall be sent as first message by a Bus implementation to make
+sure that no device is in an unknown state from a possible previous usage of
+it by a driver.
+
+TODO: shall this message be used for added/removed notif ?
 
