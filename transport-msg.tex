@@ -437,3 +437,25 @@ Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
+\subsection{Message Bus}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus}
+
+The Message Bus acts as a communication channel between two endpoints,
+providing a standardised abstraction to exchange messages.
+
+The Message Bus transmits the messages between the frontend and the backend in
+both directions.
+A system can have several Message Busses and it shall respect the following
+principles:
+
+\begin{itemize}
+\item One Message Bus has a backend and a frontend side located in 2 different
+      endpoints (an endpoint can be a VM, a secure Partition or a remote OS).
+\item One Message Bus has one or more devices on the backend side handled by
+      drivers on the frontend side.
+\item An endpoint can be connected to several Message Busses.
+\end{itemize}
+
+A Message Bus implementation must provide interfaces to transmit and receive
+messages from the other side.
+
+
