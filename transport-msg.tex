@@ -522,14 +522,24 @@ The Error message is used by one side of the bus to inform the other side that
 one message could not be processed correctly. The message contains an error
 code defined using the Standard Posix Error Codes (TODO: add a reference).
 
-TODO: what cases, what content ?
+This message shall be used for Bus errors not specific to a particular device.
+In case of a device specific error not impacting the complete bus, the
+VIRTIO_MSG_ERROR shall be used.
+
+As for the VIRTIO_MSG_ERROR, this message supports to have a NULL terminating
+String that can be used to give more information printable to the user.
+
+This message can be received by the frontend or the backend side and can be
+send as answer to an other message or directly to signal an error.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Any     & 0 & 4 & Posix Error Code \\
-        & 4 & 34 & Reserved (MBZ) \\
+        & 4 & 1 & Message ID which generated an error or 0 if none \\
+        & 5 & 1 & Data Type: 0 (Reserved), 1 (STRING), 2-255 (Implementation Defined) \\
+        & 6 & 32 & Null Terminated String if Data Type is STRING else Implementation Defined \\
 \hline
 \end{tabular}
 
