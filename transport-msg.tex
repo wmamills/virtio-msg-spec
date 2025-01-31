@@ -639,13 +639,39 @@ Answer & 0 & 4 & Request Data \\
 \hline
 \end{tabular}
 
-\busdef{RESET}
+\busdef{STATUS}
 
-This message is sent by the driver side of the bus to request the device side
-to reset the bus and all devices on it.
-This message shall be sent as first message by a Bus implementation to make
-sure that no device is in an unknown state from a possible previous usage of
-it by a driver.
+This message can be sent by the backend or the frontend to signal to the other
+side that its own status has changed which required the other side to take
+global actions.
 
-TODO: shall this message be used for added/removed notif ?
+For example this message can be send by the frontend when it starts to
+request the backend to reset the bus and all devices on it or when the backend
+stops to signal to the backend to shutdown everything on the bus.
+
+The backend can use it to signal to the frontend that for some reason it will
+shutdown which shall trigger the frontend to disable all drivers.
+
+The message contains a New state field which gives to the receiving the new
+state the sender is going into for which the following values are defined:
+\begin{itemize}
+\item 0: Reset.
+\item 1: Shutdown.
+\item 2: Suspend.
+\item 4: Resume.
+\item 5-127: Reserved.
+\item 128-255: Implementation Defined.
+\end{itemize}
+
+This message can be sent by the frontend or the backend side of the bus and
+does not expect any answer.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 1 & New state \\
+        & 1 & 35 & Reserved (MBZ) \\
+\hline
+\end{tabular}
 
