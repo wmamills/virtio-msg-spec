@@ -90,8 +90,15 @@ and the encoding of the payload for the request and answer (when applicable).
 \msgdef{ERROR}
 
 The Error message is used to signal to the driver or the device that a message
-it wanted to send could not be sent. The message contain an error code defined
-using the Standard Posix Error Codes (TODO: add a reference).
+it wanted to send could not be sent.
+
+The message contain an error code defined using the Standard Posix Error Codes
+(TODO: add a reference) and the Message ID of the request that triggered the
+error (or 0 if the error was not in answer to a specific request).
+
+The message also contains a Data Type that can be set to STRING to use the
+rest of the payload to give a NULL terminating string that can be used to carry
+extra printable information.
 
 This message can be received by the driver or the device and can be sent as an
 answer to an other message by the driver or the device or any element between
@@ -102,7 +109,9 @@ them involved in the communication.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Any     & 0 & 4 & Posix Error Code \\
-        & 4 & 32 & Reserved (MBZ) \\
+        & 4 & 1 & Message ID which generated an error or 0 if none \\
+        & 5 & 1 & Data Type: 0 (Reserved), 1 (STRING), 2-255 (Implementation Defined) \\
+        & 6 & 30 & Null Terminated String if Data Type is STRING else Implementation Defined \\
 \hline
 \end{tabular}
 
