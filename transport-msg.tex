@@ -618,7 +618,26 @@ Request & 0 & 2 & Device ID \\
 
 \busdef{PING}
 
-TODO: confirm how keep alive should work and be configured.
+The ping message can be sent by the backend or the frontend side of the bus
+to check that the other side is responding properly.
+
+This message can be used by either side to monitor that the other side of the
+bus is available and functional.
+
+The message contains a 32bit data field with a custom value that must be copied
+back by the receiver in its answer.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Data \\
+        & 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Request Data \\
+       & 4 & 32 & Reserved (MBZ) \\
+\hline
+\end{tabular}
 
 \busdef{RESET}
 
