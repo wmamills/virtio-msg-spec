@@ -436,6 +436,7 @@ providing a standardised abstraction to exchange messages.
 
 The Message Bus transmits the messages between the frontend and the backend in
 both directions.
+
 A system can have several Message Busses and it shall respect the following
 principles:
 
@@ -448,26 +449,26 @@ principles:
 \end{itemize}
 
 A Message Bus implementation must provide interfaces to transmit and receive
-messages from the other side.
+messages with the other side.
+
+While the Bus implementation and how communication of the messages is done
+between the devices and the drivers is completely out of the scope of the
+specification, this chapter provides a set of standard Bus messages to help
+standardizing as much as possible a part of the bus implementation.
 
 \subsubsection{Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Discovery}
 
 The Message Bus is responsible of listing the available busses and to enumerate
 all devices available on each bus.
 
-This can done in a static way using a device tree or in a more dynamic way using
-messages to communicate with the other side of the bus to discover available
-devices.
+This can be done in a static way, using a device tree for example, or in a way
+using messages to discover from the frontend side which device IDs are
+available on the backend side (using the BUS_MSG_GET_DEVICES bus message).
 
-\subsubsection{Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Messages}
+\subsubsection{Message Format}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Message Format}
 
-While the Bus implementation and how communication of the messages is done
-between the devices and the drivers is completely out of the scope of the
-specification, this chapter provides a set of standard Bus messages to help
-reusing as much as possible a part of the bus implementation.
-
-The Bus messages are transfered using the *bus-msg* type in VIRTIO_MSG_TYPE and
-have the following format:
+The Bus messages are transfered using the \emph{bus-msg} type in
+VIRTIO_MSG_TYPE and have the following format:
 
 \begin{tabularx}{\textwidth}{|l|l|l|X|}
 \hline
@@ -481,25 +482,29 @@ VIRTIO_MSG_PAYLOAD & 2 & 38 & Payload \\
 \hline
 \end{tabularx}
 
-The following table is listing the different Bus messages and the sender for
-each for them.
+\subsubsection{Message Definition}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Message Definition}
+
+The following table is listing the different Virtio-MSG Bus messages and the
+sender for each of them.
 
 \begin{tabular}{|l|l|l|}
 \hline
 Name & ID & Sender \\
 \hline
 \hline
-BUS_MSG_ERROR               & 0x0  & Any    \\
+Reserved                    & 0x0  &        \\
 \hline
-BUS_MSG_GET_DEVICES         & 0x1  & Driver \\
+BUS_MSG_ERROR               & 0x1  & Any    \\
 \hline
-BUS_MSG_DEVICE_ADDED        & 0x2  & Device \\
+BUS_MSG_GET_DEVICES         & 0x2  & Driver \\
 \hline
-BUS_MSG_DEVICE_REMOVED      & 0x3  & Device \\
+BUS_MSG_DEVICE_ADDED        & 0x3  & Device \\
 \hline
-BUS_MSG_PING                & 0x4  & Any    \\
+BUS_MSG_DEVICE_REMOVED      & 0x4  & Device \\
 \hline
-BUS_MSG_RESET               & 0x5  & Driver  \\
+BUS_MSG_PING                & 0x5  & Any    \\
+\hline
+BUS_MSG_RESET               & 0x6  & Driver  \\
 \hline
 \end{tabular}
 
@@ -509,7 +514,7 @@ message ID 128-255 can be used for implementation specific needs.
 The following sections are giving more details of the usage of each message
 and the encoding of the payload for the request and answer (when applicable).
 
-\newcommand{\busdef}[1]{\paragraph{BUS_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Messages / BUS_MSG_#1}}
+\newcommand{\busdef}[1]{\paragraph{BUS_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Message Definition / BUS_MSG_#1}}
 
 \busdef{ERROR}
 
