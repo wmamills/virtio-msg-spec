@@ -142,9 +142,9 @@ The Get features message is used to retrieve 256 bits of feature information
 from the device. The driver request features at an index and the device answers
 with the features bits at 256*index.
 
-TODO: How should a device signal that there are no features at the requested
- index ? is it ok to just specify that 0 will be returned in that case ? can
- we expect the driver to always know how much features a device has ?
+If there are no features available at and after the requested index, the
+ERROR message can be used by the device to signal to the driver that there is
+no need to scan for features at and after the requested index.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
