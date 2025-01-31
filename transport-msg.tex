@@ -48,39 +48,37 @@ for each of them.
 Name & ID & Sender \\
 \hline
 \hline
-VIRTIO_MSG_ERROR               & 0x0  & Any    \\
+Reserved                      & 0x0 & \\
 \hline
-VIRTIO_MSG_CONNECT             & 0x1  & Driver \\
+VIRTIO_MSG_ERROR              & 0x1  & Any    \\
 \hline
-VIRTIO_MSG_DISCONNECT          & 0x2  & Driver \\
+VIRTIO_MSG_GET_DEVICE_INFO    & 0x2  & Driver \\
 \hline
-VIRTIO_MSG_GET_DEVICE_INFO   & 0x3  & Driver \\
+VIRTIO_MSG_GET_FEATURES       & 0x3  & Driver \\
 \hline
-VIRTIO_MSG_GET_FEATURES       & 0x4  & Driver \\
+VIRTIO_MSG_SET_FEATURES       & 0x4  & Driver \\
 \hline
-VIRTIO_MSG_SET_FEATURES       & 0x5  & Driver \\
+VIRTIO_MSG_GET_CONFIG         & 0x5  & Driver \\
 \hline
-VIRTIO_MSG_GET_CONFIG         & 0x6  & Driver \\
+VIRTIO_MSG_SET_CONFIG         & 0x6  & Driver \\
 \hline
-VIRTIO_MSG_SET_CONFIG         & 0x7  & Driver \\
+VIRTIO_MSG_GET_CONFIG_GEN     & 0x7  & Driver \\
 \hline
-VIRTIO_MSG_GET_CONFIG_GEN    & 0x8  & Driver \\
+VIRTIO_MSG_GET_DEVICE_STATUS  & 0x8  & Driver \\
 \hline
-VIRTIO_MSG_GET_DEVICE_STATUS & 0x9  & Driver \\
+VIRTIO_MSG_SET_DEVICE_STATUS  & 0x9  & Driver \\
 \hline
-VIRTIO_MSG_SET_DEVICE_STATUS & 0xA  & Driver \\
+VIRTIO_MSG_GET_VQUEUE         & 0xA  & Driver \\
 \hline
-VIRTIO_MSG_GET_VQUEUE         & 0xB  & Driver \\
+VIRTIO_MSG_SET_VQUEUE         & 0xB  & Driver \\
 \hline
-VIRTIO_MSG_SET_VQUEUE         & 0xC  & Driver \\
+VIRTIO_MSG_RESET_VQUEUE       & 0xC  & Driver \\
 \hline
-VIRTIO_MSG_RESET_VQUEUE       & 0xD  & Driver \\
+VIRTIO_MSG_EVENT_CONFIG       & 0x20 & Device \\
 \hline
-VIRTIO_MSG_EVENT_CONFIG       & 0x10 & Device \\
+VIRTIO_MSG_EVENT_AVAIL        & 0x21 & Driver \\
 \hline
-VIRTIO_MSG_EVENT_AVAIL        & 0x11 & Driver \\
-\hline
-VIRTIO_MSG_EVENT_USED         & 0x12 & Device \\
+VIRTIO_MSG_EVENT_USED         & 0x22 & Device \\
 \hline
 \end{tabular}
 
@@ -105,42 +103,6 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Any     & 0 & 4 & Posix Error Code \\
         & 4 & 32 & Reserved (MBZ) \\
-\hline
-\end{tabular}
-
-\msgdef{CONNECT}
-
-The Connect message is used to signal to the device that the driver will start
-to use it. It gives an opportunity for the device to get ready for usage.
-
-This message is sent by the driver to the device and expects an answer from the
-device.
-
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 36 & Reserved (MBZ) \\
-\hline
-Answer & 0 & 36 & Reserved (MBZ) \\
-\hline
-\end{tabular}
-
-\msgdef{DISCONNECT}
-
-The Disconnect message is used to signal to the device that the driver will
-stop using it. It gives an opportunity for the device to turn down.
-
-This message is sent by the driver to the device and expects an answer from the
-device.
-
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 36 & Reserved (MBZ) \\
-\hline
-Answer & 0 & 36 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
