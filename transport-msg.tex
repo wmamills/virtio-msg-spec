@@ -38,6 +38,28 @@ VIRTIO_MSG_PAYLOAD & 4 & 36 & Payload \\
 \hline
 \end{tabularx}
 
+\subsection{Errors Definition}\label{sec::Virtio Transport Options / Virtio Over Messages / Errors Definition}
+
+The Virtio Message transport defines a list of error codes that are used in
+the VIRTIO\_MSG\_ERROR message.
+
+\begin{tabular}{|l|l|l|}
+\hline
+Error Code & Name & Description \\
+\hline \hline
+1  & EINVAL & Invalid parameter or feature \\
+2  & ENOTSUPP & Unsupported function or feature \\
+3  & EBUSY & Device or ressource unavailable \\
+4  & EABORT & Request was aborted \\
+5  & EIO & Input/Output error \\
+6  & ENOMEM & No memory available \\
+7  & EPERM & Permission denied \\
+8  & EFAULT & Bad address \\
+9  & ENODEV & No such device \\
+\hline
+\end{tabular}
+
+
 \subsection{Messages Definition}\label{sec:Virtio Transport Options / Virtio Over Messages / Messages Definition}
 
 The following table is listing the different Virtio-MSG messages and the sender
@@ -93,9 +115,9 @@ The error message is used to signal to the driver or the device that a received
 message is not valid or cannot be addressed. It can also be used to report an
 internal error to the other entity.
 
-The message contain an error code defined using the Standard Posix Error Codes
-(TODO: add a reference) and the Message ID of the request that triggered the
-error (or 0 if the error was not in answer to a specific request).
+The message contains a Virtio Message error code and the Message ID of the
+request that triggerred the error (or 0 if the error was not in answer to a
+specific request).
 
 The message also contains a Data Type that can be set to STRING to use the
 rest of the payload to give a NULL terminating string that can be used to carry
@@ -109,7 +131,7 @@ them involved in the communication.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Any     & 0 & 4 & Posix Error Code \\
+Any     & 0 & 4 & Virtio Message Error Code \\
         & 4 & 1 & Message ID which generated an error or 0 if none \\
         & 5 & 1 & Data Type: 0 (Reserved), 1 (STRING), 2-255 (Implementation Defined) \\
         & 6 & 30 & Null Terminated String if Data Type is STRING else Implementation Defined \\
@@ -528,8 +550,8 @@ and the encoding of the payload for the request and answer (when applicable).
 \busdef{ERROR}
 
 The Error message is used by one side of the bus to inform the other side that
-one message could not be processed correctly. The message contains an error
-code defined using the Standard Posix Error Codes (TODO: add a reference).
+one message could not be processed correctly. The message contains a Virtio
+Messsage error code.
 
 This message shall be used for Bus errors not specific to a particular device.
 In case of a device specific error not impacting the complete bus, the
@@ -545,7 +567,7 @@ send as answer to an other message or directly to signal an error.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Any     & 0 & 4 & Posix Error Code \\
+Any     & 0 & 4 & Virtio Message Error Code \\
         & 4 & 1 & Message ID which generated an error or 0 if none \\
         & 5 & 1 & Data Type: 0 (Reserved), 1 (STRING), 2-255 (Implementation Defined) \\
         & 6 & 32 & Null Terminated String if Data Type is STRING else Implementation Defined \\
