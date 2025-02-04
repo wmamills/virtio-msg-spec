@@ -16,8 +16,8 @@ cross system communications required in an heterogeneous system configuration.
 The messages have the following properties:
 \begin{itemize}
 \item A message size is 40 bytes.
-\item Most messages are driver/device initialisation messages.
-\item Messages are expected to be sent at low frequencies and quick roundtrip is
+\item Most messages are driver/device initialization messages.
+\item Messages are expected to be sent at low frequencies and quick round-trip is
   not necessary and should not impact global performances (as communication
   requiring performance should use virtqueues).
 \end{itemize}
@@ -89,8 +89,9 @@ and the encoding of the payload for the request and answer (when applicable).
 
 \msgdef{ERROR}
 
-The Error message is used to signal to the driver or the device that a message
-it wanted to send could not be sent.
+The error message is used to signal to the driver or the device that a received
+message is not valid or cannot be addressed. It can also be used to report an
+internal error to the other entity.
 
 The message contain an error code defined using the Standard Posix Error Codes
 (TODO: add a reference) and the Message ID of the request that triggered the
@@ -142,9 +143,12 @@ The Get features message is used to retrieve 256 bits of feature information
 from the device. The driver request features at an index and the device answers
 with the features bits at 256*index.
 
+If there are no features available at the requested index but there are
+features available after the index, the backend must return an all-zero
+response.
 If there are no features available at and after the requested index, the
-ERROR message can be used by the device to signal to the driver that there is
-no need to scan for features at and after the requested index.
+backend must return an ERROR message to inform the frontend that it does not
+need to scan features further.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -432,12 +436,12 @@ Request & 0 & 4 & Virtqueue index \\
 \subsection{Message Bus}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus}
 
 The Message Bus acts as a communication channel between two endpoints,
-providing a standardised abstraction to exchange messages.
+providing a standardized abstraction to exchange messages.
 
 The Message Bus transmits the messages between the frontend and the backend in
 both directions.
 
-A system can have several Message Busses and it shall respect the following
+A system can have several Message Buses and it shall respect the following
 principles:
 
 \begin{itemize}
@@ -445,7 +449,7 @@ principles:
       endpoints (an endpoint can be a VM, a secure Partition or a remote OS).
 \item One Message Bus has one or more devices on the backend side handled by
       drivers on the frontend side.
-\item An endpoint can be connected to several Message Busses.
+\item An endpoint can be connected to several Message Buses.
 \end{itemize}
 
 A Message Bus implementation must provide interfaces to transmit and receive
@@ -458,16 +462,21 @@ standardizing as much as possible a part of the bus implementation.
 
 \subsubsection{Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Discovery}
 
-The Message Bus is responsible of listing the available busses and to enumerate
+The Message Bus is responsible of listing the available buses and to enumerate
 all devices available on each bus.
 
-This can be done in a static way, using a device tree for example, or in a way
-using messages to discover from the frontend side which device IDs are
-available on the backend side (using the BUS_MSG_GET_DEVICES bus message).
+The frontend may use a predefined virtio devices ID list (static way), or may
+use the BUS_MSG_GET_DEVICES message to discover devices IDs available on the
+backend (dynamic way), or a combination of the two methods.
+
+The backend may use a predefined virtio devices ID list that can be provided to
+the driver on BUS_MSG_GET_DEVICES request, or may announce device IDs using
+the BUS_MSG_DEVICE_ADDED and BUS_MSG_DEVICE_REMOVED messages, or a combination
+of the two methods.
 
 \subsubsection{Message Format}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Message Format}
 
-The Bus messages are transfered using the \emph{bus-msg} type in
+The Bus messages are transferred using the \emph{bus-msg} type in
 VIRTIO_MSG_TYPE and have the following format:
 
 \begin{tabularx}{\textwidth}{|l|l|l|X|}
@@ -545,27 +554,29 @@ Any     & 0 & 4 & Posix Error Code \\
 
 \busdef{GET_DEVICES}
 
-The Get Devices message is used by the frontend to retrieve the ID of the
+The Get Devices message is used by the frontend to retrieve the IDs of the
 devices available on the backend of the bus.
 
-The frontend requests the availibility at an offset and the backend returns a
-bitmap in which each bit indicates if a device is available or not for this ID.
+The frontend requests the availability of a group of 256 device IDs and the
+backend returns a bitmap indicating which device IDs are available at the
+requested device ID offset.
 
-A request at offset X give the availability of devices X*32 to X*32 + 31.
+A request at offset X gives the availability of device IDs X*32 to (X+1)*32-1.
 
-The backend also return a next offset that indicates to the frontend what
-offset to request next. This is to optimize the number of messages required in
-a case where the device IDs have numbers far from each other.
+The backend also returns a next offset indicating to the frontend what device
+ID offset should be requested next. This is to reduce the number of messages
+required to scan all IDs when the backend has device IDs far from each other.
 
 This message shall be used in the following way:
 \begin{itemize}
-\item frontend request devices at offset 0.
-\item backend answers with the availibility of devices 0 to 31 and indicates to
-  the frontend what offset to request next.
-\item frontend request devices at the offset mentioned by the device side.
+\item frontend request device IDs at offset X.
+\item backend answers with the availability of device IDs X*32 to (X+1)*32-1
+  and indicates to the frontend which offset to request after using the next
+  offset.
 \end{itemize}
-This repeats until the backend gives a next offset of 0 meaning that no
-more devices are available after the currently requested offset.
+The frontend starts by doing a request with offset 0 and then iterates using
+the next offset returned by the backend until the backend gives a next offset
+of 0.
 
 This message is sent by the frontend side of the bus to the backend side and
 expects an answer from the backend side.
@@ -580,7 +591,7 @@ Request & 0 & 2 & Offset \\
 Answer & 0 & 2 & Offset \\
        & 2 & 2 & Next offset or 0 if no devices after Offset \\
        & 4 & 2 & Reserved (MBZ) \\
-       & 6 & 32 & Bit[n]: Device[offset*32 + n] not availble(0)/available(1) \\
+       & 6 & 32 & Bit[n]: Device[offset*32 + n] not available(0)/available(1) \\
 \hline
 \end{tabular}
 
