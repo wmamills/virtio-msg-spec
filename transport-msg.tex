@@ -115,6 +115,9 @@ The error message is used to signal to the driver or the device that a received
 message is not valid or cannot be addressed. It can also be used to report an
 internal error to the other entity.
 
+This message can be received by the driver or the device and can be sent as an
+answer to an other message by the driver or the device.
+
 The message contains a Virtio Message error code and the Message ID of the
 request that triggerred the error (or 0 if the error was not in answer to a
 specific request).
@@ -122,10 +125,6 @@ specific request).
 The message also contains a Data Type that can be set to STRING to use the
 rest of the payload to give a NULL terminating string that can be used to carry
 extra printable information.
-
-This message can be received by the driver or the device and can be sent as an
-answer to an other message by the driver or the device or any element between
-them involved in the communication.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -140,7 +139,7 @@ Any     & 0 & 4 & Virtio Message Error Code \\
 
 \msgdef{GET_DEVICE_INFO}
 
-The Get device information message is used by the driver to retrieve the device
+The get device information message is used by the driver to retrieve the device
 version, device ID and vendor ID.
 
 This message is sent by the driver to the device and expects an answer from the
@@ -161,7 +160,7 @@ Answer & 0 & 4 & Device version \\
 
 \msgdef{GET_FEATURES}
 
-The Get features message is used to retrieve 256 bits of feature information
+The get features message is used to retrieve 256 bits of feature information
 from the device. The driver request features at an index and the device answers
 with the features bits at 256*index.
 
@@ -189,7 +188,7 @@ Answer & 0 & 4 & Feature index \\
 
 \msgdef{SET_FEATURES}
 
-The Set features message is used by the driver to configure the features of a
+The set features message is used by the driver to configure the features of a
 device. The driver configures 256 bits a time a given index. The device
 provides in the answer the actual features value at the index after having
 configured the bit requested giving an opportunity for the driver to detect if
@@ -212,7 +211,7 @@ Answer & 0 & 4 & Feature index \\
 
 \msgdef{GET_CONFIG}
 
-The Get configuration message is used by the driver to retrieve a part of the
+The get configuration message is used by the driver to retrieve a part of the
 configuration values of the device. The driver can request up to 256 bits at
 a given offset in the device configuration space.
 
@@ -235,7 +234,7 @@ Answer & 0 & 3 & Configuration offset \\
 
 \msgdef{SET_CONFIG}
 
-The Set configuration message is used by the driver to modify a part of the
+The set configuration message is used by the driver to modify a part of the
 configuration values of the device. The driver can modify up to 256 bits at a
 given offset in the device configuration. The device answers with the actual
 configuration value at the offset after the modification to give a chance to the
@@ -260,7 +259,7 @@ Answer & 0 & 3 & Configuration offset \\
 
 \msgdef{GET_CONFIG_GEN}
 
-The Get configuration generation message is used by the driver to retrieve the
+The get configuration generation message is used by the driver to retrieve the
 device configuration atomicity value.
 
 TODO: need help to have a complete description here.
@@ -281,7 +280,7 @@ Answer & 0 & 4 & Atomicity value \\
 
 \msgdef{GET_DEVICE_STATUS}
 
-The Get device status message is used by the driver to retrieve the device
+The get device status message is used by the driver to retrieve the device
 status fields.
 
 This message is sent by the driver to the device and expects an answer from the
@@ -300,7 +299,7 @@ Answer & 0 & 4 & Device status \\
 
 \msgdef{SET_DEVICE_STATUS}
 
-The Set device status message is used by the driver to modify the device status
+The set device status message is used by the driver to modify the device status
 fields. Writing a status of 0 triggers a device reset.
 
 This message is sent by the driver to the device and expects an answer from the
@@ -319,7 +318,7 @@ Answer & 0 & 36 & Reserved (MBZ) \\
 
 \msgdef{GET_VQUEUE}
 
-The Get vqueue message is used to retrieve the maximum virtqueue size and
+The get vqueue message is used to retrieve the maximum virtqueue size and
 information about the vqueue if it was already configured (all information are
 0 if the virtqueue was not configured).
 
@@ -344,7 +343,7 @@ Answer & 0 & 4 & Virtqueue index \\
 
 \msgdef{SET_VQUEUE}
 
-The Set vqueue message is used to configure a virtqueue.
+The set vqueue message is used to configure a virtqueue.
 Setting the virtqueue size to 0 is disabling the virtqueue without modifying
 the rest of the parameters (those should be ignored by the device).
 If a driver needs to complete reset a virtqueue, the RESET\_VQUEUE message
@@ -375,7 +374,7 @@ Answer & 0 & 4 & Virtqueue index \\
 
 \msgdef{RESET_VQUEUE}
 
-The Reset vqueue message is used to disable and reset a virtqueue.
+The reset vqueue message is used to disable and reset a virtqueue.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -393,7 +392,7 @@ Answer & 0 & 36 & Reserved (MBZ) \\
 
 \msgdef{EVENT_CONFIG}
 
-The Event config message is sent by the device to signal to the driver that one
+The event config message is sent by the device to signal to the driver that one
 or several values in the device configuration have changed. The message
 contains the current device status (as encoded in the GET\_DEVICE\_STATUS
 answer) and optionally the part of the configuration that has been modified. If
@@ -417,7 +416,7 @@ Request & 0 & 4 & Device status \\
 
 \msgdef{EVENT_AVAIL}
 
-The Event available message is sent by the driver to the device to signal that
+The event available message is sent by the driver to the device to signal that
 some data are available to process in a virtqueue. If the NOTIFICATION\_DATA
 was negotiated, the message can also include more details on what is actually
 available.
@@ -441,8 +440,6 @@ Request & 0 & 4 & Virtqueue index \\
 The event used message is sent by the device to the driver to signal that some
 data is available or has been processed in the a virtqueue.
 
-TODO: is there a case for offset/wrap in this one ?
-
 This message is sent by the device to the driver and does not expect any
 answer.
 
@@ -463,7 +460,7 @@ providing a standardized abstraction to exchange messages.
 The Message Bus transmits the messages between the frontend and the backend in
 both directions.
 
-A system can have several Message Buses and it shall respect the following
+A system can have several Message Buses and it must respect the following
 principles:
 
 \begin{itemize}
@@ -477,9 +474,9 @@ principles:
 A Message Bus implementation must provide interfaces to transmit and receive
 messages with the other side.
 
-While the Bus implementation and how communication of the messages is done
+While the bus implementation and how communication of the messages is done
 between the devices and the drivers is completely out of the scope of the
-specification, this chapter provides a set of standard Bus messages to help
+specification, this chapter provides a set of Bus messages to help
 standardizing as much as possible a part of the bus implementation.
 
 \subsubsection{Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Discovery}
@@ -583,7 +580,7 @@ The frontend requests the availability of a group of 256 device IDs and the
 backend returns a bitmap indicating which device IDs are available at the
 requested device ID offset.
 
-A request at offset X gives the availability of device IDs X*32 to (X+1)*32-1.
+A request at offset X gives the availability of device IDs X*256 to (X+1)*256-1.
 
 The backend also returns a next offset indicating to the frontend what device
 ID offset should be requested next. This is to reduce the number of messages
@@ -592,7 +589,7 @@ required to scan all IDs when the backend has device IDs far from each other.
 This message shall be used in the following way:
 \begin{itemize}
 \item frontend request device IDs at offset X.
-\item backend answers with the availability of device IDs X*32 to (X+1)*32-1
+\item backend answers with the availability of device IDs X*256 to (X+1)*256-1
   and indicates to the frontend which offset to request after using the next
   offset.
 \end{itemize}
@@ -608,12 +605,12 @@ expects an answer from the backend side.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Offset \\
-        & 2 & 34 & Reserved (MBZ) \\
+        & 2 & 36 & Reserved (MBZ) \\
 \hline
 Answer & 0 & 2 & Offset \\
        & 2 & 2 & Next offset or 0 if no devices after Offset \\
        & 4 & 2 & Reserved (MBZ) \\
-       & 6 & 32 & Bit[n]: Device[offset*32 + n] not available(0)/available(1) \\
+       & 6 & 32 & Bit[n]: Device[offset*256 + n] not available(0)/available(1) \\
 \hline
 \end{tabular}
 
@@ -629,7 +626,7 @@ This message is sent by the backend of the bus and does not expect any answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Device ID \\
-        & 2 & 34 & Reserved (MBZ) \\
+        & 2 & 36 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -645,7 +642,7 @@ This message is sent by the backend of the bus and does not expect any answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Device ID \\
-        & 2 & 34 & Reserved (MBZ) \\
+        & 2 & 36 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -665,10 +662,10 @@ back by the receiver in its answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Data \\
-        & 4 & 32 & Reserved (MBZ) \\
+        & 4 & 34 & Reserved (MBZ) \\
 \hline
 Answer & 0 & 4 & Request Data \\
-       & 4 & 32 & Reserved (MBZ) \\
+       & 4 & 34 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -704,7 +701,7 @@ does not expect any answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 1 & New state \\
-        & 1 & 35 & Reserved (MBZ) \\
+        & 1 & 37 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
