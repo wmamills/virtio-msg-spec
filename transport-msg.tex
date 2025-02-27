@@ -15,7 +15,8 @@ cross system communications required in an heterogeneous system configuration.
 
 The messages have the following properties:
 \begin{itemize}
-\item A message size is 40 bytes.
+\item A message has a minimum size of 8 bytes and any implementation must support
+  to transmit messages of up to 64 bytes.
 \item Most messages are driver/device initialization messages.
 \item Messages are expected to be sent at low frequencies and quick round-trip is
   not necessary and should not impact global performances (as communication
@@ -34,7 +35,9 @@ VIRTIO_MSG_ID & 1 & 1 & Message ID \\
 \hline
 VIRTIO_MSG_DEV_ID & 2 & 2 & Device ID, must be set to 0 if VIRTIO_MSG_TYPE Bit[1]=1\\
 \hline
-VIRTIO_MSG_PAYLOAD & 4 & 36 & Payload \\
+VIRTIO_MSG_SIZE & 4 & 2 & Message Payload Size\\
+\hline
+VIRTIO_MSG_PAYLOAD & 6 & ...  & Payload \\
 \hline
 \end{tabularx}
 
@@ -135,14 +138,15 @@ Type & Offset & Size (bytes) & Content \\
 Any     & 0 & 4 & Virtio Message Error Code \\
         & 4 & 1 & Message ID which generated an error or 0 if none \\
         & 5 & 1 & Data Type: 0 (Reserved), 1 (STRING), 2-255 (Implementation Defined) \\
-        & 6 & 30 & Null Terminated String if Data Type is STRING else Implementation Defined \\
+        & 6 & ... & Null Terminated String if Data Type is STRING else Implementation Defined \\
 \hline
 \end{tabular}
 
 \msgdef{VERSION}
 
 The version message is used by the driver to negociate the version of the
-Virtio Message protocol to use.
+Virtio Message protocol to use and inform the other side of the maximum message
+size it can handle (including the message header).
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -184,10 +188,10 @@ The version negociation shall be done by the driver following those steps:
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Driver Protocol version \\
-& 4 & 32 & Reserved (MBZ) \\
+& 4 & 4 & Maximum message size supported \\
 \hline
 Answer & 0 & 4 & Device Protocol version \\
-& 4 & 32 & Reserved (MBZ) \\
+& 4 & 4 & Maximum message size supported \\
 \hline
 \end{tabular}
 
@@ -203,24 +207,30 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 36 & Reserved (MBZ) \\
+Request & 0 & 0 & None \\
 \hline
 Answer & 0 & 4 & Device version \\
 & 4 & 4 & Device ID \\
 & 8 & 4 & Vendor ID \\
-& 12 & 24 & Reserved (MBZ) \\
+& 12 & 4 & Number of feature bits \\
+& 16 & 4 & Configuration size in bytes \\
 \hline
 \end{tabular}
 
 \msgdef{GET_FEATURES}
 
-The get features message is used to retrieve 256 bits of feature information
-from the device. The driver requests features at an index and the device answers
-with the features bits at 256*index.
+The get features message is used to retrieve a number of bits of feature
+information from the device. The driver requests features at an index (in bits)
+and a number of bits and the device answers with the features bits at the
+wanted index.
+
+The maximum number of feature bits that can be requested in one message depends
+on the maximum message size supported by both sides.
 
 If there are no features available at the requested index but there are
 features available after the index, the backend must return an all-zero
 response.
+
 If there are no features available at and after the requested index, the
 backend must return an ERROR message to inform the frontend that it does not
 need to scan features further.
@@ -232,21 +242,25 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Feature index \\
-& 4 & 32 & Reserved (MBZ) \\
+Request & 0 & 4 & Feature bit index \\
+& 4 & 4 & Number of features \\
 \hline
-Answer & 0 & 4 & Feature index \\
-& 4 & 32 & Feature data \\
+Answer & 0 & 4 & Feature bit index \\
+& 4 & 4 & Number of features \\
+& 8 & ... & Feature data \\
 \hline
 \end{tabular}
 
 \msgdef{SET_FEATURES}
 
 The set features message is used by the driver to configure the features of a
-device. The driver configures 256 bits a time a given index. The device
-provides in the answer the actual features value at the index after having
-configured the bit requested giving an opportunity for the driver to detect if
-some of the bits it tried to set were not accepted.
+device. The driver configures a number of bits at given index using one
+requets. The device provides in the answer the actual features value at the
+index after having configured the bits requested, giving an opportunity for the
+driver to detect if some of the bits it tried to set were not accepted.
+
+The maximum number of feature bits that can be modified in one request depends
+on the maximum message size supported by both sides.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -255,19 +269,23 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Feature index \\
-& 4 & 32 & Feature data \\
+Request & 0 & 4 & Feature bit index \\
+& 4 & 4 & Number of features \\
+& 8 & ... & Feature data \\
 \hline
-Answer & 0 & 4 & Feature index \\
-& 4 & 32 & Feature data \\
+Answer & 0 & 4 & Feature bit index \\
+& 4 & 4 & Number of features \\
+& 8 & ... & Feature data \\
 \hline
 \end{tabular}
 
 \msgdef{GET_CONFIG}
 
 The get configuration message is used by the driver to retrieve a part of the
-configuration values of the device. The driver can request up to 256 bits at
-a given offset in the device configuration space.
+configuration values of the device at a given offset.
+
+The maximum size of configuration that can be requested in one message depends
+on the maximum message size supported by both sides.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -276,23 +294,26 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 3 & Configuration offset \\
-& 3 & 1 & Number of bytes (1-32) \\
-& 4 & 32 & Reserved (MBZ) \\
+Request & 0 & 4 & Configuration offset in bytes \\
+& 4 & 4 & Number of bytes \\
 \hline
-Answer & 0 & 3 & Configuration offset \\
-& 3 & 1 & Number of bytes (1-32) \\
-& 4 & 32 & Configuration data \\
+Answer & 0 & 4 & Configuration offset in bytes \\
+& 4 & 4 & Number of bytes \\
+& 8 & ... & Configuration data \\
 \hline
 \end{tabular}
 
 \msgdef{SET_CONFIG}
 
 The set configuration message is used by the driver to modify a part of the
-configuration values of the device. The driver can modify up to 256 bits at a
-given offset in the device configuration. The device answers with the actual
-configuration value at the offset after the modification to give a chance to the
-driver to detect changes that have not been accepted by the device.
+configuration values of the device.
+
+The maximum size of configuration that can be modified in one request depends
+on the maximum message size supported by both sides.
+
+The device answers with the actual configuration value at the offset after the
+modification to give a chance to the driver a chance to detect changes that
+have not been accepted by the device.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -301,13 +322,13 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 3 & Configuration offset \\
-& 3 & 1 & Number of bytes (1-32) \\
-& 4 & 32 & Configuration data \\
+Request & 0 & 4 & Configuration offset in bytes\\
+& 4 & 4 & Number of bytes \\
+& 8 & ... & Configuration data \\
 \hline
-Answer & 0 & 3 & Configuration offset \\
-& 3 & 1 & Number of bytes (1-32) \\
-& 4 & 32 & Configuration data \\
+Answer & 0 & 3 & Configuration offset in bytes\\
+& 4 & 4 & Number of bytes \\
+& 8 & ... & Configuration data \\
 \hline
 \end{tabular}
 
@@ -325,10 +346,9 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 36 & Reserved (MBZ) \\
+Request & 0 & 0 & None \\
 \hline
 Answer & 0 & 4 & Atomicity value \\
-& 4 & 32 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -344,10 +364,9 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 36 & Reserved (MBZ) \\
+Request & 0 & 0 & None \\
 \hline
 Answer & 0 & 4 & Device status \\
-& 4 & 32 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -364,9 +383,8 @@ device.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Device status \\
-& 4 & 32 & Reserved (MBZ) \\
 \hline
-Answer & 0 & 36 & Reserved (MBZ) \\
+Answer & 0 & 0 & None \\
 \hline
 \end{tabular}
 
@@ -384,7 +402,6 @@ device.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
-& 4 & 32 & Reserved (MBZ) \\
 \hline
 Answer & 0 & 4 & Virtqueue index \\
 & 4 & 4 & Max virtqueue size \\
@@ -438,9 +455,8 @@ device.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
-& 4 & 32 & Reserved (MBZ) \\
 \hline
-Answer & 0 & 36 & Reserved (MBZ) \\
+Answer & 0 & 0 & None \\
 \hline
 \end{tabular}
 
@@ -453,6 +469,9 @@ answer) and optionally the part of the configuration that has been modified. If
 this is not provided, the driver will have to use the GET\_CONFIG to retrieve
 the configuration and discover what has changed.
 
+The maximum size of data that can be communicated with an event depends on the
+maximum message size supported by both sides.
+
 This message is sent by the device to the driver and does not expect any
 answer.
 
@@ -461,10 +480,9 @@ answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Device status \\
-& 4 & 3 & Configuration offset \\
-& 7 & 1 & Number of bytes (1-16) \\
-& 8 & 16 & Configuration data \\
-& 24 & 12 & Reserved (MBZ) \\
+& 4 & 4 & Configuration offset \\
+& 8 & 4 & Number of bytes \\
+& 12 & ... & Configuration data \\
 \hline
 \end{tabular}
 
@@ -485,7 +503,6 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Virtqueue index \\
 & 4 & 4 & Next offset \\
 & 8 & 4 & Next wrap \\
-& 12 & 24 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -502,7 +519,6 @@ answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
-& 4 & 32 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -604,11 +620,14 @@ send as answer to an other message or directly to signal an error.
 The Get Devices message is used by the frontend to retrieve the IDs of the
 devices available on the backend of the bus.
 
-The frontend requests the availability of a group of 256 device IDs and the
+The frontend requests the availability of a group of device IDs and the
 backend returns a bitmap indicating which device IDs are available at the
 requested device ID offset.
 
-A request at offset X gives the availability of device IDs X*256 to (X+1)*256-1.
+A request at offset X gives the availability of device IDs starting at X with
+a number of IDs depending on the actual message size received:
+
+X to (X + Message Size)*8 - 1
 
 The backend also returns a next offset indicating to the frontend what device
 ID offset should be requested next. This is to reduce the number of messages
@@ -617,7 +636,7 @@ required to scan all IDs when the backend has device IDs far from each other.
 This message shall be used in the following way:
 \begin{itemize}
 \item frontend request device IDs at offset X.
-\item backend answers with the availability of device IDs X*256 to (X+1)*256-1
+\item backend answers with the availability of device IDs X to X + Y
   and indicates to the frontend which offset to request after using the next
   offset.
 \end{itemize}
@@ -633,11 +652,10 @@ expects an answer from the backend side.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Offset \\
-        & 2 & 36 & Reserved (MBZ) \\
 \hline
 Answer & 0 & 2 & Offset \\
        & 2 & 2 & Next offset or 0 if no devices after Offset \\
-       & 4 & 32 & Bit[n]: Device[offset*256 + n] not available(0)/available(1) \\
+       & 4 & .. & Bit[n]: Device[offset + n] not available(0)/available(1) \\
 \hline
 \end{tabular}
 
@@ -653,7 +671,6 @@ This message is sent by the backend of the bus and does not expect any answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Device ID \\
-        & 2 & 34 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -669,7 +686,6 @@ This message is sent by the backend of the bus and does not expect any answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Device ID \\
-        & 2 & 34 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -689,10 +705,8 @@ back by the receiver in its answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Data \\
-        & 4 & 32 & Reserved (MBZ) \\
 \hline
 Answer & 0 & 4 & Request Data \\
-       & 4 & 32 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
@@ -728,7 +742,6 @@ does not expect any answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 1 & New state \\
-        & 1 & 35 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
