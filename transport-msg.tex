@@ -74,27 +74,29 @@ Reserved                      & 0x0 & \\
 \hline
 VIRTIO_MSG_ERROR              & 0x1  & Any    \\
 \hline
-VIRTIO_MSG_GET_DEVICE_INFO    & 0x2  & Driver \\
+VIRTIO_MSG_VERSION            & 0x2  & Driver \\
 \hline
-VIRTIO_MSG_GET_FEATURES       & 0x3  & Driver \\
+VIRTIO_MSG_GET_DEVICE_INFO    & 0x3  & Driver \\
 \hline
-VIRTIO_MSG_SET_FEATURES       & 0x4  & Driver \\
+VIRTIO_MSG_GET_FEATURES       & 0x4  & Driver \\
 \hline
-VIRTIO_MSG_GET_CONFIG         & 0x5  & Driver \\
+VIRTIO_MSG_SET_FEATURES       & 0x5  & Driver \\
 \hline
-VIRTIO_MSG_SET_CONFIG         & 0x6  & Driver \\
+VIRTIO_MSG_GET_CONFIG         & 0x6  & Driver \\
 \hline
-VIRTIO_MSG_GET_CONFIG_GEN     & 0x7  & Driver \\
+VIRTIO_MSG_SET_CONFIG         & 0x7  & Driver \\
 \hline
-VIRTIO_MSG_GET_DEVICE_STATUS  & 0x8  & Driver \\
+VIRTIO_MSG_GET_CONFIG_GEN     & 0x8  & Driver \\
 \hline
-VIRTIO_MSG_SET_DEVICE_STATUS  & 0x9  & Driver \\
+VIRTIO_MSG_GET_DEVICE_STATUS  & 0x9  & Driver \\
 \hline
-VIRTIO_MSG_GET_VQUEUE         & 0xA  & Driver \\
+VIRTIO_MSG_SET_DEVICE_STATUS  & 0xA  & Driver \\
 \hline
-VIRTIO_MSG_SET_VQUEUE         & 0xB  & Driver \\
+VIRTIO_MSG_GET_VQUEUE         & 0xB  & Driver \\
 \hline
-VIRTIO_MSG_RESET_VQUEUE       & 0xC  & Driver \\
+VIRTIO_MSG_SET_VQUEUE         & 0xC  & Driver \\
+\hline
+VIRTIO_MSG_RESET_VQUEUE       & 0xD  & Driver \\
 \hline
 VIRTIO_MSG_EVENT_CONFIG       & 0x20 & Device \\
 \hline
@@ -134,6 +136,58 @@ Any     & 0 & 4 & Virtio Message Error Code \\
         & 4 & 1 & Message ID which generated an error or 0 if none \\
         & 5 & 1 & Data Type: 0 (Reserved), 1 (STRING), 2-255 (Implementation Defined) \\
         & 6 & 30 & Null Terminated String if Data Type is STRING else Implementation Defined \\
+\hline
+\end{tabular}
+
+\msgdef{VERSION}
+
+The version message is used by the driver to negociate the version of the
+Virtio Message protocol to use.
+
+This message is sent by the driver to the device and expects an answer from the
+device.
+
+The version message is not specific to a device so the device ID field of the
+message header must be set to 0.
+
+The current version of the protocol describe by this specification is:
+\emph{0.1}.
+
+A Virtio Message Protocol Version is encoded in 32 bits with:
+\begin{itemize}
+    \item Bits[31-16]: Major Version (Current is 0).
+    \item Bits[15-0]: Minor Version (Current is 1).
+\end{itemize}
+
+The version message must be sent by the driver before any other Virtio
+messages and the version is frozen once a message other than the version
+message is sent by the driver.
+
+To re-negociate a version, the Virtio Message Bus needs to be reseted through
+a Bus Implementation Defined way (for example using the BUS_MSG_STATUS Virtio
+Bus Message).
+
+The version negociation shall be done by the driver following those steps:
+\begin{itemize}
+    \item The driver sends a version message with the highest version of the
+        protocol its supports.
+    \item The device answers with the highest version lower or equals to the
+        version requested by the driver that it supports. If the device does
+        not support any lower version, it answers with an Error.
+    \item If the driver can work with the version answered, it continues
+        using it otherwise it can send an other version message to try to
+        negociate a different version.
+\end{itemize}
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Driver Protocol version \\
+& 4 & 32 & Reserved (MBZ) \\
+\hline
+Answer & 0 & 4 & Device Protocol version \\
+& 4 & 32 & Reserved (MBZ) \\
 \hline
 \end{tabular}
 
