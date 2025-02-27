@@ -552,12 +552,31 @@ principles:
 \end{itemize}
 
 A Message Bus implementation must provide interfaces to transmit and receive
-messages with the other side.
+messages with the other side but could also provide solutions to:
+\begin{itemize}
+    \item Handle memory sharing: it can be informed by drivers when they need
+        some memory to be accessible to devices and use some custom messages
+        or solutions to make the memory accessible and inform the device side
+        that some memory is now available. This can be useful in a VM to VM
+        use case on top of an hypervisor to request the hypervisor to make some
+        of the driver memory accessible into the VM hosting the device.
+    \item Out of band notifications: transfering messages to signal events
+        could not be the best solution in all cases. The bus implementation
+        could for example have a solution to use one MSI-X per virtqueue and
+        create the event message for the transport when it triggers instead
+        of actually transferring an even message between the device and the
+        driver.
+    \item Full static discovery: instead of transfering messages to detect
+        devices, one bus implementation could rely on a Device tree to get
+        a list of devices available and generate the device info messages out
+        of it instead of actually asking the device side using a message.
+\end{itemize}
 
 While the bus implementation and how communication of the messages is done
 between the devices and the drivers is completely out of the scope of the
 specification, this chapter provides a set of Bus messages to help
 standardizing as much as possible a part of the bus implementation.
+
 
 \subsubsection{Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Message Bus / Discovery}
 
