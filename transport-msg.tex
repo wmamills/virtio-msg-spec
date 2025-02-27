@@ -62,6 +62,27 @@ Error Code & Name & Description \\
 \hline
 \end{tabular}
 
+\subsection{Configuration Generation Count}\label{sec::Virtio Transport Options / Virtio Over Messages / Configuration Generation Count}
+
+To allow the driver to cache the configuration and prevent sending messages to
+access the configuration when it did not change, the Virtio Message Transport
+is using a \emph{Configuration generation count} value.
+
+The \emph{Configuration generation count} is a counter that is incremented by
+the device every time a value is modified in the configuration. It is
+communicated to the driver through an event (VIRTIO_MSG_EVENT_CONFIG) each time
+a configuration value is modified by the device itself and in the response to
+any modification of the configuration by the driver (through the
+VIRTIO_MSG_SET_CONFIG message).
+
+When the driver wants to modify a part of the configuration values, it has to
+provide the current value of the \emph{Configuration generation count} and the
+device will reject the request if the value provided is not the one it
+currently has.
+
+This system allows the driver to maintain a cache of the configuration space
+of a device and return values from it instead of asking the device when a
+configuration value is needed.
 
 \subsection{Messages Definition}\label{sec:Virtio Transport Options / Virtio Over Messages / Messages Definition}
 
@@ -89,17 +110,15 @@ VIRTIO_MSG_GET_CONFIG         & 0x6  & Driver \\
 \hline
 VIRTIO_MSG_SET_CONFIG         & 0x7  & Driver \\
 \hline
-VIRTIO_MSG_GET_CONFIG_GEN     & 0x8  & Driver \\
+VIRTIO_MSG_GET_DEVICE_STATUS  & 0x8  & Driver \\
 \hline
-VIRTIO_MSG_GET_DEVICE_STATUS  & 0x9  & Driver \\
+VIRTIO_MSG_SET_DEVICE_STATUS  & 0x9  & Driver \\
 \hline
-VIRTIO_MSG_SET_DEVICE_STATUS  & 0xA  & Driver \\
+VIRTIO_MSG_GET_VQUEUE         & 0xA  & Driver \\
 \hline
-VIRTIO_MSG_GET_VQUEUE         & 0xB  & Driver \\
+VIRTIO_MSG_SET_VQUEUE         & 0xB  & Driver \\
 \hline
-VIRTIO_MSG_SET_VQUEUE         & 0xC  & Driver \\
-\hline
-VIRTIO_MSG_RESET_VQUEUE       & 0xD  & Driver \\
+VIRTIO_MSG_RESET_VQUEUE       & 0xC  & Driver \\
 \hline
 VIRTIO_MSG_EVENT_CONFIG       & 0x20 & Device \\
 \hline
@@ -282,7 +301,8 @@ Answer & 0 & 4 & Feature bit index \\
 \msgdef{GET_CONFIG}
 
 The get configuration message is used by the driver to retrieve a part of the
-configuration values of the device at a given offset.
+configuration values of the device at a given offset together with the current
+value of the configuration generation count.
 
 The maximum size of configuration that can be requested in one message depends
 on the maximum message size supported by both sides.
@@ -299,7 +319,8 @@ Request & 0 & 4 & Configuration offset in bytes \\
 \hline
 Answer & 0 & 4 & Configuration offset in bytes \\
 & 4 & 4 & Number of bytes \\
-& 8 & ... & Configuration data \\
+& 8 & 4 & Configuration generation count \\
+& 12 & ... & Configuration data \\
 \hline
 \end{tabular}
 
@@ -307,6 +328,11 @@ Answer & 0 & 4 & Configuration offset in bytes \\
 
 The set configuration message is used by the driver to modify a part of the
 configuration values of the device.
+
+The driver must give the current value of the Configuration Generation Count
+and the device will reject the request with an error if its current Generation
+count value is different from the one it finds in the request. The new value
+of the Generation count is provided by the device in the answer.
 
 The maximum size of configuration that can be modified in one request depends
 on the maximum message size supported by both sides.
@@ -324,31 +350,13 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Configuration offset in bytes\\
 & 4 & 4 & Number of bytes \\
-& 8 & ... & Configuration data \\
+& 8 & 4 & Configuration generation count \\
+& 12 & ... & Configuration data \\
 \hline
 Answer & 0 & 3 & Configuration offset in bytes\\
 & 4 & 4 & Number of bytes \\
-& 8 & ... & Configuration data \\
-\hline
-\end{tabular}
-
-\msgdef{GET_CONFIG_GEN}
-
-The get configuration generation message is used by the driver to retrieve the
-device configuration atomicity value.
-
-TODO: need help to have a complete description here.
-
-This message is sent by the driver to the device and expects an answer from the
-device.
-
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 0 & None \\
-\hline
-Answer & 0 & 4 & Atomicity value \\
+& 8 & 4 & Configuration generation count \\
+& 12 & ... & Configuration data \\
 \hline
 \end{tabular}
 
@@ -465,9 +473,10 @@ Answer & 0 & 0 & None \\
 The event config message is sent by the device to signal to the driver that one
 or several values in the device configuration have changed. The message
 contains the current device status (as encoded in the GET\_DEVICE\_STATUS
-answer) and optionally the part of the configuration that has been modified. If
-this is not provided, the driver will have to use the GET\_CONFIG to retrieve
-the configuration and discover what has changed.
+answer), the new Configuration Generation Count value and optionally the part
+of the configuration that has been modified. If this is not provided, the
+driver will have to use the GET\_CONFIG to retrieve the configuration and
+discover what has changed.
 
 The maximum size of data that can be communicated with an event depends on the
 maximum message size supported by both sides.
@@ -480,9 +489,10 @@ answer.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Device status \\
-& 4 & 4 & Configuration offset \\
-& 8 & 4 & Number of bytes \\
-& 12 & ... & Configuration data \\
+& 4 & 4 & Configuration generation count \\
+& 8 & 4 & Configuration offset \\
+& 12 & 4 & Number of bytes \\
+& 16 & ... & Configuration data \\
 \hline
 \end{tabular}
 
