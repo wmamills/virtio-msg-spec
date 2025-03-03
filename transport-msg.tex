@@ -15,8 +15,9 @@ cross system communications required in an heterogeneous system configuration.
 
 The messages have the following properties:
 \begin{itemize}
-\item A message has a minimum size of 8 bytes and any implementation must support
-  to transmit messages of up to 64 bytes.
+\item A message has a minimum size of 8 bytes (header size with an empty payload)
+  and any implementation must support to transmit messages of up to 44 bytes
+  (size of the set virtqueue message).
 \item Most messages are driver/device initialization messages.
 \item Messages are expected to be sent at low frequencies and quick round-trip is
   not necessary and should not impact global performances (as communication
@@ -35,7 +36,7 @@ VIRTIO_MSG_ID & 1 & 1 & Message ID \\
 \hline
 VIRTIO_MSG_DEV_ID & 2 & 2 & Device ID, must be set to 0 if VIRTIO_MSG_TYPE Bit[1]=1\\
 \hline
-VIRTIO_MSG_SIZE & 4 & 2 & Message Payload Size\\
+VIRTIO_MSG_SIZE & 4 & 2 & Message Size (including header)\\
 \hline
 VIRTIO_MSG_PAYLOAD & 6 & ...  & Payload \\
 \hline
@@ -198,6 +199,13 @@ The version negociation shall be done by the driver following those steps:
         negociate a different version.
 \end{itemize}
 
+During the negociation, the driver informs the device of the maximum message
+size it can receive and the device informs back the driver of the maximum
+message it can receive. Each side must save this information and ensure not
+to send messages bigger than what the other side can handle. It is generally
+expected that both side will not send message bigger than the biggest size
+supported by both sides.
+
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
@@ -233,10 +241,10 @@ Answer & 0 & 4 & Device ID \\
 
 \msgdef{GET_FEATURES}
 
-The get features message is used to retrieve a number of bits of feature
-information from the device. The driver requests features at an index (in bits)
-and a number of bits and the device answers with the features bits at the
-wanted index.
+The get features message is used to retrieve a number of blocks of 32 bits of
+feature information from the device. The driver requests features at a block
+index (one block is 32bits of feature) and a number of blocks and the device
+answers with the features bits for the requested blocks.
 
 The maximum number of feature bits that can be requested in one message depends
 on the maximum message size supported by both sides.
@@ -246,8 +254,7 @@ features available after the index, the backend must return an all-zero
 response.
 
 If there are no features available at and after the requested index, the
-backend must return an ERROR message to inform the frontend that it does not
-need to scan features further.
+backend must return an ERROR message.
 
 This message is sent by the driver to the device and expects an answer from the
 device.
@@ -256,11 +263,11 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Feature bit index \\
-& 4 & 4 & Number of features \\
+Request & 0 & 4 & Feature block index \\
+& 4 & 4 & Number of feature blocks \\
 \hline
-Answer & 0 & 4 & Feature bit index \\
-& 4 & 4 & Number of features \\
+Answer & 0 & 4 & Feature block index \\
+& 4 & 4 & Number of feature blocks \\
 & 8 & ... & Feature data \\
 \hline
 \end{tabular}
@@ -268,10 +275,11 @@ Answer & 0 & 4 & Feature bit index \\
 \msgdef{SET_FEATURES}
 
 The set features message is used by the driver to configure the features of a
-device. The driver configures a number of bits at given index using one
-requets. The device provides in the answer the actual features value at the
-index after having configured the bits requested, giving an opportunity for the
-driver to detect if some of the bits it tried to set were not accepted.
+device. The driver configures one or several blocks of feature bits (one block
+is 32bits of feature) at a given block index one request. The device provides
+in the answer the actual features value at the index after having configured
+the bits requested, giving an opportunity for the driver to detect if some of
+the bits it tried to set were not accepted.
 
 The maximum number of feature bits that can be modified in one request depends
 on the maximum message size supported by both sides.
@@ -283,12 +291,12 @@ device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Feature bit index \\
-& 4 & 4 & Number of features \\
+Request & 0 & 4 & Feature block index \\
+& 4 & 4 & Number of feature blocks \\
 & 8 & ... & Feature data \\
 \hline
-Answer & 0 & 4 & Feature bit index \\
-& 4 & 4 & Number of features \\
+Answer & 0 & 4 & Feature block index \\
+& 4 & 4 & Number of feature blocks \\
 & 8 & ... & Feature data \\
 \hline
 \end{tabular}
@@ -544,6 +552,7 @@ principles:
 \item One Message Bus has one or more devices on the backend side handled by
       drivers on the frontend side.
 \item An endpoint can be connected to several Message Buses.
+\item Any Message bus must support to transmit messages of at least 44 bytes.
 \end{itemize}
 
 A Message Bus implementation must provide interfaces to transmit and receive
@@ -565,6 +574,14 @@ messages with the other side but could also provide solutions to:
         devices, one bus implementation could rely on a Device tree to get
         a list of devices available and generate the device info messages out
         of it instead of actually asking the device side using a message.
+    \item Adapt protocol and message size: when a driver is negociating with
+        a driver using the VIRTIO_MSG_VERSION, a bus can intercept the messages
+        to make sure that the version and size negociated is compatible with
+        what it can handle. This is for example modifying the size the driver
+        claims to support to reduce it to the maximum size it can support
+        and do the same with size claimed by the device. If a bus only support
+        specific version of the protocol it can also restrict what is claimed
+        by a driver or a device by modifying the message protocol version part.
 \end{itemize}
 
 While the bus implementation and how communication of the messages is done
@@ -676,8 +693,10 @@ expects an answer from the backend side.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Offset \\
+        & 2 & 2 & Number of device IDs requested \\
 \hline
 Answer & 0 & 2 & Offset \\
+       & 2 & 2 & Number of device IDs in the answer \\
        & 2 & 2 & Next offset or 0 if no devices after Offset \\
        & 4 & .. & Bit[n]: Device[offset + n] not available(0)/available(1) \\
 \hline
