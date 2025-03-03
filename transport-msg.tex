@@ -83,7 +83,9 @@ currently has.
 
 This system allows the driver to maintain a cache of the configuration space
 of a device and return values from it instead of asking the device when a
-configuration value is needed.
+configuration value is needed. The device will signal to the driver any change
+in the configuration that was not requested by the driver through the
+VIRTIO_MSG_EVENT_CONFIG event.
 
 \subsection{Messages Definition}\label{sec:Virtio Transport Options / Virtio Over Messages / Messages Definition}
 
