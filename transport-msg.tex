@@ -170,25 +170,21 @@ size it can handle (including the message header).
 This message is sent by the driver to the device and expects an answer from the
 device.
 
-The version message is not specific to a device so the device ID field of the
-message header must be set to 0.
+The protocol version is an unsigned integer increased each time the
+specification changes and must be negociated for each device.
 
 The current version of the protocol describe by this specification is:
-\emph{0.1}.
-
-A Virtio Message Protocol Version is encoded in 32 bits with:
-\begin{itemize}
-    \item Bits[31-16]: Major Version (Current is 0).
-    \item Bits[15-0]: Minor Version (Current is 1).
-\end{itemize}
+\emph{1}.
 
 The version message must be sent by the driver before any other Virtio
 messages and the version is frozen once a message other than the version
-message is sent by the driver.
+message is sent by the driver. Once the version is frozen, any version message
+with a size or version different from what was negociated must be answered with
+an ERROR message by the device.
 
-To re-negociate a version, the Virtio Message Bus needs to be reseted through
-a Bus Implementation Defined way (for example using the BUS_MSG_STATUS Virtio
-Bus Message).
+To re-negociate a protocol version, the device needs to be reseted using the
+SET_DEVICE_STATUS or any other Bus specific reset solution to allow
+renogociating the version or message size.
 
 The version negociation shall be done by the driver following those steps:
 \begin{itemize}
@@ -228,11 +224,10 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 0 & None \\
 \hline
-Answer & 0 & 4 & Device version \\
-& 4 & 4 & Device ID \\
-& 8 & 4 & Vendor ID \\
-& 12 & 4 & Number of feature bits \\
-& 16 & 4 & Configuration size in bytes \\
+Answer & 0 & 4 & Device ID \\
+& 4 & 4 & Vendor ID \\
+& 8 & 4 & Number of feature bits \\
+& 12 & 4 & Configuration size in bytes \\
 \hline
 \end{tabular}
 
