@@ -1,22 +1,19 @@
 name: Deploy current state
 
-on:
-  push:
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Tools
-        run: |
-          sudo apt update
-          sudo apt install texlive-full
-
-      - name: Build Docs
-        run: |
-          make local-all
-          echo ${{ github.sha }} > Release.txt
+      - uses: xu-cheng/texlive-action@v2
+        with:
+          scheme: full
+          run: |
+            apk add file make zip
+            make local-all
+            echo ${{ github.sha }} > Release.txt
 
       - name: Create Draft Release
         id: create_release
@@ -28,6 +25,7 @@ jobs:
           release_name: Draft ${{ github.run_number }}
           draft: false
           prerelease: false
+
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
