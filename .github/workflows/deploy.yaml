@@ -11,7 +11,7 @@ jobs:
         with:
           scheme: full
           run: |
-            apk add file make zip
+            apk add file font-liberation make zip
             make local-all
             echo ${{ github.sha }} > Release.txt
 
