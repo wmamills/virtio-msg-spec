@@ -79,14 +79,14 @@ virtio-msg operates around two layers:
   \item \textbf{Bus Instances and Devices}: Each bus instance can advertise
         different capabilities (e.g., transport revision, maximum message size)
         and may discover devices via a message-based or external mechanism.
-        Every discovered device is assigned a \emph{device ID}.
+        Every discovered device is assigned a \emph{device number}.
   \item \textbf{Driver}: Communicates with the bus to learn about
         available devices. Once a device is recognized, the driver uses the
         common transport messages to perform feature negotiation, configuration,
         and virtqueue setup.
   \item \textbf{Device}: Implement virtio device functionality and
         respond to the transport messages. The bus forwards these messages to
-        the correct device instance based on device ID.
+        the correct device instance based on device number.
 \end{itemize}
 
 \subsubsection{Optional Bus Messages}
@@ -153,21 +153,22 @@ The following tables defines the currently defined virtio-msg revisions:
 Note that a change in the virtio standard does not necessarily
 correspond to a change in the virtio-msg revision.
 
-\subsubsection{Device IDs and Enumeration}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / DeviceIDs}
+\subsubsection{Device Numbers and Enumeration}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts /
+Device Numbers}
 
 Each virtio-msg bus instance contains one or more \emph{devices}, identified
-by a 16-bit \textbf{device ID}. Buses \emph{MAY} discover these device IDs
-in multiple ways:
+by a 16-bit \textbf{device number}. Buses \emph{MAY} discover these device
+numbers in multiple ways:
 \begin{itemize}
   \item \textbf{Message-Based Enumeration}: Using \busref{GET_DEVICES} to query
-        which IDs exist (optional).
+        which numbers exist (optional).
   \item \textbf{Platform Data}: A device tree, ACPI tables, or hypervisor calls
-        might inform the bus of available device IDs and their properties.
+        might inform the bus of available device numbers and their properties.
 \end{itemize}
 
-Once a bus confirms that a given device ID is valid (regardless of the method),
-it typically issues \msgref{GET_DEVICE_INFO} to retrieve the device’s Virtio ID
+Once a bus confirms that a given device number is valid (regardless of the method),
+it typically issues \msgref{GET_DEVICE_INFO} to retrieve the device’s Device ID
 and vendor ID. The bus can then register the device with the host OS to initiate
 the usual Virtio driver binding process.
 
@@ -260,7 +261,7 @@ virtio-msg groups messages into two categories:
 
 \begin{description}
   \item[\textbf{Bus Messages}:]
-    Intended for global bus operations such as enumerating device IDs
+    Intended for global bus operations such as enumerating device numbers
     (\busref{GET_DEVICES}), managing device hotplug events (\busref{DEVICE_ADDED},
     \busref{DEVICE_REMOVED}), or sending a bus-wide reset or suspend signal
     (\busref{STATUS}). These messages are \emph{optional} in environments where
@@ -303,7 +304,7 @@ rest of the payload. This header has the following format:
 struct virtio_msg_message {
     uint8_t type;
     uint8_t msg_id;
-    uint16_t dev_id;
+    uint16_t dev_num;
     uint16_t msg_size;
     u8 payload[];
 };
@@ -324,8 +325,8 @@ The fields in this header have the following usage:
     GET_FEATURES, SET_CONFIG). The specific range or enumeration of types is
     defined in sections \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
     and \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
-  \item \field{dev_id}:
-     Identifies the Device ID the message is targetting or is coming from for
+  \item \field{dev_num}:
+     Identifies the Device Number the message is targeting or is coming from for
      Transport Message and must be zero of Bus messages.
   \item \field{msg_size};
     Indicates the total length of the message payload including the header.
@@ -350,7 +351,7 @@ Bus implementations \emph{MAY} discover their devices in various ways:
   \item By receiving enumeration data from a hypervisor or firmware,
   \item By using \busref{GET_DEVICES} messages (defined in
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages})
-    to query which device IDs are present on this bus instance.
+    to query which device numbers are present on this bus instance.
 \end{itemize}
 
 This specification \emph{defines} \busref{GET_DEVICES} for implementations that
@@ -423,7 +424,7 @@ protocols instead. The general usage of \busref{PING} (if implemented) is:
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Interaction with Transport}
 
 The bus is also responsible for forwarding device-specific \emph{transport
-messages} to the correct device for each device ID. Typically, the bus does
+messages} to the correct device for each device number. Typically, the bus does
 not interpret or modify these transport messages—its role is simply to ensure
 they reach the intended device. If the bus does not rely on messages for device
 enumeration or hotplug itself, it \emph{MUST} still be capable of transporting
@@ -445,8 +446,8 @@ details the recommended order of operations and the associated messages.
 A typical device initialization flow includes:
 \begin{enumerate}
   \item \textbf{Obtain Device Information:}  
-    The driver queries the device’s ID, vendor ID, feature block count, and
-    configuration size using \msgref{GET_DEVICE_INFO}.
+    The driver queries the device’s Device ID, vendor ID, feature block count,
+    and configuration size using \msgref{GET_DEVICE_INFO}.
   \item \textbf{Negotiate Features:}  
     The driver retrieves the device’s feature bits (\msgref{GET_FEATURES}),
     determines which features it wants to enable, and writes back any updated
@@ -471,7 +472,7 @@ serves as a common baseline for virtio-msg transport implementations.
 \subsubsection{Device Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information}
 
-Once the bus or driver knows a device ID is present, it \emph{SHOULD} send a
+Once the bus or driver knows a device number is present, it \emph{SHOULD} send a
 \msgref{GET_DEVICE_INFO} to retrieve:
 
 \begin{itemize}
@@ -695,11 +696,11 @@ and clarify its required fields, typical usage patterns, and possible responses.
 \subsubsection{Overview}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / Overview}
 
-A driver typically sends these messages to a known device ID,
+A driver typically sends these messages to a known device number,
 and the virtio-msg device responds or notifies as appropriate. The
 bus \emph{forwards} these messages but does not interpret or modify them beyond
 basic checks (e.g., ensuring the size does not exceed the maximum size
-suppported, verifying the target device ID exists).
+supported, verifying the target device number exists).
 
 Most transport messages adopt a \emph{request/response} pattern, but some are
 unidirectional (e.g., asynchronous notifications). The \msgref{ERROR} message is
@@ -1064,10 +1065,10 @@ from the device side bus.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Offset \\
-        & 2 & 2 & Number of device IDs requested \\
+        & 2 & 2 & Number of device numbers requested \\
 \hline
 Answer & 0 & 2 & Offset \\
-       & 2 & 2 & Number of device IDs in the answer \\
+       & 2 & 2 & Number of device numbers in the answer \\
        & 4 & 2 & Next offset or 0 if no devices after Offset \\
        & 6 & .. & Bit[n]: Device[offset + n] not available(0)/available(1) \\
 \hline
@@ -1081,7 +1082,7 @@ This message is sent by the virtio-msg device side bus and there is no response.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 2 & Device ID \\
+Request & 0 & 2 & Device Number \\
 \hline
 \end{tabular}
 
@@ -1093,7 +1094,7 @@ This message is sent by the virtio-msg device side bus and there is no response.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 2 & Device ID \\
+Request & 0 & 2 & Device Number \\
 \hline
 \end{tabular}
 
