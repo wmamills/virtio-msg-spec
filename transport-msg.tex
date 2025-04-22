@@ -34,7 +34,7 @@ virtio-msg addresses several key objectives:
 
   \item \textbf{Preserve virtio semantics:}
   The transport leverages standard virtio concepts (features, configuration
-  space, virtqueues), so existing virtio drivers and device backends can
+  space, virtqueues), so existing virtio drivers and device implementations can
   integrate smoothly once a device is discovered and registered.
 \end{itemize}
 
@@ -80,13 +80,13 @@ virtio-msg operates around two layers:
         different capabilities (e.g., transport revision, maximum message size)
         and may discover devices via a message-based or external mechanism.
         Every discovered device is assigned a \emph{device ID}.
-  \item \textbf{Driver (Frontend)}: Communicates with the bus to learn about
+  \item \textbf{Driver}: Communicates with the bus to learn about
         available devices. Once a device is recognized, the driver uses the
         common transport messages to perform feature negotiation, configuration,
         and virtqueue setup.
-  \item \textbf{Device Backends}: Implement virtio device functionality and
+  \item \textbf{Device}: Implement virtio device functionality and
         respond to the transport messages. The bus forwards these messages to
-        the correct backend based on device ID.
+        the correct device instance based on device ID.
 \end{itemize}
 
 \subsubsection{Optional Bus Messages}
@@ -175,7 +175,7 @@ the usual Virtio driver binding process.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen}
 
 Each device maintains a \textbf{Configuration Generation Count} to prevent
-inconsistent updates. This count is incremented whenever the device backend
+inconsistent updates. This count is incremented whenever the device
 changes its own configuration internally. The driver learns the current count
 via \msgref{GET_CONFIG} and \emph{MUST} include it in \msgref{SET_CONFIG}
 requests.
@@ -279,7 +279,7 @@ virtio-msg groups messages into two categories:
       \item Handling device status and notifications (\msgref{SET_DEVICE_STATUS},
         \msgref{EVENT_USED}, etc.).
     \end{itemize}
-    The bus \emph{MUST} relay these messages to the correct device backend,
+    The bus \emph{MUST} relay these messages to the correct device,
     regardless of how the bus discovered or enumerated that device.
 \end{description}
 
@@ -407,8 +407,8 @@ those devices remain valid.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Monitoring}
 
 An optional \busref{PING} message is provided for bus implementations that want
-to periodically verify connectivity with the other end (driver or device
-backend). Implementations \emph{MAY} use other keepalive or health-check
+to periodically verify connectivity with the other end (driver or device).
+Implementations \emph{MAY} use other keepalive or health-check
 protocols instead. The general usage of \busref{PING} (if implemented) is:
 
 \begin{itemize}
@@ -423,7 +423,7 @@ protocols instead. The general usage of \busref{PING} (if implemented) is:
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Interaction with Transport}
 
 The bus is also responsible for forwarding device-specific \emph{transport
-messages} to the correct backend for each device ID. Typically, the bus does
+messages} to the correct device for each device ID. Typically, the bus does
 not interpret or modify these transport messages—its role is simply to ensure
 they reach the intended device. If the bus does not rely on messages for device
 enumeration or hotplug itself, it \emph{MUST} still be capable of transporting
@@ -675,8 +675,8 @@ and any pending operations on virtqueues. Once a device is reset, the driver
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization})
 before resuming normal operation.
 
-\paragraph{Backend-Initiated Reset}
-In some circumstances, the device backend \emph{MAY} also trigger a reset if it
+\paragraph{Device Side Initiated Reset}
+In some circumstances, the device \emph{MAY} also trigger a reset if it
 encounters an unrecoverable error. This can be signaled to the driver by sending
 an \msgref{EVENT_CONFIG} with a \emph{device status} indicating an error state,
 or through a higher-level bus reset (\busref{STATUS} if implemented). The driver
@@ -695,8 +695,8 @@ and clarify its required fields, typical usage patterns, and possible responses.
 \subsubsection{Overview}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / Overview}
 
-A driver (frontend) typically sends these messages to a known device ID,
-and the virtio-msg backend (device) responds or notifies as appropriate. The
+A driver typically sends these messages to a known device ID,
+and the virtio-msg device responds or notifies as appropriate. The
 bus \emph{forwards} these messages but does not interpret or modify them beyond
 basic checks (e.g., ensuring the size does not exceed the maximum size
 suppported, verifying the target device ID exists).
@@ -765,7 +765,7 @@ strategies are used instead.
 
 \msgdef{ERROR}
 
-This message is sent by the virtio-msg transport frontend or backend and does
+This message is sent by the virtio-msg transport driver or device and does
 not require a response.
 
 \begin{tabular}{|l|l|l|l|}
@@ -781,8 +781,8 @@ Any     & 0 & 4 & Virtio Message Error Code \\
 
 \msgdef{GET_DEVICE_INFO}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -799,8 +799,8 @@ Answer & 0 & 4 & Device ID \\
 
 \msgdef{GET_FEATURES}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -817,8 +817,8 @@ Answer & 0 & 4 & Feature block index \\
 
 \msgdef{SET_FEATURES}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -836,8 +836,8 @@ Answer & 0 & 4 & Feature block index \\
 
 \msgdef{GET_CONFIG}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -855,8 +855,8 @@ Answer & 0 & 4 & Configuration offset in bytes \\
 
 \msgdef{SET_CONFIG}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -876,8 +876,8 @@ Answer & 0 & 4 & Configuration offset in bytes\\
 
 \msgdef{GET_DEVICE_STATUS}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -891,8 +891,8 @@ Answer & 0 & 4 & Device status \\
 
 \msgdef{SET_DEVICE_STATUS}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -906,8 +906,8 @@ Answer & 0 & 0 & None \\
 
 \msgdef{GET_VQUEUE}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -926,8 +926,8 @@ Answer & 0 & 4 & Virtqueue index \\
 
 \msgdef{SET_VQUEUE}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -951,8 +951,8 @@ Answer & 0 & 4 & Virtqueue index \\
 
 \msgdef{RESET_VQUEUE}
 
-This message is sent by the virtio-msg transport frontend and requires a
-response from the backend.
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -966,7 +966,7 @@ Answer & 0 & 0 & None \\
 
 \msgdef{EVENT_CONFIG}
 
-This message is sent by the virtio-msg backend and does not require a response.
+This message is sent by the virtio-msg device and does not require a response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -982,7 +982,7 @@ Request & 0 & 4 & Device status \\
 
 \msgdef{EVENT_AVAIL}
 
-This message is sent by the virtio-msg frontend and does not require a response.
+This message is sent by the virtio-msg driver and does not require a response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -996,7 +996,7 @@ Request & 0 & 4 & Virtqueue index \\
 
 \msgdef{EVENT_USED}
 
-This message is sent by the virtio-msg backend and does not require a response.
+This message is sent by the virtio-msg device and does not require a response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1056,8 +1056,8 @@ The virtio-msg bus ERROR message is reusing the format and conventions of the
 
 \busdef{GET_DEVICES}
 
-This message is sent by the virtio-msg bus frontend and requires a response
-from the backend.
+This message is sent by the virtio-msg driver side bus and requires a response
+from the device side bus.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1075,7 +1075,7 @@ Answer & 0 & 2 & Offset \\
 
 \busdef{DEVICE_ADDED}
 
-This message is sent by the virtio-msg bus backend and does not require a
+This message is sent by the virtio-msg device side bus and does not require a
 response.
 
 \begin{tabular}{|l|l|l|l|}
@@ -1088,7 +1088,7 @@ Request & 0 & 2 & Device ID \\
 
 \busdef{DEVICE_REMOVED}
 
-This message is sent by the virtio-msg bus backend and does not require a
+This message is sent by the virtio-msg device side bus and does not require a
 response.
 
 \begin{tabular}{|l|l|l|l|}
@@ -1101,8 +1101,8 @@ Request & 0 & 2 & Device ID \\
 
 \busdef{PING}
 
-This message is sent by the virtio-msg bus frontend and or backend and requires
-a response.
+This message is sent by the virtio-msg driver side bus or device side bus and
+requires a response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1127,8 +1127,8 @@ state the issuer is going into for which the following values are defined:
 \item 128-255: Reserved for implementation-specific usage.
 \end{itemize}
 
-This message is sent by the virtio-msg bus frontend or backend and does not
-require a response.
+This message is sent by the virtio-msg driver side bus or device side bus
+and does not require a response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1174,7 +1174,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     the \textbf{maximum message size} in any message.
 \end{itemize}
 
-\paragraph{Device-Side Requirements (Backend)}
+\paragraph{Device-Side Requirements}
 \begin{itemize}
   \item A device \textbf{MUST} provide accurate data in response to
     \msgref{GET_DEVICE_INFO}, including the correct \emph{device ID}, \emph{vendor ID},
@@ -1193,7 +1193,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     discard any pending operations.
 \end{itemize}
 
-\paragraph{Driver-Side Requirements (Frontend)}
+\paragraph{Driver-Side Requirements}
 \begin{itemize}
   \item A driver \textbf{MUST} send valid requests that do not exceed
     the \textbf{maximum message size}, including correct offsets and block
@@ -1253,7 +1253,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 \paragraph{Bus Implementation}
 A \emph{bus implementation} is compliant if:
 \begin{itemize}
-  \item It forwards \textbf{transport messages} to the appropriate device backend
+  \item It forwards \textbf{transport messages} to the appropriate device
     without altering or discarding valid requests.
   \item It enforces the \textbf{maximum message size} and \textbf{transport
     revision} advertised for its instance.
@@ -1275,7 +1275,7 @@ A \emph{driver} is compliant if:
 \end{itemize}
 
 \paragraph{Device Implementation}
-A \emph{device} (backend) is compliant if:
+A \emph{device} is compliant if:
 \begin{itemize}
   \item It supports the core transport messages and enforces the
     \emph{Configuration Generation Count}.
