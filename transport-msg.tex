@@ -92,8 +92,8 @@ virtio-msg operates around two layers:
 \subsubsection{Optional Bus Messages}
 
 This specification \emph{defines} messages such as \busref{GET_DEVICES},
-\busref{DEVICE_ADDED}, \busref{DEVICE_REMOVED}, and \busref{STATUS} for a
-completely message-based approach to enumeration, hotplug, and bus-wide resets.
+\busref{DEVICE_ADDED}, \busref{DEVICE_REMOVED}, and \busref{PING} for a
+completely message-based approach to enumeration, hotplug, and bus-wide health.
 However, these are \emph{not} mandatory if a bus instance already handles those
 functions via firmware, device tree, or other platform features. The only strict
 requirement is that the bus be able to forward device-specific \emph{transport
@@ -263,8 +263,8 @@ virtio-msg groups messages into two categories:
   \item[\textbf{Bus Messages}:]
     Intended for global bus operations such as enumerating device numbers
     (\busref{GET_DEVICES}), managing device hotplug events (\busref{DEVICE_ADDED},
-    \busref{DEVICE_REMOVED}), or sending a bus-wide reset or suspend signal
-    (\busref{STATUS}). These messages are \emph{optional} in environments where
+    \busref{DEVICE_REMOVED}), or assessing bus-wide health (\busref{PING}).
+    These messages are \emph{optional} in environments where
     device discovery or state changes occur through other means (e.g., device
     tree). However, if a bus \emph{chooses} to handle those tasks via messages,
     it \emph{should} implement the appropriate bus message definitions.
@@ -381,28 +381,6 @@ approach but does not require their use. In any scenario, once notified that a
 device has appeared, the bus \emph{SHOULD} query the device (e.g., via
 \msgref{GET_DEVICE_INFO}) and register it with the OS. If a device is
 removed, the bus \emph{SHOULD} prompt the OS to unbind and release resources.
-
-\subsubsection{Resetting the Bus}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Resetting the Bus}
-
-A bus \emph{MAY} encounter conditions that require a global reset of all attached
-devices (e.g., major error or system suspend/resume). If the bus implements a
-message-based reset mechanism, it \emph{MAY} send or receive \busref{STATUS}
-messages carrying a \emph{Reset} state. However, the bus \emph{MAY} also handle
-resets through other platform-defined means (e.g., firmware calls, hardware
-interrupt signals) without using \busref{STATUS} at all.
-
-When a global reset occurs—regardless of how it is signaled—the bus
-\emph{SHOULD}:
-\begin{itemize}
-  \item Treat previously enumerated devices as uninitialized and no longer
-        available,
-  \item Discard or invalidate pending I/O requests at the bus level,
-  \item Revert to a known baseline state so that new device discovery can start
-        cleanly.
-\end{itemize}
-Drivers \emph{SHOULD} be prepared to re-enumerate devices after a bus reset if
-those devices remain valid.
 
 \subsubsection{Monitoring the Bus}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Monitoring}
@@ -679,9 +657,8 @@ before resuming normal operation.
 \paragraph{Device Side Initiated Reset}
 In some circumstances, the device \emph{MAY} also trigger a reset if it
 encounters an unrecoverable error. This can be signaled to the driver by sending
-an \msgref{EVENT_CONFIG} with a \emph{device status} indicating an error state,
-or through a higher-level bus reset (\busref{STATUS} if implemented). The driver
-\emph{SHOULD} treat this situation as if \msgref{SET_DEVICE_STATUS}(0) was
+an \msgref{EVENT_CONFIG} with a \emph{device status} indicating an error state.
+The driver \emph{SHOULD} treat this situation as if \msgref{SET_DEVICE_STATUS}(0) was
 received and re-initialize the device accordingly.
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
@@ -1010,7 +987,7 @@ Request & 0 & 4 & Virtqueue index \\
 \subsection{Bus Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}
 
 The bus messages defined in this specification facilitate device discovery,
-hotplug management, global status changes, and liveness checks at the bus level.
+hotplug management, and liveness checks at the bus level.
 They are intended for bus implementations that wish to perform these operations
 \emph{via virtio-msg} rather than relying exclusively on external means (e.g.,
 firmware tables, device trees). Each bus instance \emph{may} use a subset of or
@@ -1034,8 +1011,6 @@ Reserved                    & 0x0  &        \\
 \busref{DEVICE_REMOVED}     & 0x4  & Device \\
 \hline
 \busref{PING}               & 0x5  & Any    \\
-\hline
-\busref{STATUS}             & 0x6  & Driver  \\
 \hline
 \end{tabular}
 
@@ -1110,30 +1085,6 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Data \\
 \hline
 Answer & 0 & 4 & Request Data \\
-\hline
-\end{tabular}
-
-\busdef{STATUS}
-
-The message contains a New State field which provides to the receiving the new
-state the issuer is going into for which the following values are defined:
-\begin{itemize}
-\item 0: Reset.
-\item 1: Shutdown.
-\item 2: Suspend.
-\item 4: Resume.
-\item 5-127: Reserved.
-\item 128-255: Reserved for implementation-specific usage.
-\end{itemize}
-
-This message is sent by the virtio-msg driver side bus or device side bus
-and there is no response.
-
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 1 & New State \\
 \hline
 \end{tabular}
 
@@ -1226,10 +1177,6 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 
 \paragraph{Optional Bus-Level Messages}
 \begin{itemize}
-  \item \busref{STATUS} for bus-wide resets and state changes is \emph{MAY}
-    implement. Some systems handle resets through firmware or external
-    mechanisms. If implemented, the bus \textbf{MUST} conform to the message
-    layout.
   \item \busref{PING} for keepalive or health checks is also \emph{MAY}
     implement. If used, both sides \textbf{MUST} echo the 32-bit data field
     precisely.
