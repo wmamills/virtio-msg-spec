@@ -153,6 +153,13 @@ The following tables defines the currently defined virtio-msg revisions:
 Note that a change in the virtio standard does not necessarily
 correspond to a change in the virtio-msg revision.
 
+The maximum message size is from the common transport level point of
+view and includes the headers and payload described here.  If the bus adds it
+own overhead (e.x. its own header) this is not included in the maximum message
+size. The maximum useful message size is currently expected to be 274.
+This value is large enough to support a GET_CONFIG or SET_CONFIG message with a
+configuration data payload of 256 bytes.
+
 \subsubsection{Device Numbers and Enumeration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts /
 Device Numbers}
