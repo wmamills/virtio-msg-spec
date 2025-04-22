@@ -612,7 +612,7 @@ it (e.g., if a feature akin to \emph{NOTIFY_ON_AVAIL} is defined or if
         information, such as the next descriptor offset or wrap counter
         (depending on the negotiated features), so the device can jump directly
         to the updated buffers.
-  \item \textbf{Response}: The \msgref{EVENT_AVAIL} message does not require a
+  \item \textbf{Response}: The \msgref{EVENT_AVAIL} message does not have a
         direct response, but the device will subsequently process available
         buffers and eventually notify the driver when they are used.
 \end{itemize}
@@ -966,7 +966,7 @@ Answer & 0 & 0 & None \\
 
 \msgdef{EVENT_CONFIG}
 
-This message is sent by the virtio-msg device and does not require a response.
+This message is sent by the virtio-msg device and there is no response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -982,7 +982,7 @@ Request & 0 & 4 & Device status \\
 
 \msgdef{EVENT_AVAIL}
 
-This message is sent by the virtio-msg driver and does not require a response.
+This message is sent by the virtio-msg driver and there is no response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -996,7 +996,7 @@ Request & 0 & 4 & Virtqueue index \\
 
 \msgdef{EVENT_USED}
 
-This message is sent by the virtio-msg device and does not require a response.
+This message is sent by the virtio-msg device and there is no response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1075,8 +1075,7 @@ Answer & 0 & 2 & Offset \\
 
 \busdef{DEVICE_ADDED}
 
-This message is sent by the virtio-msg device side bus and does not require a
-response.
+This message is sent by the virtio-msg device side bus and there is no response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1088,8 +1087,7 @@ Request & 0 & 2 & Device ID \\
 
 \busdef{DEVICE_REMOVED}
 
-This message is sent by the virtio-msg device side bus and does not require a
-response.
+This message is sent by the virtio-msg device side bus and there is no response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1128,7 +1126,7 @@ state the issuer is going into for which the following values are defined:
 \end{itemize}
 
 This message is sent by the virtio-msg driver side bus or device side bus
-and does not require a response.
+and there is no response.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
