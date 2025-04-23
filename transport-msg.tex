@@ -405,6 +405,18 @@ protocols instead. The general usage of \busref{PING} (if implemented) is:
         procedure.
 \end{itemize}
 
+\subsubsection{Bus Specific Messages}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
+
+A range of message IDs are reserved for use by the specific bus
+implementation. These messages can be used for any implementation specific
+usage. Example usage could include:
+
+\begin{itemize}
+  \item Configuration of out-of-band notification methods
+  \item Setup shared memory regions to be used for buffers or virtqueues
+\end{itemize}
+
 \subsubsection{Interaction with Transport Messages}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Interaction with Transport}
 
