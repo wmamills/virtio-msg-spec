@@ -598,12 +598,16 @@ runtime resets or shutdown sequences.
 \subsubsection{Driver Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications}
 
-After setting up one or more virtqueues, the driver \emph{MAY} send notifications
+After setting up one or more virtqueues, the driver \emph{MUST} send notifications
 to signal that new buffers are available for processing. The virtio-msg transport
-defines an optional message, \msgref{EVENT_AVAIL}, that the driver can use to
-notify the device of pending buffers if the device’s feature negotiation allows
-it (e.g., if a feature akin to \emph{NOTIFY_ON_AVAIL} is defined or if
-\emph{NEGOCIATION\_DATA} was agreed upon).
+defines the message, \msgref{EVENT_AVAIL}, that the driver will use to
+notify the device of pending buffers.
+
+The driver side bus implementation \emph{MAY} convert them to some form of
+out-of-band (OoB) notification.  If not using OoB notifications, the driver
+side bus \emph{SHOULD} send the messages via the normal message channel.
+As a final option, the bus \emph{MAY} discard the messages but only if it knows
+that the device will poll the virtqueues directly.
 
 \paragraph{EVENT\_AVAIL Usage}
 \begin{itemize}
@@ -617,15 +621,24 @@ it (e.g., if a feature akin to \emph{NOTIFY_ON_AVAIL} is defined or if
         buffers and eventually notify the driver when they are used.
 \end{itemize}
 
-If a driver chooses not to use \msgref{EVENT_AVAIL}, or if the device does not
-support receiving it, the device \emph{MAY} rely on standard virtqueue polling
-mechanisms to detect virtqueue changes.
-
 \subsubsection{Device Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications}
 
-During normal operation, the device \emph{MAY} send notifications to the driver
-about configuration changes or the completion of buffers in virtqueues.
+During normal operation, the driver side bus \emph{MUST} send notifications to
+the driver about configuration changes, device status changes, or the
+completion of buffers in virtqueues using the messages described below.
+These notifications may be the result of:
+
+\begin{itemize}
+    \item The same messages received in band on the message channel from the
+        device side bus.
+    \item Manufactured by the driver side bus based on reception of an
+        out-of-band (OoB) notification from the device side.  Example OoB
+        notifications include things like specific MSIX or other IRQ signals.
+    \item Manufactured by the driver side bus periodically (polling).
+        This option should be reserved only for situation where nothing else
+        will work.
+  \end{itemize}
 
 \paragraph{EVENT\_CONFIG}
 \begin{itemize}
@@ -634,7 +647,7 @@ about configuration changes or the completion of buffers in virtqueues.
     status, and optionally the updated portion of the configuration data.
   \item If the data is not included, the driver \emph{SHOULD} issue
     \msgref{GET_CONFIG} to discover the updated configuration.
-  \item If a device does not suppport to send \msgref{EVENT_CONFIG}, the driver
+  \item If a device does not support to send \msgref{EVENT_CONFIG}, the driver
      \emph{MAY} rely on \msgref{GET_CONFIG}, \msgref{SET_CONFIG} and
      \msgref{GET_DEVICE_STATUS} to handle configuration and status changes.
 \end{itemize}
@@ -650,8 +663,7 @@ about configuration changes or the completion of buffers in virtqueues.
      completion.
 \end{itemize}
 
-These messages enable asynchronous updates from the device, reducing driver
-polling overhead and improving performance.
+These messages enable asynchronous updates from the device.
 
 
 \subsubsection{Configuration Changes During Operation}
@@ -756,9 +768,15 @@ For a virtio-msg device to be fully operational, the following messages
   \item \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE}, and \msgref{RESET_VQUEUE}
 \end{itemize}
 
-Certain notifications, such as \msgref{EVENT_CONFIG} or \msgref{EVENT_USED}, are
-highly recommended to improve performance but \emph{may} be omitted if polling
-strategies are used instead.
+The functionality of the following messages \textbf{MUST} be provided by
+in band messages, out of band event notification, or bus implementation based
+polling:
+\begin{itemize}
+  \item \msgref{EVENT_AVAIL}
+  \item \msgref{EVENT_USED}
+  \item \msgref{EVENT_CONFIG}
+  \item \msgref{EVENT_USED}
+\end{itemize}
 
 \newcommand{\msgdef}[1]{\subsubsection{VIRTIO_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_#1}}
 
