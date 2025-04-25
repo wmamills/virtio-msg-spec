@@ -932,9 +932,14 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Device status \\
 \hline
-Answer & 0 & 0 & None \\
+Answer & 0 & 4 & New device status \\
 \hline
 \end{tabular}
+
+The resulting device status is returned and may not match the status set.  The
+device may set the DEVICE_NEEDS_RESET bit if it has an issue.  The device may
+refuse to set the FEATURES_OK bit if it cannot operate with the features set
+by the driver.
 
 \msgdef{GET_VQUEUE}
 
