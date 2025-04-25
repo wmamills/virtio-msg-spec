@@ -446,7 +446,8 @@ A typical device initialization flow includes:
 \begin{enumerate}
   \item \textbf{Obtain Device Information:}  
     The driver queries the device’s Device ID, vendor ID, feature block count,
-    and configuration size using \msgref{GET_DEVICE_INFO}.
+    configuration size, and other static parameters of the device using
+    \msgref{GET_DEVICE_INFO}.
   \item \textbf{Negotiate Features:}  
     The driver retrieves the device’s feature bits (\msgref{GET_FEATURES}),
     determines which features it wants to enable, and writes back any updated
@@ -482,6 +483,8 @@ Once the bus or driver knows a device number is present, it \emph{SHOULD} send a
     32-bit blocks) the device uses for feature negotiation.
   \item \textbf{Configuration Size}: The total size (in bytes) of the device’s
     configuration space.
+  \item \textbf{Number of virtqueues}: The maximum number of virtqueues the
+    device supports.
 \end{itemize}
 
 Armed with these details, the driver knows how many feature blocks to query,
@@ -812,6 +815,7 @@ Answer & 0 & 4 & Device ID \\
 & 4 & 4 & Vendor ID \\
 & 8 & 4 & Number of feature bits \\
 & 12 & 4 & Configuration size in bytes \\
+& 12 & 4 & Maximum number of virtqueues \\
 \hline
 \end{tabular}
 
