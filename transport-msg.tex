@@ -669,17 +669,15 @@ These notifications may be the result of:
 
 These messages enable asynchronous updates from the device.
 
-
 \subsubsection{Configuration Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates}
 
-The driver \emph{MAY} issue new \msgref{SET_CONFIG} or \msgref{SET_FEATURES}
-messages after initialization if device functionality or features need to be
-changed at runtime. The device \emph{MUST} respond with updated generation counts
-or feature bits if the request succeeds, or \msgref{ERROR} if the request fails
-(e.g., invalid generation count or unsupported features). The driver \emph{SHOULD}
-be prepared to handle partial acceptance of requested features if the device
-cannot enable them all simultaneously.
+The driver \emph{MAY} issue new \msgref{SET_CONFIG}
+messages after initialization if device configuration needs to be
+changed at runtime. The device \emph{MAY} also make configuration changes at
+runtime and \emph{MUST} signal those changes with \msgref{EVENT_CONFIG}
+messages.
+
 
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
