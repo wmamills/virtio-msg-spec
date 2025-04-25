@@ -961,6 +961,9 @@ Answer & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
+If the maximum virtqueue size is zero, the virtqueue is not valid and
+\emph{MUST} not be used.
+
 \msgdef{SET_VQUEUE}
 
 This message is sent by the virtio-msg transport driver and requires a
