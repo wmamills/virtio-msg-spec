@@ -216,9 +216,8 @@ The virtio-msg transport handles feature bits in one or more
         supported or requested feature bits.
 \end{itemize}
 
-A device \emph{MUST} respond with \msgref{ERROR} if the driver requests
-blocks beyond those the device implements, or if the request size exceeds
-the bus instance’s \textbf{maximum message size} limit.
+A device \emph{MUST} respond with all zero feature data for features bit
+requested beyond those the device implements.
 
 \subsubsection{Error Signaling}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling}
@@ -449,9 +448,11 @@ A typical device initialization flow includes:
     configuration size, and other static parameters of the device using
     \msgref{GET_DEVICE_INFO}.
   \item \textbf{Negotiate Features:}  
-    The driver retrieves the device’s feature bits (\msgref{GET_FEATURES}),
-    determines which features it wants to enable, and writes back any updated
-    bits (\msgref{SET_FEATURES}).
+    The driver retrieves the device’s feature bits (\msgref{GET_DEVICE_FEATURES}),
+    determines which features it wants to enable, and writes the desired set
+    with (\msgref{SET_DRIVER_FEATURES}).  It then attempts to set the
+    FEATURES_OK bit in the device status (\msgref{SET_DEVICE_STATUS}) and
+    verifies that it is set in the return device status.
   \item \textbf{Initialize Configuration Space:}  
     The driver may read (\msgref{GET_CONFIG}) or modify (\msgref{SET_CONFIG})
     configuration data, using the device’s \emph{Configuration Generation Count}
@@ -495,22 +496,21 @@ driver might bind to this device based on the Device ID.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}
 
 The driver reads the device’s available features in \textbf{blocks of 32 bits}
-using \msgref{GET_FEATURES}, supplying a \emph{block index} and \emph{number of
-blocks} to retrieve. The device responds with the feature bits valid in that
-range, possibly filling out-of-range blocks with zero.
+using \msgref{GET_DEVICE_FEATURES}, supplying a \emph{block index} and
+\emph{number of blocks} to retrieve. The device responds with the feature bits
+in that range, filling any out-of-range blocks with zero.
 
 The driver then determines which features it can or wants to enable. Enabling a
-feature typically requires the driver to set the corresponding bit(s) and send
-them back to the device with \msgref{SET_FEATURES}. The device, upon receiving
-\textbf{SET\_FEATURES}, may reject certain bits or update bits if it cannot
-enable them. The final bits returned to the driver indicate which features are
-fully negotiated.
+feature requires the driver to set the corresponding bit(s) and send
+them back to the device with \msgref{SET_DRIVER_FEATURES}. Once the driver has
+set all desired features it tries to set the FEATURES_OK bit in the device status
+via the \msgref{SET_DEVICE_STATUS} message.  The device may accept or reject the
+selected features by returning the new device status with the FEATURES_OK bit
+set (accepted) or cleared (rejected).
 
-\paragraph{Error Handling}
 If the driver requests blocks beyond the number of feature bits the device
-exposes, the device \emph{MUST} respond with an \msgref{ERROR}. Likewise, if the
-driver attempts to enable features the device does not recognize or support,
-the device \emph{MAY} leave those bits unset in its final response.
+exposes, the device \emph{MUST} respond with all zeros for the unsupported
+features.
 
 \subsubsection{Device Configuration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration}
@@ -734,9 +734,9 @@ Reserved                   & 0x0 & \\
 \hline
 \msgref{GET_DEVICE_INFO}   & 0x2  & Driver \\
 \hline
-\msgref{GET_FEATURES}      & 0x3  & Driver \\
+\msgref{GET_DEVICE_FEATURES} & 0x3  & Driver \\
 \hline
-\msgref{SET_FEATURES}      & 0x4  & Driver \\
+\msgref{SET_DRIVER_FEATURES} & 0x4  & Driver \\
 \hline
 \msgref{GET_CONFIG}        & 0x5  & Driver \\
 \hline
@@ -819,7 +819,9 @@ Answer & 0 & 4 & Device ID \\
 \hline
 \end{tabular}
 
-\msgdef{GET_FEATURES}
+The number of feature bits must be a multiple of 32.
+
+\msgdef{GET_DEVICE_FEATURES}
 
 This message is sent by the virtio-msg transport driver and requires a
 response from the device.
@@ -837,7 +839,10 @@ Answer & 0 & 4 & Feature block index \\
 \hline
 \end{tabular}
 
-\msgdef{SET_FEATURES}
+A feature block is a group of 32 bits.  The feature data \emph{MUST} be a
+multiple of 4 bytes in length.
+
+\msgdef{SET_DRIVER_FEATURES}
 
 This message is sent by the virtio-msg transport driver and requires a
 response from the device.
@@ -850,11 +855,16 @@ Request & 0 & 4 & Feature block index \\
 & 4 & 4 & Number of feature blocks \\
 & 8 & ... & Feature data \\
 \hline
-Answer & 0 & 4 & Feature block index \\
-& 4 & 4 & Number of feature blocks \\
-& 8 & ... & Feature data \\
+Answer & 0 & 0 & None \\
 \hline
 \end{tabular}
+
+A feature block is a group of 32 bits.  The feature data \emph{MUST} be a
+multiple of 4 bytes in length.
+
+Note: As defined in \ref{sec:Basic Facilities of a Virtio Device / Feature Bits},
+if the device is not OK with the features set, it \emph{MUST} not allow
+the FEATURES_OK bit in the device status to be set.
 
 \msgdef{GET_CONFIG}
 
