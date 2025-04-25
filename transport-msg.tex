@@ -554,7 +554,8 @@ Virtqueues are configured via a set of transport messages:
   \item \msgref{SET_VQUEUE} sets or updates the virtqueue parameters (e.g.,
     queue size, descriptor area addresses, driver address, device address).
   \item \msgref{RESET_VQUEUE} disables and resets the virtqueue, freeing its
-    resources on the device side.
+    resources on the device side.  The use of this message is dependent on the
+    VIRTIO_F_RING_RESET feature being negotiated.
 \end{itemize}
 
 A typical approach is:
@@ -564,8 +565,6 @@ A typical approach is:
   \item \textbf{SET\_VQUEUE}: Specify the number of descriptors (not exceeding
         the maximum) and the addresses for the descriptor table, driver area,
         and device area.  
-  \item \textbf{(Optional) GET\_VQUEUE} again: Check that the configuration
-        matches what was requested.
 \end{enumerate}
 
 The driver repeats these steps for each queue the device supports.
@@ -677,6 +676,12 @@ changed at runtime. The device \emph{MAY} also make configuration changes at
 runtime and \emph{MUST} signal those changes with \msgref{EVENT_CONFIG}
 messages.
 
+\subsubsection{Virtqueue Changes During Operation}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates}
+
+The driver \emph{MAY} issue new \msgref{SET_VQUEUE} for virtqueues that have not
+yet be setup.  If the VIRTIO_F_RING_RESET feature has been negotiated,
+individual virtqueues can be reset and then optionally re-configured.
 
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
@@ -986,6 +991,9 @@ Answer & 0 & 0 & no extra data \\
 
 This message is sent by the virtio-msg transport driver and requires a
 response from the device.
+
+The driver \emph{SHOULD NOT} send this message unless the VIRTIO_F_RING_RESET
+feature has been negotiated.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
