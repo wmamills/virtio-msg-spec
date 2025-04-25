@@ -683,16 +683,17 @@ cannot enable them all simultaneously.
 The driver \emph{MAY} reset or shut down a device at any time by writing a status
 of 0 via \msgref{SET_DEVICE_STATUS}. This forces the device to discard its state
 and any pending operations on virtqueues. Once a device is reset, the driver
-\emph{MUST} reinitialize it (see
+\emph{MAY} reinitialize the device (see
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization})
-before resuming normal operation.
+if it wishes to try and use the device again.
 
 \paragraph{Device Side Initiated Reset}
 In some circumstances, the device \emph{MAY} also trigger a reset if it
 encounters an unrecoverable error. This can be signaled to the driver by sending
-an \msgref{EVENT_CONFIG} with a \emph{device status} indicating an error state.
-The driver \emph{SHOULD} treat this situation as if \msgref{SET_DEVICE_STATUS}(0) was
-received and re-initialize the device accordingly.
+an \msgref{EVENT_CONFIG} with a \emph{device status} with the DEVICE_NEEDS_RESET
+bit set.  The driver \emph{SHOULD} reset the device after this using a
+\msgref{SET_DEVICE_STATUS}(0) message.  The driver \emph{MAY} reinitialize the
+device if it wishes to try and use the device again.
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
 
