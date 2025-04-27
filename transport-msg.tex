@@ -190,11 +190,13 @@ requests.
 
 \begin{itemize}
   \item If the driver’s generation count does not match the device’s current
-        count, the \msgref{SET_CONFIG} request \emph{MUST} be rejected (typically
-        via \msgref{ERROR}).
-  \item The driver then \emph{SHOULD} re-read the configuration (e.g., by
-        \msgref{GET_CONFIG}), retrieve the updated count, and attempt the update
-        again if necessary.
+        count, the \msgref{SET_CONFIG} request \emph{MUST} be rejected by the
+        device.
+  \item The driver will likely have received \msgref{EVENT_CONFIG} messages
+        between the request and the response and will know the current
+        configuration data and generation count.  If not it \emph{SHOULD}
+        re-read the configuration and generation count via \msgref{GET_CONFIG}),
+        and then resent the \msgref{SET_CONFIG} of still desired.
 \end{itemize}
 
 This mechanism ensures updates are not lost or overwritten due to stale
@@ -539,8 +541,9 @@ To write a portion of the configuration space, the driver uses
 \end{itemize}
 
 If the generation count does not match the device’s current value, the device
-\emph{MUST} reject the request with \msgref{ERROR}. The driver \emph{SHOULD}
-then read the updated configuration space and reattempt if necessary.
+\emph{MUST} reject the update as defined in the \msgref{SET_CONFIG} response.
+The driver \emph{SHOULD} then read the updated configuration space and
+reattempt if necessary.
 
 \subsubsection{Virtqueue Configuration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration}
@@ -904,11 +907,27 @@ Request & 0 & 4 & Configuration offset in bytes\\
 & 12 & ... & Configuration data \\
 \hline
 Answer & 0 & 4 & Configuration offset in bytes\\
-& 4 & 4 & Number of bytes \\
-& 8 & 4 & Configuration generation count \\
+& 4 & 4 & Number of bytes, or 0 if rejected \\
+& 8 & 4 & New Configuration generation count \\
 & 12 & ... & Configuration data \\
 \hline
 \end{tabular}
+
+If the request's generation count matches the device's generation count when
+this message is processed by the device, then the specified data will be updated
+and the resulting data will be returned. The resulting data may not match the
+request data as the device may implement read-only parts of the config area or
+have other constraints on the settings. A \msgref{SET_CONFIG} with 0 for
+"Number of bytes"  in the request is illegal.
+
+If the request and current configuration generation counts do not match, no
+change to the configuration data is made and the response is given with the
+current generation counter and a 0 for "Number of bytes".  As signaled by
+"Number of bytes", no configuration data is returned in the response. The
+driver will likely know the new configuration state and generation count by
+processing \msgref{EVENT_CONFIG} messages.  If this is not the case it should
+use \msgref{GET_CONFIG} to come up to date.  The driver may then retry the
+\msgref{SET_CONFIG} operation if still desired.
 
 \msgdef{GET_DEVICE_STATUS}
 
@@ -1213,12 +1232,8 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     the \textbf{maximum message size}, including correct offsets and block
     counts in \msgref{GET_FEATURES}, \msgref{SET_FEATURES}, \msgref{GET_CONFIG},
     and \msgref{SET_CONFIG}.
-  \item A driver \textbf{MUST} handle \msgref{ERROR} responses gracefully,
-    taking appropriate recovery actions (e.g., re-reading configuration, resetting
-    the device, or ceasing operations).
-  \item A driver \textbf{MUST} provide the correct \emph{Configuration
-      Generation Count} in \msgref{SET_CONFIG}, or else it \emph{MUST} handle
-    an \msgref{ERROR}.
+  \item A driver \emph{MUST} handle a /msgref{SET_CONFIG} being rejected for a
+    mismatched configuration generation count.
   \item A driver \textbf{MUST} initialize each device’s virtqueues (where needed)
     via \msgref{SET_VQUEUE} before attempting normal I/O and \textbf{SHOULD}
     query the device’s status or configuration if an unexpected
