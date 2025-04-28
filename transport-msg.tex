@@ -186,8 +186,8 @@ Each device maintains a \textbf{Configuration Generation Count} to prevent
 inconsistent updates. This count is incremented at least once by the device for
 every driver visible change it makes to its own copy of the configuration data.
 A configuration change is made visible to the driver via \msgref{EVENT_CONFIG}
-or the response to \msgref{GET_CONFIG} which also both provide the device's
-current configuration count. The device may change any amount of data for one
+or the response to \msgref{GET_CONFIG} which also both provide the current
+configuration count of the device. The device may change any amount of data for one
 generation count increment. If the change cannot fit in one \msfref{EVENT_CONFIG}
 message, it \emph{SHOULD} be signaled to the driver via a \msgref{EVENT_CONFIG0}
 message. The device \emph{MUST NOT} provide the same generation count in
@@ -881,7 +881,7 @@ Answer & 0 & 4 & Configuration offset in bytes\\
 \hline
 \end{tabular}
 
-If the request's generation count matches the device's generation count when
+If the request generation count matches the device generation count when
 this message is processed by the device, then the specified data will be updated
 and the resulting data will be returned. The resulting data may not match the
 request data as the device may implement read-only parts of the config area or
