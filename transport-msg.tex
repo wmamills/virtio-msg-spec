@@ -193,7 +193,8 @@ message, it \emph{SHOULD} be signaled to the driver via a \msgref{EVENT_CONFIG0}
 message. The device \emph{MUST NOT} provide the same generation count in
 multiple \msgref{EVENT_CONFIG} messages that contain non-zero length config
 data. The driver includes its view of the current generation count in
-\msgref{SET_CONFIG} requests.
+\msgref{SET_CONFIG} requests. The configuration generation count does not
+necessarily start at 0 and \emph{SHOULD NOT} reset to 0 on device reset.
 
 \begin{itemize}
   \item If the driver’s generation count does not match the device’s current
