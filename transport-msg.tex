@@ -188,8 +188,12 @@ every driver visible change it makes to its own copy of the configuration data.
 A configuration change is made visible to the driver via \msgref{EVENT_CONFIG}
 or the response to \msgref{GET_CONFIG} which also both provide the device's
 current configuration count. The device may change any amount of data for one
-generation count increment. The driver includes its view of the current
-generation count in \msgref{SET_CONFIG} requests.
+generation count increment. If the change cannot fit in one \msfref{EVENT_CONFIG}
+message, it \emph{SHOULD} be signaled to the driver via a \msgref{EVENT_CONFIG0}
+message. The device \emph{MUST NOT} provide the same generation count in
+multiple \msgref{EVENT_CONFIG} messages that contain non-zero length config
+data. The driver includes its view of the current generation count in
+\msgref{SET_CONFIG} requests.
 
 \begin{itemize}
   \item If the driver’s generation count does not match the device’s current
@@ -733,6 +737,8 @@ Reserved                   & 0x1 & \\
 \hline
 \msgref{RESET_VQUEUE}      & 0xB  & Driver \\
 \hline
+\msgref{EVENT_CONFIG0}     & 0x40 & Device \\
+\hline
 \msgref{EVENT_CONFIG}      & 0x41 & Device \\
 \hline
 \msgref{EVENT_AVAIL}       & 0x42 & Driver \\
@@ -762,7 +768,7 @@ polling:
 \begin{itemize}
   \item \msgref{EVENT_AVAIL}
   \item \msgref{EVENT_USED}
-  \item \msgref{EVENT_CONFIG}
+  \item \msgref{EVENT_CONFIG} or \msgref{EVENT_CONFIG0}
   \item \msgref{EVENT_USED}
 \end{itemize}
 
@@ -985,6 +991,31 @@ Request & 0 & 4 & Virtqueue index \\
 Answer & 0 & 0 & no extra data \\
 \hline
 \end{tabular}
+
+\msgdef{EVENT_CONFIG0}
+
+This message is sent by the virtio-msg device and there is no response.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 0 & no extra data \\
+\hline
+\end{tabular}
+
+The \msgref{EVENT_CONFIG0} message is used when the extra information in 
+\msgref{EVENT_CONFIG} is not available. In general \msgref{EVENT_CONFIG} 
+\emph{SHOULD} be prefered to \msgref{EVENT_CONFIG0} but this is not always
+possible. If the driver side bus implementation is manufacturing notification
+based on polling intervals, it should use this message to notifiy the driver
+side transport layer that it should use \msgref{GET_DEVICE_STATUS} and
+\msgref{GET_CONFIG} to query for device side changes.
+
+This message may also be used when a single configuration change on the device
+side cannot be communicated in one \msgref{EVENT_CONFIG} message due to maximum
+message size and does not desire to represent it as multiple configuration
+changes.
 
 \msgdef{EVENT_CONFIG}
 
@@ -1225,7 +1256,8 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 
 \paragraph{Runtime Notifications}
 \begin{itemize}
-  \item A device \textbf{MAY} send \msgref{EVENT_CONFIG} or \msgref{EVENT_USED}
+  \item A device \textbf{MAY} send \msgref{EVENT_CONFIG}, \msgref{EVENT_CONFIG0}
+    or \msgref{EVENT_USED}
     to inform the driver of configuration changes or buffer completions. This is
     recommended for efficiency but is not strictly required if the driver uses
     polling.
