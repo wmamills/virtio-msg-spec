@@ -762,13 +762,17 @@ Reserved                   & 0x0 & \\
 \hline
 \msgref{RESET_VQUEUE}      & 0xB  & Driver \\
 \hline
-\msgref{EVENT_CONFIG}      & 0x20 & Device \\
+\msgref{EVENT_CONFIG}      & 0x41 & Device \\
 \hline
-\msgref{EVENT_AVAIL}       & 0x21 & Driver \\
+\msgref{EVENT_AVAIL}       & 0x42 & Driver \\
 \hline
-\msgref{EVENT_USED}        & 0x22 & Device \\
+\msgref{EVENT_USED}        & 0x43 & Device \\
 \hline
 \end{tabular}
+
+Transport message IDs 0x00 to 0x3F are used for messages that require a response
+and IDs 0x40 to 0x7F are used for messages that have no response.  Transport
+message IDs 0x80 and above are reserved by this specification.
 
 \paragraph{Mandatory Transport Messages}
 For a virtio-msg device to be fully operational, the following messages
@@ -1092,16 +1096,23 @@ Reserved                    & 0x0  &        \\
 \hline
 \busref{GET_DEVICES}        & 0x2  & Driver \\
 \hline
-\busref{DEVICE_ADDED}       & 0x3  & Device \\
+\busref{PING}               & 0x3  & Any    \\
 \hline
-\busref{DEVICE_REMOVED}     & 0x4  & Device \\
+\busref{DEVICE_ADDED}       & 0x41 & Device \\
 \hline
-\busref{PING}               & 0x5  & Any    \\
+\busref{DEVICE_REMOVED}     & 0x42 & Device \\
 \hline
 \end{tabular}
 
-Bus message ID 6-127 are reserved for future use in the specification and
-message ID 128-255 MAY be used for implementation specific needs.
+Bus message IDs below 0x80 are reserved for standardizes (but optional) bus
+messages.  A few are used here and more are expected in the future. Bus message
+IDs below 0x40 are used for messages that require a response and 0x40 and above
+have no response.
+
+Bus message IDs 0x80 and above are bus implementation specific. Bus
+implementations \emph{MAY} specify the policy that IDs below 0xC0 be used
+for messages with a response and IDs 0xC0 and above are used fro messages with
+no response.
 
 \paragraph{Note:} A bus implementation \textbf{is not required} to use these
 messages if it already provides equivalent functionality through some
