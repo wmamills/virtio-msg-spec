@@ -1127,6 +1127,12 @@ Answer & 0 & 2 & Offset \\
 \hline
 \end{tabular}
 
+The offset and number of device numbers requested \emph{MUST} be multiples of 8.
+The next offset \emph{MUST} also be a multiple of 8.
+The device available data is packed into a sequence of bytes with the first
+device in the least significant bit of the first byte, the eighth device in
+the most significant bit of the first byte, etc.
+
 \busdef{DEVICE_ADDED}
 
 This message is sent by the virtio-msg device side bus and there is no response.
