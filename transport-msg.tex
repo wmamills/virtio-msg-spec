@@ -1043,8 +1043,7 @@ This message is sent by the virtio-msg driver and there is no response.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
-& 4 & 4 & Next offset \\
-& 8 & 4 & Next wrap \\
+& 4 & 4 & Next offset and Next wrap \\
 \hline
 \end{tabular}
 
@@ -1053,9 +1052,11 @@ polled for available buffers. This is useful when the bus implementation is
 using out-of-band notifications, using polling, or when emulating or bridging
 to another virtio transport.
 
-The next offset and Next wrap fields should be 0 if VIRTIO_F_NOTIFICATION_DATA
-has not been negotiated.  If the bus implementation is using out-of-band
-notifications, it should refuse to allow this feature to be negotiated.
+The \textbf{Next wrap} field is the MSB of the 32 bit value. The
+\textbf{Next offset} field is the other 31 bits. These fields should be 0 if
+the VIRTIO_F_NOTIFICATION_DATA feature has not been negotiated. If the bus
+implementation is using out-of-band notifications, it should refuse to allow
+this feature to be negotiated.
 
 \msgdef{EVENT_USED}
 
