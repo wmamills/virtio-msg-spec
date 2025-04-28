@@ -1053,6 +1053,10 @@ polled for available buffers. This is useful when the bus implementation is
 using out-of-band notifications, using polling, or when emulating or bridging
 to another virtio transport.
 
+The next offset and Next wrap fields should be 0 if VIRTIO_F_NOTIFICATION_DATA
+has not been negotiated.  If the bus implementation is using out-of-band
+notifications, it should refuse to allow this feature to be negotiated.
+
 \msgdef{EVENT_USED}
 
 This message is sent by the virtio-msg device and there is no response.
