@@ -1048,6 +1048,11 @@ Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
+If virtqueue index is 0xFFFF then it indicates that all virtqueus should be
+polled for available buffers. This is useful when the bus implementation is
+using out-of-band notifications, using polling, or when emulating or bridging
+to another virtio transport.
+
 \msgdef{EVENT_USED}
 
 This message is sent by the virtio-msg device and there is no response.
@@ -1059,6 +1064,11 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
+
+If virtqueue index is 0xFFFF then it indicates that all virtqueus should be
+polled for used buffers. This is useful when the bus implementation is
+using out-of-band notifications, using polling, or when emulating or bridging
+to another virtio transport.
 
 \subsection{Bus Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}
 
