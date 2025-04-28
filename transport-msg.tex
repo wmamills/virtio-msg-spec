@@ -1278,14 +1278,13 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 
 \paragraph{Runtime Notifications}
 \begin{itemize}
-  \item A device \textbf{MAY} send \msgref{EVENT_CONFIG}, \msgref{EVENT_CONFIG0}
-    or \msgref{EVENT_USED}
-    to inform the driver of configuration changes or buffer completions. This is
-    recommended for efficiency but is not strictly required if the driver uses
-    polling.
-  \item A driver \textbf{MAY} send \msgref{EVENT_AVAIL} to notify the device that
-    new buffers are posted, provided this was negotiated. Polling is acceptable
-    if the feature is unimplemented or disabled.
+  \item A device or the driver side bus \emph{MUST} send \msgref{EVENT_CONFIG}
+    or \msgref{EVENT_CONFIG0}
+    to inform the driver of configuration of device status changes.
+  \item A device or the driver side bus \emph{MUST} \msgref{EVENT_USED}
+    to inform the driver of (likely) buffer completions.
+  \item A driver \emph{MUST} send \msgref{EVENT_AVAIL} to notify the device that
+    new buffers are posted.
 \end{itemize}
 
 \subsubsection{Compliance for Different Environments}
