@@ -79,7 +79,7 @@ virtio-msg operates around two layers:
   \item \textbf{Bus Instances and Devices}: Each bus instance can advertise
         different capabilities (e.g., transport revision, maximum message size)
         and may discover devices via a message-based or external mechanism.
-        Every discovered device is assigned a \emph{device number}.
+        Every discovered device has a unique \emph{device number}.
   \item \textbf{Driver}: Communicates with the bus to learn about
         available devices. Once a device is recognized, the driver uses the
         common transport messages to perform feature negotiation, configuration,
@@ -200,11 +200,11 @@ necessarily start at 0 and \emph{SHOULD NOT} reset to 0 on device reset.
   \item If the driver’s generation count does not match the device’s current
         count, the \msgref{SET_CONFIG} request \emph{MUST} be rejected by the
         device.
-  \item The driver will likely have received \msgref{EVENT_CONFIG} messages
+  \item The driver may have received \msgref{EVENT_CONFIG} messages
         between the request and the response and will know the current
         configuration data and generation count.  If not it \emph{SHOULD}
         re-read the configuration and generation count via \msgref{GET_CONFIG}),
-        and then resent the \msgref{SET_CONFIG} of still desired.
+        and then resend the \msgref{SET_CONFIG} if still desired.
 \end{itemize}
 
 This mechanism ensures updates are not lost or overwritten due to stale
@@ -338,8 +338,7 @@ Bus implementations \emph{MAY} discover their devices in various ways:
 \begin{itemize}
   \item By parsing platform data such as a device tree or ACPI tables,
   \item By receiving enumeration data from a hypervisor or firmware,
-  \item By using \busref{GET_DEVICES} messages (defined in
-    \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages})
+  \item By using \busref{GET_DEVICES} messages
     to query which device numbers are present on this bus instance.
 \end{itemize}
 
@@ -589,7 +588,7 @@ to signal that new buffers are available for processing. The virtio-msg transpor
 defines the message, \msgref{EVENT_AVAIL}, that the driver will use to
 notify the device of pending buffers.
 
-The driver side bus implementation \emph{MAY} convert them to some form of
+The driver side bus \emph{MAY} convert them to some form of
 out-of-band (OoB) notification.  If not using OoB notifications, the driver
 side bus \emph{SHOULD} send the messages via the normal message channel.
 As a final option, the bus \emph{MAY} discard the messages but only if it knows
@@ -598,10 +597,11 @@ that the device will poll the virtqueues directly.
 \paragraph{EVENT\_AVAIL Usage}
 \begin{itemize}
   \item \textbf{Virtqueue Index}: Identifies which queue has new buffers.
-  \item \textbf{Next Offset and Wrap}: The driver \emph{MAY} include additional
-        information, such as the next descriptor offset or wrap counter
-        (depending on the negotiated features), so the device can jump directly
-        to the updated buffers.
+  \item \textbf{Next Offset and Wrap}: If the VIRTIO_F_NOTIFICATION_DATA feature
+        has been negotiated, the driver \emph{MUST} sets these fields to
+        indicate the next descriptor offset and wrap state
+        so the device can jump directly to the updated buffers.
+        If this features has not been negotiated these fields \emph{MUST} be 0.
   \item \textbf{Response}: The \msgref{EVENT_AVAIL} message does not have a
         direct response, but the device will subsequently process available
         buffers and eventually notify the driver when they are used.
@@ -621,7 +621,7 @@ These notifications may be the result of:
     \item Manufactured by the driver side bus based on reception of an
         out-of-band (OoB) notification from the device side.  Example OoB
         notifications include things like specific MSIX or other IRQ signals.
-    \item Manufactured by the driver side bus periodically (polling).
+    \item Manufactured by the device side bus periodically (polling).
         This option should be reserved only for situation where nothing else
         will work.
   \end{itemize}
@@ -658,8 +658,8 @@ These messages enable asynchronous updates from the device.
 The driver \emph{MAY} issue new \msgref{SET_CONFIG}
 messages after initialization if device configuration needs to be
 changed at runtime. The device \emph{MAY} also make configuration changes at
-runtime and \emph{MUST} signal those changes with \msgref{EVENT_CONFIG}
-messages.
+runtime and \emph{MUST} signal those changes with \msgref{EVENT_CONFIG} or
+\msgref{EVENT_CONFIG0} messages.
 
 \subsubsection{Virtqueue Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates}
@@ -676,15 +676,15 @@ of 0 via \msgref{SET_DEVICE_STATUS}. This forces the device to discard its state
 and any pending operations on virtqueues. Once a device is reset, the driver
 \emph{MAY} reinitialize the device (see
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization})
-if it wishes to try and use the device again.
+if it wishes to use the device again.
 
 \paragraph{Device Side Initiated Reset}
 In some circumstances, the device \emph{MAY} also trigger a reset if it
 encounters an unrecoverable error. This can be signaled to the driver by sending
 an \msgref{EVENT_CONFIG} with a \emph{device status} with the DEVICE_NEEDS_RESET
-bit set.  The driver \emph{SHOULD} reset the device after this using a
-\msgref{SET_DEVICE_STATUS}(0) message.  The driver \emph{MAY} reinitialize the
-device if it wishes to try and use the device again.
+bit set.  The driver \emph{SHOULD} reset the device by writeing a status of 0
+via the \msgref{SET_DEVICE_STATUS} message. The driver \emph{MAY} reinitialize
+the device if it wishes to use the device again.
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
 
@@ -749,8 +749,8 @@ Reserved                   & 0x1 & \\
 \end{tabular}
 
 Transport message IDs 0x00 to 0x3F are used for messages that require a response
-and IDs 0x40 to 0x7F are used for messages that have no response.  Transport
-message IDs 0x80 and above are reserved by this specification.
+and IDs 0x40 to 0x7F are used for event messages. Transport message IDs 0x80
+and above are reserved by this specification.
 
 \paragraph{Mandatory Transport Messages}
 For a virtio-msg device to be fully operational, the following messages
@@ -795,6 +795,9 @@ Answer & 0 & 4 & Device ID \\
 \end{tabular}
 
 The number of feature bits must be a multiple of 32.
+
+This is the only message allowed for an inactive device. If this message queries
+an inactive device all fields in the response should be 0.
 
 \msgdef{GET_DEVICE_FEATURES}
 
@@ -881,21 +884,8 @@ Answer & 0 & 4 & Configuration offset in bytes\\
 \hline
 \end{tabular}
 
-If the request's generation count matches the device's generation count when
-this message is processed by the device, then the specified data will be updated
-and the resulting data will be returned. The resulting data may not match the
-request data as the device may implement read-only parts of the config area or
-have other constraints on the settings. A \msgref{SET_CONFIG} with 0 for
-"Number of bytes"  in the request is illegal.
-
-If the request and current configuration generation counts do not match, no
-change to the configuration data is made and the response is given with the
-current generation counter and a 0 for "Number of bytes".  As signaled by
-"Number of bytes", no configuration data is returned in the response. The
-driver will likely know the new configuration state and generation count by
-processing \msgref{EVENT_CONFIG} messages.  If this is not the case it should
-use \msgref{GET_CONFIG} to come up to date.  The driver may then retry the
-\msgref{SET_CONFIG} operation if still desired.
+See \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration}
+for details about rejection and for new data not equal to written data.
 
 \msgdef{GET_DEVICE_STATUS}
 
@@ -1007,16 +997,16 @@ Request & 0 & 0 & no extra data \\
 
 The \msgref{EVENT_CONFIG0} message is used when the extra information in 
 \msgref{EVENT_CONFIG} is not available. In general \msgref{EVENT_CONFIG} 
-\emph{SHOULD} be prefered to \msgref{EVENT_CONFIG0} but this is not always
+\emph{SHOULD} be preferred to \msgref{EVENT_CONFIG0} but this is not always
 possible. If the driver side bus implementation is manufacturing notification
-based on polling intervals, it should use this message to notifiy the driver
+based on polling intervals, it should use this message to notify the driver
 side transport layer that it should use \msgref{GET_DEVICE_STATUS} and
 \msgref{GET_CONFIG} to query for device side changes.
 
 This message may also be used when a single configuration change on the device
 side cannot be communicated in one \msgref{EVENT_CONFIG} message due to maximum
-message size and does not desire to represent it as multiple configuration
-changes.
+message size and the device does not desire to represent it as multiple
+configuration changes.
 
 \msgdef{EVENT_CONFIG}
 
@@ -1107,13 +1097,12 @@ Reserved                    & 0x1  &        \\
 
 Bus message IDs below 0x80 are reserved for standardizes (but optional) bus
 messages.  A few are used here and more are expected in the future. Bus message
-IDs below 0x40 are used for messages that require a response and 0x40 and above
-have no response.
+IDs below 0x40 are used for request/response messages and 0x40 and above for
+event messages.
 
 Bus message IDs 0x80 and above are bus implementation specific. Bus
 implementations \emph{MAY} specify the policy that IDs below 0xC0 be used
-for messages with a response and IDs 0xC0 and above are used fro messages with
-no response.
+for request/response messages and IDs 0xC0 and above are used for event messages.
 
 \paragraph{Note:} A bus implementation \textbf{is not required} to use these
 messages if it already provides equivalent functionality through some
