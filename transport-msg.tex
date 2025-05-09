@@ -60,8 +60,8 @@ virtio-msg operates around two layers:
   \item \textbf{Transport Layer}: After the bus knows about a device, the
         virtio-msg transport handles all device-specific operations:
     \begin{itemize}
-      \item Retrieving and setting features (\msgref{GET_FEATURES},
-        \msgref{SET_FEATURES}),
+      \item Retrieving and setting features (\msgref{GET_DEVICE_FEATURES},
+        \msgref{SET_DRIVER_FEATURES}),
       \item Accessing the device configuration space (\msgref{GET_CONFIG},
         \msgref{SET_CONFIG}),
       \item Setting up virtqueues (\msgref{SET_VQUEUE}, \msgref{RESET_VQUEUE}),
@@ -214,8 +214,8 @@ information.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks}
 
 The virtio-msg transport handles feature bits in one or more
-\textbf{32-bits blocks}, accessed via \msgref{GET_FEATURES} and
-\msgref{SET_FEATURES}. Each block corresponds to up to 32 features:
+\textbf{32-bits blocks}, accessed via \msgref{GET_DEVICE_FEATURES} and
+\msgref{SET_DRIVER_FEATURES}. Each block corresponds to up to 32 features:
 
 \begin{itemize}
   \item \textbf{Block Index}: Identifies the starting block (e.g., block 0 for
@@ -261,8 +261,8 @@ virtio-msg groups messages into two categories:
   \item[\textbf{Transport Messages}:]
     Used for device-specific operations, such as:
     \begin{itemize}
-      \item Retrieving or setting features (\msgref{GET_FEATURES},
-        \msgref{SET_FEATURES}),
+      \item Retrieving or setting features (\msgref{GET_DEVICE_FEATURES},
+        \msgref{SET_DRIVER_FEATURES}),
       \item Accessing device configuration (\msgref{GET_CONFIG},
         \msgref{SET_CONFIG}),
       \item Managing virtqueues (\msgref{SET_VQUEUE}, \msgref{RESET_VQUEUE}),
@@ -311,7 +311,7 @@ The fields in this header have the following usage:
     \end{itemize}
   \item \field{msg_id}:
     Uniquely identifies which message definition applies (e.g., GET_DEVICES,
-    GET_FEATURES, SET_CONFIG). The specific range or enumeration of types is
+    GET_DEVICE_FEATURES, SET_CONFIG). The specific range or enumeration of types is
     defined in sections \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
     and \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
   \item \field{dev_num}:
@@ -409,7 +409,7 @@ messages} to the correct device for each device number. Typically, the bus does
 not interpret or modify these transport messages—its role is simply to ensure
 they reach the intended device. If the bus does not rely on messages for device
 enumeration or hotplug itself, it \emph{MUST} still be capable of transporting
-\msgref{GET_DEVICE_INFO}, \msgref{GET_FEATURES}, \msgref{SET_CONFIG}, etc.
+\msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_CONFIG}, etc.
 once the OS driver has identified a device and is performing initialization
 via the virtio-msg transport.
 
@@ -757,7 +757,7 @@ For a virtio-msg device to be fully operational, the following messages
 \textbf{MUST} be supported:
 \begin{itemize}
   \item \msgref{GET_DEVICE_INFO}
-  \item \msgref{GET_FEATURES} and \msgref{SET_FEATURES}
+  \item \msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}
   \item \msgref{GET_CONFIG} and \msgref{SET_CONFIG}
   \item \msgref{GET_DEVICE_STATUS} and \msgref{SET_DEVICE_STATUS}
   \item \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE}, and \msgref{RESET_VQUEUE}
@@ -1210,7 +1210,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     \emph{transport messages} defined by this specification that are necessary
     for device operation. At minimum, this includes:
     \begin{itemize}
-      \item \msgref{GET_DEVICE_INFO}, \msgref{GET_FEATURES}, \msgref{SET_FEATURES}
+      \item \msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES}
       \item \msgref{GET_CONFIG}, \msgref{SET_CONFIG}
       \item \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE}, \msgref{RESET_VQUEUE}
       \item \msgref{GET_DEVICE_STATUS}, \msgref{SET_DEVICE_STATUS}
@@ -1228,7 +1228,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     \msgref{GET_DEVICE_INFO}, including the correct \emph{device ID}, \emph{vendor ID},
     number of feature bits, and configuration size.
   \item A device \textbf{MUST} accept or reject driver-requested features via
-    \msgref{SET_FEATURES} consistently with its capabilities and \textbf{MUST}
+    \msgref{SET_DRIVER_FEATURES} consistently with its capabilities and \textbf{MUST}
     return the final agreed-upon feature bits to the driver.
   \item A device \textbf{MUST} maintain a valid \emph{Configuration Generation
     Count} and \textbf{MUST} reject \msgref{SET_CONFIG} or similar operations if
@@ -1245,7 +1245,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 \begin{itemize}
   \item A driver \textbf{MUST} send valid requests that do not exceed
     the \textbf{maximum message size}, including correct offsets and block
-    counts in \msgref{GET_FEATURES}, \msgref{SET_FEATURES}, \msgref{GET_CONFIG},
+    counts in \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES}, \msgref{GET_CONFIG},
     and \msgref{SET_CONFIG}.
   \item A driver \emph{MUST} handle a /msgref{SET_CONFIG} being rejected for a
     mismatched configuration generation count.
@@ -1306,7 +1306,7 @@ A \emph{bus implementation} is compliant if:
 A \emph{driver} is compliant if:
 \begin{itemize}
   \item It correctly sends and interprets all required transport messages
-    (\msgref{GET_DEVICE_INFO}, \msgref{SET_FEATURES}, \msgref{SET_CONFIG}, etc.).
+    (\msgref{GET_DEVICE_INFO}, \msgref{SET_DRIVER_FEATURES}, \msgref{SET_CONFIG}, etc.).
   \item It respects the bus \textbf{transport revision}  and \textbf{maximum
     message size} limits for each bus instance.
   \item It properly handles device resets, ensuring that any
