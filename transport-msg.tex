@@ -468,11 +468,20 @@ Once the bus or driver knows a device number is present, it \emph{SHOULD} send a
     configuration space.
   \item \textbf{Number of virtqueues}: The maximum number of virtqueues the
     device supports.
+  \item \textbf{Number of SHM segments}: The number of device owned
+    shared memory segments this device has.
+  \item \textbf{Admin virtqueue starting index}: The virtqueue index for the
+    first admin virtqueue supported by the device.
+  \item \textbf{Admin virtqueue count}: The number of admin virtqueues
+    supported by the device.
 \end{itemize}
 
 Armed with these details, the driver knows how many feature blocks to query,
 what portion of the configuration space is valid, and which OS-level virtio
 driver might bind to this device based on the Device ID.
+
+It also knows of any device owned shared memory segments and any admin
+virtqueues supported by the device.
 
 \subsubsection{Feature Negotiation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}
@@ -735,6 +744,8 @@ Reserved                   & 0x1 & \\
 \hline
 \msgref{RESET_VQUEUE}      & 0xB  & Driver \\
 \hline
+\msgref{GET_SHM}           & 0xC  & Driver \\
+\hline
 \msgref{EVENT_CONFIG}      & 0x40 & Device \\
 \hline
 \msgref{EVENT_AVAIL}       & 0x41 & Driver \\
@@ -785,6 +796,8 @@ Answer & 0 & 4 & Device ID \\
 & 8 & 4 & Number of feature bits \\
 & 12 & 4 & Configuration size in bytes \\
 & 16 & 4 & Maximum number of virtqueues \\
+& 20 & 2 & Admin virtqueue start index \\
+& 22 & 2 & Admin virtqueue count \\
 \hline
 \end{tabular}
 
@@ -976,6 +989,30 @@ Request & 0 & 4 & Virtqueue index \\
 Answer & 0 & 0 & no extra data \\
 \hline
 \end{tabular}
+
+\msgdef{GET_SHM}
+
+This message is sent by the virtio-msg transport driver and requires a
+response from the device.
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+Type & Offset & Size (bytes) & Content \\
+\hline \hline
+Request & 0 & 4 & Shared memory region index \\
+\hline
+Answer & 0 & 4 & Shared memory region index \\
+& 4 & 4 & Shared memory region length \\
+& 8 & 4 & Shared memory region address \\
+\hline
+\end{tabular}
+
+If the returned shared memory region length is zero, the memory region does not
+exist.
+
+Note: these shared memory regions are device owned and supported on other virtio
+transports since virtio v1.3. These shared memory regions are separate and
+distinct from any shared memory regions defined by the bus implementation.
 
 \msgdef{EVENT_CONFIG}
 
