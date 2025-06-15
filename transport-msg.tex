@@ -643,7 +643,7 @@ These notifications may be the result of:
     processed or consumed by the device.
   \item The driver uses normal virtio methods (e.g., reading the “used” ring) to
     identify which buffers are complete.
-  \item If a device does not support to send \msgref{EVENT_USED}, the driver
+  \item If a device does not support sending \msgref{EVENT_USED}, the driver
      \emph{MAY} rely on standard virtqueue polling mechanisms to detect
      completion.
 \end{itemize}
@@ -680,7 +680,7 @@ if it wishes to use the device again.
 In some circumstances, the device \emph{MAY} also trigger a reset if it
 encounters an unrecoverable error. This can be signaled to the driver by sending
 an \msgref{EVENT_CONFIG} with a \emph{device status} with the DEVICE_NEEDS_RESET
-bit set.  The driver \emph{SHOULD} reset the device by writeing a status of 0
+bit set.  The driver \emph{SHOULD} reset the device by writing a status of 0
 via the \msgref{SET_DEVICE_STATUS} message. The driver \emph{MAY} reinitialize
 the device if it wishes to use the device again.
 
@@ -1214,7 +1214,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     the \textbf{maximum message size}, including correct offsets and block
     counts in \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES}, \msgref{GET_CONFIG},
     and \msgref{SET_CONFIG}.
-  \item A driver \emph{MUST} handle a /msgref{SET_CONFIG} being rejected for a
+  \item A driver \emph{MUST} handle a \msgref{SET_CONFIG} being rejected for a
     mismatched configuration generation count.
   \item A driver \textbf{MUST} initialize each device’s virtqueues (where needed)
     via \msgref{SET_VQUEUE} before attempting normal I/O and \textbf{SHOULD}
