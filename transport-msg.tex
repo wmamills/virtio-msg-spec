@@ -1015,10 +1015,10 @@ Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
-If virtqueue index is 0xFFFF then it indicates that all virtqueus should be
-polled for available buffers. This is useful when the bus implementation is
-using out-of-band notifications, using polling, or when emulating or bridging
-to another virtio transport.
+If virtqueue index is 0xFFFFFFFF then it indicates that all virtqueues should be
+polled for available buffers. This may be useful on the device side when the
+bus implementation is using out-of-band notifications, using polling, or when
+emulating or bridging to another virtio transport.
 
 The \textbf{Next wrap} field is the MSB of the 32 bit value. The
 \textbf{Next offset} field is the other 31 bits. These fields should be 0 if
@@ -1038,8 +1038,8 @@ Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
-If virtqueue index is 0xFFFF then it indicates that all virtqueus should be
-polled for used buffers. This is useful when the bus implementation is
+If virtqueue index is 0xFFFFFFFF then it indicates that all virtqueues should be
+polled for used buffers. This may be useful when the bus implementation is
 using out-of-band notifications, using polling, or when emulating or bridging
 to another virtio transport.
 
