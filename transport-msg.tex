@@ -863,9 +863,9 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Configuration offset in bytes \\
 & 4 & 4 & Number of bytes \\
 \hline
-Answer & 0 & 4 & Configuration offset in bytes \\
-& 4 & 4 & Number of bytes \\
-& 8 & 4 & Configuration generation count \\
+Answer & 0 & 4 & Configuration generation count \\
+& 4 & 4 & Configuration offset in bytes \\  \\
+& 8 & 4 & Number of bytes \\
 & 12 & ... & Configuration data \\
 \hline
 \end{tabular}
@@ -879,14 +879,14 @@ response from the device.
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Configuration offset in bytes\\
-& 4 & 4 & Number of bytes \\
-& 8 & 4 & Configuration generation count \\
+Request & 0 & 4 & Configuration generation count \\
+& 4 & 4 & Configuration offset in bytes \\
+& 8 & 4 & Number of bytes \\
 & 12 & ... & Configuration data \\
 \hline
-Answer & 0 & 4 & Configuration offset in bytes\\
-& 4 & 4 & Number of bytes, or 0 if rejected \\
-& 8 & 4 & New Configuration generation count \\
+Answer & 0 & 4 & New Configuration generation count \\
+& 4 & 4 & Configuration offset in bytes \\
+& 8 & 4 &  Number of bytes, or 0 if rejected \\
 & 12 & ... & Configuration data \\
 \hline
 \end{tabular}
