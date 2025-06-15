@@ -27,8 +27,8 @@ virtio-msg addresses several key objectives:
 
   \item \textbf{Reduce per-bus complexity:}
   Buses can implement a fully message-based workflow (including optional
-  enumeration via \busref{GET_DEVICES} and hotplug via \busref{DEVICE_ADDED}
-  / \busref{DEVICE_REMOVED}), or they can discover and manage devices through
+  enumeration via \busref{GET_DEVICES} and hotplug via \busref{EVENT_DEVICE}
+  or they can discover and manage devices through
   alternative means such as platform firmware data. In either case, they
   forward transport messages to and from each device.
 
@@ -49,8 +49,7 @@ virtio-msg operates around two layers:
       \item Optional message-based queries (\busref{GET_DEVICES}),
       \item External data sources (e.g., device tree, ACPI tables, hypervisor
         firmware calls),
-      \item Dynamic hotplug notifications (optionally via \busref{DEVICE_ADDED}
-        and \busref{DEVICE_REMOVED}).
+      \item Dynamic hotplug notifications (optionally via \busref{EVENT_DEVICE}).
     \end{itemize}
     Once a device is identified—regardless of discovery method—the bus typically
     uses \msgref{GET_DEVICE_INFO} to read its device ID and vendor ID, then
@@ -92,7 +91,7 @@ virtio-msg operates around two layers:
 \subsubsection{Optional Bus Messages}
 
 This specification \emph{defines} messages such as \busref{GET_DEVICES},
-\busref{DEVICE_ADDED}, \busref{DEVICE_REMOVED}, and \busref{PING} for a
+\busref{EVENT_DEVICE}, and \busref{PING} for a
 completely message-based approach to enumeration, hotplug, and bus-wide health.
 However, these are \emph{not} mandatory if a bus instance already handles those
 functions via firmware, device tree, or other platform features. The only strict
@@ -252,8 +251,8 @@ virtio-msg groups messages into two categories:
 \begin{description}
   \item[\textbf{Bus Messages}:]
     Intended for global bus operations such as enumerating device numbers
-    (\busref{GET_DEVICES}), managing device hotplug events (\busref{DEVICE_ADDED},
-    \busref{DEVICE_REMOVED}), or assessing bus-wide health (\busref{PING}).
+    (\busref{GET_DEVICES}), managing device hotplug events (\busref{EVENT_DEVICE})
+    or assessing bus-wide health (\busref{PING}).
     These messages are \emph{optional} in environments where
     device discovery or state changes occur through other means (e.g., device
     tree). However, if a bus \emph{chooses} to handle those tasks via messages,
@@ -358,14 +357,14 @@ so the appropriate virtio driver probe routine is invoked.
 If the bus supports dynamic addition or removal of devices at runtime, it
 \emph{MAY} announce these events using messages:
 \begin{itemize}
-  \item \busref{DEVICE_ADDED} for a newly available device,
-  \item \busref{DEVICE_REMOVED} for a device that is no longer accessible.
+  \item \busref{EVENT_DEVICE} with state ready for a newly available device,
+  \item \busref{EVENT_DEVICE} with state removed for a device that is no longer accessible.
 \end{itemize}
 
 Alternatively, the bus \emph{MAY} rely on external signals (e.g., an event from
 the platform or hypervisor) and inform the OS of hotplug changes out-of-band.
-This specification \emph{defines} \busref{DEVICE_ADDED} and
-\busref{DEVICE_REMOVED} for implementations that prefer a fully message-based
+This specification \emph{defines} \busref{EVENT_DEVICE}
+for implementations that prefer a fully message-based
 approach but does not require their use. In any scenario, once notified that a
 device has appeared, the bus \emph{SHOULD} query the device (e.g., via
 \msgref{GET_DEVICE_INFO}) and register it with the OS. If a device is
@@ -1067,9 +1066,7 @@ Reserved                    & 0x1  &        \\
 \hline
 \busref{PING}               & 0x3  & Any    \\
 \hline
-\busref{DEVICE_ADDED}       & 0x41 & Device \\
-\hline
-\busref{DEVICE_REMOVED}     & 0x42 & Device \\
+\busref{EVENT_DEVICE}       & 0x40 & Device \\
 \hline
 \end{tabular}
 
@@ -1115,7 +1112,7 @@ The device available data is packed into a sequence of bytes with the first
 device in the least significant bit of the first byte, the eighth device in
 the most significant bit of the first byte, etc.
 
-\busdef{DEVICE_ADDED}
+\busdef{EVENT_DEVICE}
 
 This message is sent by the virtio-msg device side bus and there is no response.
 
@@ -1124,20 +1121,28 @@ This message is sent by the virtio-msg device side bus and there is no response.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 2 & Device Number \\
+        & 2 & 2 & Device Bus State \\
 \hline
 \end{tabular}
 
-\busdef{DEVICE_REMOVED}
-
-This message is sent by the virtio-msg device side bus and there is no response.
-
-\begin{tabular}{|l|l|l|l|}
+\begin{tabular}{|l|l|l|}
 \hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 2 & Device Number \\
+Device Bus State & Value & Meaning \\
+\hline
+\hline
+DEVICE_BUS_STATE_READY      & 0x0  & Device is present and ready \\
+\hline
+DEVICE_BUS_STATE_REMOVED    & 0x1  & Device is no longer present \\
+\hline
+reserved          & 0x2 to 0x7FFF & Reserved for standard use \\
+\hline
+any               & 0x8000 to 0xFFFF & may be used by bus implementations \\
 \hline
 \end{tabular}
+
+This event is sent when the bus level state of the device has changed.
+It can indicate when a device is added or removed. It may also be used by
+bus implementations to indicate other states.
 
 \busdef{PING}
 
@@ -1227,8 +1232,8 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 
 \paragraph{Bus Messages for Enumeration and Hotplug}
 \begin{itemize}
-  \item Implementations \emph{MAY} use \busref{GET_DEVICES}, \busref{DEVICE_ADDED},
-    and \busref{DEVICE_REMOVED} for discovering and managing devices in a
+  \item Implementations \emph{MAY} use \busref{GET_DEVICES}
+    and \busref{EVENT_DEVICE} for discovering and managing devices in a
     message-driven manner. However, this is not mandatory if other enumeration
     methods (e.g., device tree, ACPI, hypervisor firmware) are used.
   \item If a bus \emph{chooses} to implement these messages, it \textbf{MUST} do
