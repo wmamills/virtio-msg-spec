@@ -1027,12 +1027,12 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Device status \\
 & 4 & 4 & Configuration generation count \\
 & 8 & 4 & Configuration offset \\
-& 12 & 4 & Number of bytes (may be zero) \\
+& 12 & 4 & Number of bytes (\emph{MAY} be zero) \\
 & 16 & ... & Configuration data \\
 \hline
 \end{tabular}
 
-The number of bytes field may be zero. If so the configuration data field
+The number of bytes field \emph{MAY} be zero. If so the configuration data field
 will also be of zero length. This is the normal case when the configuration
 generation count has not been changed.
 
