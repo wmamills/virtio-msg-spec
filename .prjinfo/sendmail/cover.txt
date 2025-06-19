@@ -95,7 +95,6 @@ Changes since RFC1:
 * made SET_DEVICE_STATE return new state as it may not match
 * Don't echo back the data in SET_VQUEUE (it cannot change)
 * defined request/response vs event message id ranges
-* add an "all virtqueues" option for EVENT_AVAIL and EVENT_USED
 * match field size of next offset and wrap to virtio-{pci,mmio}
 * added maximum number of virtqueues to DEVICE_INFO
 * added admin virtqueue and SHM support
