@@ -103,6 +103,9 @@ This series is a work in progress and we acknowledge at least the following
 issues we need to work on:
 
 * Better conformance documentation
+* Publish an update to Arm FF-A spec that shows virtio-msg binding (work underway)
+* Publish virtio-msg-amp data structures and messages somewhere
+* Align implementations to this version and send PATCH v1 (non-rfc)
 
 Background info and work in progress implementations:
 * HVAC project page with intro slides [1]
