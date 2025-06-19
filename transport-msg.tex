@@ -357,8 +357,10 @@ so the appropriate virtio driver probe routine is invoked.
 If the bus supports dynamic addition or removal of devices at runtime, it
 \emph{MAY} announce these events using messages:
 \begin{itemize}
-  \item \busref{EVENT_DEVICE} with state ready for a newly available device,
-  \item \busref{EVENT_DEVICE} with state removed for a device that is no longer accessible.
+  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_READY for a newly
+    available device,
+  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_REMOVED for a device
+    that is no longer accessible.
 \end{itemize}
 
 Alternatively, the bus \emph{MAY} rely on external signals (e.g., an event from
@@ -1167,11 +1169,11 @@ Request & 0 & 2 & Device Number \\
 Device Bus State & Value & Meaning \\
 \hline
 \hline
-DEVICE_BUS_STATE_READY      & 0x0  & Device is present and ready \\
+DEVICE_BUS_STATE_READY      & 0x1  & Device is present and ready \\
 \hline
-DEVICE_BUS_STATE_REMOVED    & 0x1  & Device is no longer present \\
+DEVICE_BUS_STATE_REMOVED    & 0x2  & Device is no longer present \\
 \hline
-reserved          & 0x2 to 0x7FFF & Reserved for standard use \\
+reserved          & 0x3 to 0x7FFF & Reserved for standard use \\
 \hline
 any               & 0x8000 to 0xFFFF & may be used by bus implementations \\
 \hline
