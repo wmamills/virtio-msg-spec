@@ -51,7 +51,7 @@ virtio-msg operates around two layers:
         firmware calls),
       \item Dynamic hotplug notifications (optionally via \busref{EVENT_DEVICE}).
     \end{itemize}
-    Once a device is identified—regardless of discovery method—the bus typically
+    Once a device is identified, regardless of discovery method, the bus typically
     uses \msgref{GET_DEVICE_INFO} to read its device ID and vendor ID, then
     \emph{registers} that device with the host OS so the usual virtio driver
     probe can occur.
@@ -122,7 +122,7 @@ Each \textbf{virtio-msg bus instance} advertises:
 \end{itemize}
 
 These parameters \emph{MAY} vary between bus instances within the same system.
-The driver obtains a bus’s revision, maximum message size and list of features
+The driver obtains a bus's revision, maximum message size and list of features
 through an \emph{implementation-defined} mechanism, which could be:
 \begin{itemize}
   \item A device tree or firmware method providing bus configuration,
@@ -134,7 +134,7 @@ through an \emph{implementation-defined} mechanism, which could be:
 After learning these parameters, the driver \emph{MUST} respect them for all
 messages involving that bus instance. For example, it \emph{MUST NOT} send a
 message exceeding the \textbf{maximum message size}, and it \emph{MUST} avoid
-using advanced features or messages unavailable in the bus’s advertised
+using advanced features or messages unavailable in the bus's advertised
 \textbf{transport revision}.
 
 \paragraph{virtio-msg revisions}
@@ -174,7 +174,7 @@ numbers in multiple ways:
 \end{itemize}
 
 Once a bus confirms that a given device number is valid (regardless of the method),
-it typically issues \msgref{GET_DEVICE_INFO} to retrieve the device’s Device ID
+it typically issues \msgref{GET_DEVICE_INFO} to retrieve the device's Device ID
 and vendor ID. The bus can then register the device with the host OS to initiate
 the usual Virtio driver binding process.
 
@@ -197,7 +197,7 @@ data. The driver includes its view of the current generation count in
 necessarily start at 0 and \emph{SHOULD NOT} reset to 0 on device reset.
 
 \begin{itemize}
-  \item If the driver’s generation count does not match the device’s current
+  \item If the driver's generation count does not match the device's current
         count, the \msgref{SET_CONFIG} request \emph{MUST} be rejected by the
         device.
   \item The driver may have received \msgref{EVENT_CONFIG} messages
@@ -222,7 +222,7 @@ The virtio-msg transport handles feature bits in one or more
         features 0--31, block 1 for features 32--63, etc.).
   \item \textbf{Number of Blocks}: How many blocks the driver wishes to retrieve
         or modify in a single message.
-  \item \textbf{Feature Data}: The 32 bits values representing a device’s
+  \item \textbf{Feature Data}: The 32 bits values representing a device's
         supported or requested feature bits.
 \end{itemize}
 
@@ -406,8 +406,8 @@ usage. Example usage could include:
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Interaction with Transport}
 
 The bus is also responsible for forwarding device-specific \emph{transport
-messages} to the correct device for each device number. Typically, the bus does
-not interpret or modify these transport messages—its role is simply to ensure
+messages} to the correct device for each device number. Typically the bus does
+not interpret or modify these transport messages; its role is simply to ensure
 they reach the intended device. If the bus does not rely on messages for device
 enumeration or hotplug itself, it \emph{MUST} still be capable of transporting
 \msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_CONFIG}, etc.
@@ -428,30 +428,30 @@ details the recommended order of operations and the associated messages.
 A typical device initialization flow includes:
 \begin{enumerate}
   \item \textbf{Obtain Device Information:}  
-    The driver queries the device’s Device ID, vendor ID, feature block count,
+    The driver queries the device's Device ID, vendor ID, feature block count,
     configuration size, and other static parameters of the device using
     \msgref{GET_DEVICE_INFO}.
   \item \textbf{Negotiate Features:}  
-    The driver retrieves the device’s feature bits (\msgref{GET_DEVICE_FEATURES}),
+    The driver retrieves the device's feature bits (\msgref{GET_DEVICE_FEATURES}),
     determines which features it wants to enable, and writes the desired set
     with (\msgref{SET_DRIVER_FEATURES}).  It then attempts to set the
     FEATURES_OK bit in the device status (\msgref{SET_DEVICE_STATUS}) and
     verifies that it is set in the return device status.
   \item \textbf{Initialize Configuration Space:}  
     The driver may read (\msgref{GET_CONFIG}) or modify (\msgref{SET_CONFIG})
-    configuration data, using the device’s \emph{Configuration Generation Count}
+    configuration data, using the device's \emph{Configuration Generation Count}
     to prevent race conditions.
   \item \textbf{Set Up Virtqueues:}  
     The driver configures each virtqueue (e.g., number of descriptors, base
-    addresses) via \msgref{SET_VQUEUE} and verifies each queue’s readiness
+    addresses) via \msgref{SET_VQUEUE} and verifies each queue's readiness
     (\msgref{GET_VQUEUE}).
   \item \textbf{Set Device Status:}  
-    The driver updates the device’s status with \msgref{SET_DEVICE_STATUS} to
-    indicate initialization progress (e.g., from “reset” to “acknowledge,”
-    “driver,” or “driver OK,” following Virtio conventions).
+    The driver updates the device's status with \msgref{SET_DEVICE_STATUS} to
+    indicate initialization progress (e.g., from "reset" to "acknowledge,"
+    "driver," or "driver OK," following Virtio conventions).
 \end{enumerate}
 
-This sequence may vary slightly depending on the device’s requirements, but it
+This sequence may vary slightly depending on the device's requirements, but it
 serves as a common baseline for virtio-msg transport implementations.
 
 \subsubsection{Device Information}
@@ -466,7 +466,7 @@ Once the bus or driver knows a device number is present, it \emph{SHOULD} send a
   \item \textbf{Vendor ID}: Identifies the vendor or implementation source.
   \item \textbf{Number of Feature Bits}: Indicates how many bits (organized in
     32-bit blocks) the device uses for feature negotiation.
-  \item \textbf{Configuration Size}: The total size (in bytes) of the device’s
+  \item \textbf{Configuration Size}: The total size (in bytes) of the device's
     configuration space.
   \item \textbf{Number of virtqueues}: The maximum number of virtqueues the
     device supports.
@@ -488,7 +488,7 @@ virtqueues supported by the device.
 \subsubsection{Feature Negotiation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}
 
-The driver reads the device’s available features in \textbf{blocks of 32 bits}
+The driver reads the device's available features in \textbf{blocks of 32 bits}
 using \msgref{GET_DEVICE_FEATURES}, supplying a \emph{block index} and
 \emph{number of blocks} to retrieve. The device responds with the feature bits
 in that range, filling any out-of-range blocks with zero.
@@ -510,7 +510,7 @@ features.
 
 \paragraph{Reading Configuration}
 
-The driver can read portions of the device’s configuration space using
+The driver can read portions of the device's configuration space using
 \msgref{GET_CONFIG}. It supplies:
 \begin{itemize}
   \item \textbf{Offset}: The byte offset from the start of the configuration
@@ -531,7 +531,7 @@ To write a portion of the configuration space, the driver uses
   \item The \textbf{new configuration data} to be written.
 \end{itemize}
 
-If the generation count does not match the device’s current value, the device
+If the generation count does not match the device's current value, the device
 \emph{MUST} reject the update as defined in the \msgref{SET_CONFIG} response.
 The driver \emph{SHOULD} then read the updated configuration space and
 reattempt if necessary.
@@ -566,18 +566,18 @@ The driver repeats these steps for each queue the device supports.
 \subsubsection{Status Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information}
 
-During initialization, the driver \emph{MAY} query the device’s status via
+During initialization, the driver \emph{MAY} query the device's status via
 \msgref{GET_DEVICE_STATUS} to check for errors or to see if the device is ready
 for feature negotiation or configuration changes. To advance or reset the
-device’s state, the driver sends \msgref{SET_DEVICE_STATUS} with the desired
-status bits (e.g., “ACKNOWLEDGE,” “DRIVER,” “DRIVER OK”). Setting the device’s
+device's state, the driver sends \msgref{SET_DEVICE_STATUS} with the desired
+status bits (e.g., "ACKNOWLEDGE," "DRIVER," "DRIVER OK"). Setting the device's
 status to 0 triggers a device reset, invalidating configuration and
 virtqueues.
 
 \subsubsection{Finalizing Initialization}
 
 Once all virtqueues are configured and any required features have been enabled,
-the driver typically sets the final status bits (e.g., “DRIVER OK”) via
+the driver typically sets the final status bits (e.g., "DRIVER OK") via
 \msgref{SET_DEVICE_STATUS}. At this point, the device is considered fully
 initialized, and normal I/O operations can begin using virtio queues.
 
@@ -651,7 +651,7 @@ These notifications may be the result of:
 \begin{itemize}
   \item Signifies that one or more buffers in a specific virtqueue have been
     processed or consumed by the device.
-  \item The driver uses normal virtio methods (e.g., reading the “used” ring) to
+  \item The driver uses normal virtio methods (e.g., reading the "used" ring) to
     identify which buffers are complete.
   \item If a device does not support sending \msgref{EVENT_USED}, the driver
      \emph{MAY} rely on standard virtqueue polling mechanisms to detect
@@ -1250,9 +1250,9 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     and \msgref{SET_CONFIG}.
   \item A driver \emph{MUST} handle a \msgref{SET_CONFIG} being rejected for a
     mismatched configuration generation count.
-  \item A driver \textbf{MUST} initialize each device’s virtqueues (where needed)
+  \item A driver \textbf{MUST} initialize each device's virtqueues (where needed)
     via \msgref{SET_VQUEUE} before attempting normal I/O and \textbf{SHOULD}
-    query the device’s status or configuration if an unexpected
+    query the device's status or configuration if an unexpected
     \msgref{EVENT_CONFIG} or error arises.
 \end{itemize}
 
@@ -1327,7 +1327,7 @@ A \emph{device} is compliant if:
 \subsubsection{Conformance Statements}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance / Conformance}
 
-An implementation \textbf{MUST} meet all “MUST” requirements stated in:
+An implementation \textbf{MUST} meet all "MUST" requirements stated in:
 \begin{itemize}
   \item \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts} (Basic Concepts)
   \item \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation} (Bus Operation)
@@ -1338,7 +1338,7 @@ An implementation \textbf{MUST} meet all “MUST” requirements stated in:
 to claim compliance with the virtio-msg specification.
 
 Implementations that do not follow these mandatory rules \emph{MUST NOT} declare
-themselves conformant. Features or messages labeled as “optional” (\emph{MAY})
+themselves conformant. Features or messages labeled as "optional" (\emph{MAY})
 do not invalidate compliance if omitted, provided all required behaviors are
 still correctly implemented.
 
