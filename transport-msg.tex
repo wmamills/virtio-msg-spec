@@ -232,16 +232,31 @@ requested beyond those the device implements.
 \subsubsection{Error Signaling}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling}
 
-All legal transactions are defined at the transport level and responses defined.
-If the transport level does something invalid or the bus has error conditions,
-this \emph{SHOULD} be handled at the bus implementation level.
+Errors may arise from: (a) malformed or unsupported transport messages, (b)
+transmission or routing issues within a bus implementation, or (c) device-side
+failures while processing a valid request. Local detection and recovery are
+preferred, but a virtio-msg bus \textbf{MAY} report transmission errors to the
+virtio-msg transport when it cannot deliver a request or obtain a response
+within a bounded policy.
 
-How the bus recovers from an error (e.g., by retrying, resetting
-devices, or escalating to a bus-wide reset) is environment-specific, but
-\emph{MUST} adhere to any mandatory behaviors (see
-\ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation}
-and
-\ref{sec:Virtio Transport Options / Virtio Over Messages / Device Operation}).
+The following rules apply:
+\begin{itemize}
+  \item A bus implementation \textbf{MAY} surface a transport-visible failure
+    (implementation-defined) after exhausting any bounded retry policy for
+    a transmission error.
+  \item Malformed headers or unsupported \field{msg_op} values \textbf{SHOULD}
+    be discarded; the receiver \textbf{MAY} log them and \textbf{SHOULD NOT}
+    generate further protocol traffic in response.
+  \item Event (one-way) messages \textbf{MUST NOT} elicit an error response.
+  \item Recovery actions (retry, selective reset, device removal) are
+    environment-specific but \textbf{MUST} comply with any normative reset
+    or status handling semantics described in
+    \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Operation}.
+\end{itemize}
+
+This specification does not mandate a specific error reporting message for
+transmission failures; it only permits a virtio-msg bus to surface such
+failures to the virtio-msg transport when silent recovery is not feasible.
 
 \subsubsection{Bus vs. Transport Messages}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / BusVsTransport}
