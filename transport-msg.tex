@@ -286,40 +286,51 @@ be encoded in little-endian.
 \subsubsection{Common Message Format}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format}
 
-All virtio-msg exchanges, whether \emph{bus messages} or \emph{transport messages},
-begin with a shared header that indicates how the recipient should parse the
-rest of the payload. This header has the following format:
+All virtio-msg exchanges, whether \emph{bus messages} or
+\emph{transport messages}, begin with an 8 byte header followed by an optional
+payload.
+
+The header layout is:
 \begin{lstlisting}
-struct virtio_msg_message {
-    uint8_t type;
-    uint8_t msg_id;
-    uint16_t dev_num;
-    uint16_t msg_size;
-    u8 payload[];
+struct virtio_msg_header {
+    uint8_t  type;      /* request/response + bus/transport */
+    uint8_t  msg_op;    /* message operation code */
+    uint16_t dev_num;   /* device number (0 for bus messages) */
+    uint16_t msg_uid;   /* correlation identifier (0 for events) */
+    uint16_t msg_size;  /* total size: header (8) + payload */
+    uint8_t  payload[];
 };
 \end{lstlisting}
 
-The fields in this header have the following usage:
+Field semantics:
 \begin{itemize}
   \item \field{type}:
     \begin{itemize}
-      \item Bit[0]: Identifies if a message is a request (0) or a response
-          to a request (1).
-      \item Bit[1]: Identifies if a message is a Transport Message (0) or a
-          Bus Message (1).
-      \item Bit[2-7] Are reserved for future use and must be zero.
+  \item Bit[0]: 0=request, 1=response.
+  \item Bit[1]: 0=Transport Message, 1=Bus Message.
+  \item Bits[2..7]: \textbf{MUST} be zero; receivers \textbf{MUST} ignore.
     \end{itemize}
-  \item \field{msg_id}:
-    Uniquely identifies which message definition applies (e.g., GET_DEVICES,
-    GET_DEVICE_FEATURES, SET_CONFIG). The specific range or enumeration of types is
-    defined in sections \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
-    and \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
-  \item \field{dev_num}:
-     Identifies the Device Number the message is targeting or is coming from for
-     Transport Message and must be zero of Bus messages.
-  \item \field{msg_size};
-    Indicates the total length of the message payload including the header.
+  \item \field{msg_op}: Operation code identifying the message definition. Ranges
+    are defined in
+    \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
+    and
+    \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
+  \item \field{dev_num}: For Transport Messages, the target device number; for
+    Bus Messages \textbf{MUST} be zero.
+  \item \field{msg_uid}: Non-zero for requests that expect a response; zero
+    \textbf{MUST} be used only for event (one-way) messages. Responses
+    \textbf{MUST} echo the request's \field{msg_uid}.
+  \item \field{msg_size}: Total size in bytes of the complete message (header +
+    payload). \textbf{MUST} be \(\ge 8\) and \textbf{MUST NOT} exceed the
+    bus's maximum message size.
+  \item \field{payload}: Operation-specific data. Unused trailing bytes (if any
+    introduced by a bus framing) \textbf{MUST} be zero and \textbf{MUST} be
+    ignored by receivers.
 \end{itemize}
+
+All reserved header bits and any unspecified header values \textbf{MUST} be
+sent as zero and \textbf{MUST} be ignored on receive to preserve forward
+compatibility.
 
 \subsection{Bus Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation}
@@ -391,8 +402,8 @@ protocols instead. The general usage of \busref{PING} (if implemented) is:
 \subsubsection{Bus Specific Messages}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
 
-A range of message IDs are reserved for use by the specific bus
-implementation. These messages can be used for any implementation specific
+A range of message operation identifiers are reserved for use by the specific
+bus implementation. These messages can be used for any implementation specific
 usage. Example usage could include:
 
 \begin{itemize}
@@ -715,11 +726,11 @@ supported, verifying the target device number exists).
 Most transport messages adopt a \emph{request/response} pattern, but some are
 unidirectional (e.g., asynchronous notifications).
 
-\paragraph{Messages IDs and issuers}
+\paragraph{Messages Operation (OP) identifiers and issuers}
 
 \begin{tabular}{|l|l|l|}
 \hline
-Name & ID & Sender \\
+Name & OP identifier & Sender \\
 \hline
 \hline
 Reserved                   & 0x0 & \\
@@ -756,8 +767,8 @@ Reserved                   & 0x1 & \\
 \hline
 \end{tabular}
 
-Transport message IDs 0x00 to 0x3F are used for messages that require a response
-and IDs 0x40 to 0x7F are used for event messages. Transport message IDs 0x80
+Transport message OPs 0x00 to 0x3F are used for messages that require a response
+and OPs 0x40 to 0x7F are used for event messages. Transport message OPs 0x80
 and above are reserved by this specification.
 
 \paragraph{Mandatory Transport Messages}
@@ -1080,11 +1091,11 @@ They are intended for bus implementations that wish to perform these operations
 firmware tables, device trees). Each bus instance \emph{may} use a subset of or
 all these messages according to its design.
 
-\paragraph{Messages IDs and issuers}
+\paragraph{OPs identifiers and issuers}
 
 \begin{tabular}{|l|l|l|}
 \hline
-Name & ID & Sender \\
+Name & OP identifier & Sender \\
 \hline
 \hline
 Reserved                    & 0x0  &        \\
@@ -1099,14 +1110,14 @@ Reserved                    & 0x1  &        \\
 \hline
 \end{tabular}
 
-Bus message IDs below 0x80 are reserved for standardizes (but optional) bus
+Bus message OPs below 0x80 are reserved for standardizes (but optional) bus
 messages.  A few are used here and more are expected in the future. Bus message
-IDs below 0x40 are used for request/response messages and 0x40 and above for
+OPs below 0x40 are used for request/response messages and 0x40 and above for
 event messages.
 
-Bus message IDs 0x80 and above are bus implementation specific. Bus
-implementations \emph{MAY} specify the policy that IDs below 0xC0 be used
-for request/response messages and IDs 0xC0 and above are used for event messages.
+Bus message OPs 0x80 and above are bus implementation specific. Bus
+implementations \emph{MAY} specify the policy that OPs below 0xC0 be used
+for request/response messages and OPs 0xC0 and above are used for event messages.
 
 \paragraph{Note:} A bus implementation \textbf{is not required} to use these
 messages if it already provides equivalent functionality through some
