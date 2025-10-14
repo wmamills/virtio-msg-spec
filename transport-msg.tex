@@ -295,6 +295,7 @@ struct virtio_msg_message {
     uint8_t msg_id;
     uint16_t dev_num;
     uint16_t msg_size;
+    uint16_t req_id;
     u8 payload[];
 };
 \end{lstlisting}
@@ -319,6 +320,10 @@ The fields in this header have the following usage:
      Transport Message and must be zero of Bus messages.
   \item \field{msg_size};
     Indicates the total length of the message payload including the header.
+  \item \field{req_id};
+    The req_id is echoed back in the response with out change or interpretation.
+    The request originator \emph{MAY} make this field unique and use it to match
+    responses to concurrent requests.
 \end{itemize}
 
 \subsection{Bus Operation}
