@@ -22,8 +22,7 @@ virtio-msg addresses several key objectives:
   \item \textbf{Support multiple bus implementations:}
   Systems may rely on various communication methods such as hypercalls, local
   IPC, network channels, or device trees for enumerating devices. virtio-msg
-  defines a common transport interface suitable for any of these underlying
-  mechanisms.
+  defines a common transport interface suitable for any of these mechanisms.
 
   \item \textbf{Reduce per-bus complexity:}
   Buses can implement a fully message-based workflow (including optional
@@ -95,8 +94,9 @@ This specification \emph{defines} messages such as \busref{GET_DEVICES},
 completely message-based approach to enumeration, hotplug, and bus-wide health.
 However, these are \emph{not} mandatory if a bus instance already handles those
 functions via firmware, device tree, or other platform features. The only strict
-requirement is that the bus be able to forward device-specific \emph{transport
-messages} once a device is recognized, so the virtio-msg driver can manage it.
+requirement is that the bus \emph{MUST} be able to forward device-specific
+\emph{transport messages} once a device is recognized, so the virtio-msg driver
+can manage it.
 
 \subsection{Basic Concepts}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts}
@@ -139,7 +139,7 @@ using advanced features or messages unavailable in the bus's advertised
 
 \paragraph{virtio-msg revisions}
 
-The following tables defines the currently defined virtio-msg revisions:
+The following table lists the currently defined virtio-msg revisions:
 
 \begin{tabular}{ |l|l|l|l| }
 \hline
@@ -153,7 +153,7 @@ Note that a change in the virtio standard does not necessarily
 correspond to a change in the virtio-msg revision.
 
 The maximum message size is from the common transport level point of
-view and includes the headers and payload described here.  If the bus adds it
+view and includes the headers and payload described here.  If the bus adds its
 own overhead (e.x. its own header) this is not included in the maximum message
 size. The maximum useful message size is currently expected to be 274.
 This value is large enough to support a GET_CONFIG or SET_CONFIG message with a
@@ -218,12 +218,12 @@ The virtio-msg transport handles feature bits in one or more
 \msgref{SET_DRIVER_FEATURES}. Each block corresponds to up to 32 features:
 
 \begin{itemize}
-  \item \textbf{Block Index}: Identifies the starting block (e.g., block 0 for
+  \item \textbf{Block Index}: The starting block (e.g., block 0 for
         features 0--31, block 1 for features 32--63, etc.).
   \item \textbf{Number of Blocks}: How many blocks the driver wishes to retrieve
         or modify in a single message.  This is explicit in GET_FEATURES and
         inferred from msg_size in SET_FEATURES.
-  \item \textbf{Feature Data}: The 32 bits values representing a device's
+  \item \textbf{Feature Data}: The 32 bit values representing a device's
         supported or requested feature bits.
 \end{itemize}
 
@@ -256,7 +256,7 @@ virtio-msg groups messages into two categories:
     or assessing bus-wide health (\busref{PING}).
     These messages are \emph{optional} in environments where
     device discovery or state changes occur through other means (e.g., device
-    tree). However, if a bus \emph{chooses} to handle those tasks via messages,
+    tree). However, if a bus chooses to handle those tasks via messages,
     it \emph{should} implement the appropriate bus message definitions.
 
   \item[\textbf{Transport Messages}:]
@@ -281,7 +281,7 @@ fully message-based enumeration and hotplug if desired.
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
 
-All encoding of values and fields defines in the virtio-msg messages \emph{MUST}
+All encoding of values and fields defined in the virtio-msg messages \emph{MUST}
 be encoded in little-endian.
 
 \subsubsection{Common Message Format}
@@ -637,7 +637,7 @@ completion of buffers in virtqueues using the messages described below.
 These notifications may be the result of:
 
 \begin{itemize}
-    \item The same messages received in band on the message channel from the
+    \item The same messages received in-band on the message channel from the
         device side bus.
     \item Manufactured by the driver side bus based on reception of an
         out-of-band (OoB) notification from the device side.  Example OoB
@@ -660,7 +660,8 @@ These notifications may be the result of:
 \paragraph{EVENT\_USED}
 \begin{itemize}
   \item Signifies that one or more buffers in a specific virtqueue have been
-    processed or consumed by the device.
+    processed or consumed by the device and the buffer has been added to the
+    used ring of the virtqueue.
   \item The driver uses normal virtio methods (e.g., reading the "used" ring) to
     identify which buffers are complete.
   \item If a device does not support sending \msgref{EVENT_USED}, the driver
@@ -782,7 +783,7 @@ For a virtio-msg device to be fully operational, the following messages
 \end{itemize}
 
 The functionality of the following messages \textbf{MUST} be provided by
-in band messages, out of band event notification, or bus implementation based
+in-band messages, out-of-band event notification, or bus implementation based
 polling:
 \begin{itemize}
   \item \msgref{EVENT_AVAIL}
@@ -1063,8 +1064,8 @@ Request & 0 & 4 & Virtqueue index \\
 The \textbf{Next wrap} field is the MSB of the 32 bit value. The
 \textbf{Next offset} field is the other 31 bits. These fields should be 0 if
 the VIRTIO_F_NOTIFICATION_DATA feature has not been negotiated. If the bus
-implementation is using out-of-band notifications, it should refuse to allow
-this feature to be negotiated.
+implementation is using out-of-band notifications, it should prevent this
+feature from being negotiated.
 
 \msgdef{EVENT_USED}
 
@@ -1106,7 +1107,7 @@ Reserved                    & 0x1  &        \\
 \hline
 \end{tabular}
 
-Bus message IDs below 0x80 are reserved for standardizes (but optional) bus
+Bus message IDs below 0x80 are reserved for standardized (but optional) bus
 messages.  A few are used here and more are expected in the future. Bus message
 IDs below 0x40 are used for request/response messages and 0x40 and above for
 event messages.
@@ -1272,16 +1273,15 @@ and \textbf{MAY} in this document are to be interpreted as specified by
     and \busref{EVENT_DEVICE} for discovering and managing devices in a
     message-driven manner. However, this is not mandatory if other enumeration
     methods (e.g., device tree, ACPI, hypervisor firmware) are used.
-  \item If a bus \emph{chooses} to implement these messages, it \textbf{MUST} do
+  \item If a bus chooses to implement these messages, it \textbf{MUST} do
     so in compliance with their defined formats and semantics (see
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}).
 \end{itemize}
 
 \paragraph{Optional Bus-Level Messages}
 \begin{itemize}
-  \item \busref{PING} for keepalive or health checks is also \emph{MAY}
-    implement. If used, both sides \textbf{MUST} echo the 32-bit data field
-    precisely.
+  \item \busref{PING} \emph{MAY} be implemented for keepalive or health checks.
+    If used, both sides \textbf{MUST} echo the 32-bit data field precisely.
 \end{itemize}
 
 \paragraph{Runtime Notifications}
