@@ -221,7 +221,8 @@ The virtio-msg transport handles feature bits in one or more
   \item \textbf{Block Index}: Identifies the starting block (e.g., block 0 for
         features 0--31, block 1 for features 32--63, etc.).
   \item \textbf{Number of Blocks}: How many blocks the driver wishes to retrieve
-        or modify in a single message.
+        or modify in a single message.  This is explicit in GET_FEATURES and
+        inferred from msg_size in SET_FEATURES.
   \item \textbf{Feature Data}: The 32 bits values representing a device's
         supported or requested feature bits.
 \end{itemize}
@@ -585,13 +586,17 @@ internally.
 To write a portion of the configuration space, the driver uses
 \msgref{SET_CONFIG}, providing:
 \begin{itemize}
-  \item \textbf{Offset} and \textbf{Number of bytes},
+  \item \textbf{Offset},
   \item \textbf{Configuration generation count} as read earlier,
   \item The \textbf{new configuration data} to be written.
 \end{itemize}
 
+If the generation count matches the device's current value, the device
+will update its configuration and echo back the new value of configuration data.
+The new data may be different than what was sent in the request.
+
 If the generation count does not match the device's current value, the device
-\emph{MUST} reject the update as defined in the \msgref{SET_CONFIG} response.
+\emph{MUST} reject the update and return no configuration data.
 The driver \emph{SHOULD} then read the updated configuration space and
 reattempt if necessary.
 
@@ -898,15 +903,15 @@ response from the device.
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Feature block index \\
-& 4 & 4 & Number of feature blocks \\
-& 8 & ... & Feature data \\
+& 4 & ... & Feature data \\
 \hline
 Answer & 0 & 0 & no extra data \\
 \hline
 \end{tabular}
 
 A feature block is a group of 32 bits.  The feature data \emph{MUST} be a
-multiple of 4 bytes in length.
+multiple of 4 bytes in length. The number of feature blocks is calculated from
+the message length in the common message header.
 
 Note: As defined in \ref{sec:Basic Facilities of a Virtio Device / Feature Bits},
 if the device is not OK with the features set, it \emph{MUST} not allow
@@ -926,8 +931,7 @@ Request & 0 & 4 & Configuration offset in bytes \\
 \hline
 Answer & 0 & 4 & Configuration generation count \\
 & 4 & 4 & Configuration offset in bytes \\  \\
-& 8 & 4 & Number of bytes \\
-& 12 & ... & Configuration data \\
+& 8 & ... & Configuration data \\
 \hline
 \end{tabular}
 
@@ -942,13 +946,11 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Configuration generation count \\
 & 4 & 4 & Configuration offset in bytes \\
-& 8 & 4 & Number of bytes \\
-& 12 & ... & Configuration data \\
+& 8 & ... & Configuration data \\
 \hline
 Answer & 0 & 4 & New Configuration generation count \\
 & 4 & 4 & Configuration offset in bytes \\
-& 8 & 4 &  Number of bytes, or 0 if rejected \\
-& 12 & ... & Configuration data \\
+& 8 & ... & Configuration data \\
 \hline
 \end{tabular}
 
