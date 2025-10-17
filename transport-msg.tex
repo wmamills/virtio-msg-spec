@@ -244,7 +244,7 @@ The following rules apply:
   \item A bus implementation \textbf{MAY} surface a transport-visible failure
     (implementation-defined) after exhausting any bounded retry policy for
     a transmission error.
-  \item Malformed headers or unsupported \field{msg_op} values \textbf{SHOULD}
+  \item Malformed headers or unsupported \field{msg_id} values \textbf{SHOULD}
     be discarded; the receiver \textbf{MAY} log them and \textbf{SHOULD NOT}
     generate further protocol traffic in response.
   \item Event (one-way) messages \textbf{MUST NOT} elicit an error response.
