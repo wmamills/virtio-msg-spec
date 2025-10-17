@@ -335,22 +335,32 @@ compatibility.
 \subsubsection{Message Correlation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation}
 
-Correlation associates a response with its request:
+Messages are either requests or events. Requests require a response. Events are
+one way and do not have a response. Most requests defined today originate at the
+driver side but bus message requests such as \busref{PING} may originate at
+either driver side or device side.
+
+This section defines how responses are correlated to requests. An implementation
+does not need to support sending multiple requests in parallel but these rules
+allow for that possibility.
+
+The token field in the message header is part of a tuple that is unique during
+a request to response interval.
 \begin{itemize}
-  \item Bus Message key: \field{msg_uid}.
-  \item Transport Message key: (\field{dev_num}, \field{msg_uid}).
+  \item Bus Message tuple: ( 1, 0, \field{token} ).
+  \item Transport Message tuple: ( 0, \field{dev_num}, \field{token} ).
 \end{itemize}
 
 Rules:
 \begin{itemize}
-  \item The driver allocates a non-zero \field{msg_uid} for every request that
-    expects a response and \textbf{MUST NOT} reuse it while in flight.
-  \item Event (one-way) messages \textbf{MUST} set \field{msg_uid}=0 and MUST
-    NOT yield a response.
-  \item A response \textbf{MUST} echo \field{msg_uid}, \field{dev_num} (for
-    transport), and \field{msg_op}.
-  \item Unknown or already completed correlation tuples \textbf{SHOULD} result
-    in discarding the response without further protocol action.
+  \item The request originator assigns a non-zero \field{token} for every
+    request such that the tuple is unique for all inflight requests.
+  \item Event (one-way) messages \textbf{MUST} set \field{token}=0
+  \item A response \textbf{MUST} echo \field{token}, \field{dev_num} (for
+    transport), and \field{msg_id}.
+  \item Reception of unknown or already completed correlation tuples
+    \textbf{SHOULD} result in discarding the response without further protocol
+    action.
   \item Implementations \textbf{MAY} deliver responses out of order unless a
     specific message definition mandates ordering.
 \end{itemize}
