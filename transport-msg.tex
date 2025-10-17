@@ -294,9 +294,9 @@ The header layout is:
 \begin{lstlisting}
 struct virtio_msg_header {
     uint8_t  type;      /* request/response + bus/transport */
-    uint8_t  msg_op;    /* message operation code */
+    uint8_t  msg_id;    /* message id */
     uint16_t dev_num;   /* device number (0 for bus messages) */
-    uint16_t msg_uid;   /* correlation identifier (0 for events) */
+    uint16_t token;     /* correlation identifier (0 for events) */
     uint16_t msg_size;  /* total size: header (8) + payload */
     uint8_t  payload[];
 };
@@ -310,16 +310,16 @@ Field semantics:
   \item Bit[1]: 0=Transport Message, 1=Bus Message.
   \item Bits[2..7]: \textbf{MUST} be zero; receivers \textbf{MUST} ignore.
     \end{itemize}
-  \item \field{msg_op}: Operation code identifying the message definition. Ranges
+  \item \field{msg_id}: Message ID identifying the message definition. Ranges
     are defined in
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
     and
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
   \item \field{dev_num}: For Transport Messages, the target device number; for
     Bus Messages \textbf{MUST} be zero.
-  \item \field{msg_uid}: Non-zero for requests that expect a response; zero
+  \item \field{token}: Non-zero for requests (which expect a response); zero
     \textbf{MUST} be used only for event (one-way) messages. Responses
-    \textbf{MUST} echo the request's \field{msg_uid}.
+    \textbf{MUST} echo the request's \field{token}.
   \item \field{msg_size}: Total size in bytes of the complete message (header +
     payload). \textbf{MUST} be \(\ge 8\) and \textbf{MUST NOT} exceed the
     bus's maximum message size.
