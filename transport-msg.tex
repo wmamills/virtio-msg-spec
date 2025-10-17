@@ -402,8 +402,8 @@ protocols instead. The general usage of \busref{PING} (if implemented) is:
 \subsubsection{Bus Specific Messages}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
 
-A range of message operation identifiers are reserved for use by the specific
-bus implementation. These messages can be used for any implementation specific
+A range of message IDs are reserved for use by the specific bus
+implementation. These messages can be used for any implementation specific
 usage. Example usage could include:
 
 \begin{itemize}
@@ -726,11 +726,11 @@ supported, verifying the target device number exists).
 Most transport messages adopt a \emph{request/response} pattern, but some are
 unidirectional (e.g., asynchronous notifications).
 
-\paragraph{Messages Operation (OP) identifiers and issuers}
+\paragraph{Messages IDs and issuers}
 
 \begin{tabular}{|l|l|l|}
 \hline
-Name & OP identifier & Sender \\
+Name & ID & Sender \\
 \hline
 \hline
 Reserved                   & 0x0 & \\
@@ -767,8 +767,8 @@ Reserved                   & 0x1 & \\
 \hline
 \end{tabular}
 
-Transport message OPs 0x00 to 0x3F are used for messages that require a response
-and OPs 0x40 to 0x7F are used for event messages. Transport message OPs 0x80
+Transport message IDs 0x00 to 0x3F are used for messages that require a response
+and IDs 0x40 to 0x7F are used for event messages. Transport message IDs 0x80
 and above are reserved by this specification.
 
 \paragraph{Mandatory Transport Messages}
@@ -1091,11 +1091,11 @@ They are intended for bus implementations that wish to perform these operations
 firmware tables, device trees). Each bus instance \emph{may} use a subset of or
 all these messages according to its design.
 
-\paragraph{OPs identifiers and issuers}
+\paragraph{Messages IDs and issuers}
 
 \begin{tabular}{|l|l|l|}
 \hline
-Name & OP identifier & Sender \\
+Name & ID & Sender \\
 \hline
 \hline
 Reserved                    & 0x0  &        \\
@@ -1110,14 +1110,14 @@ Reserved                    & 0x1  &        \\
 \hline
 \end{tabular}
 
-Bus message OPs below 0x80 are reserved for standardizes (but optional) bus
+Bus message IDs below 0x80 are reserved for standardizes (but optional) bus
 messages.  A few are used here and more are expected in the future. Bus message
-OPs below 0x40 are used for request/response messages and 0x40 and above for
+IDs below 0x40 are used for request/response messages and 0x40 and above for
 event messages.
 
-Bus message OPs 0x80 and above are bus implementation specific. Bus
-implementations \emph{MAY} specify the policy that OPs below 0xC0 be used
-for request/response messages and OPs 0xC0 and above are used for event messages.
+Bus message IDs 0x80 and above are bus implementation specific. Bus
+implementations \emph{MAY} specify the policy that IDs below 0xC0 be used
+for request/response messages and IDs 0xC0 and above are used for event messages.
 
 \paragraph{Note:} A bus implementation \textbf{is not required} to use these
 messages if it already provides equivalent functionality through some
