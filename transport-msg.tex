@@ -1006,9 +1006,10 @@ Request & 0 & 4 & Virtqueue index \\
 Answer & 0 & 4 & Virtqueue index \\
 & 4 & 4 & Maximum virtqueue size \\
 & 8 & 4 & Current virtqueue size \\
-& 12 & 8 & Descriptor address \\
-& 20 & 8 & Driver address \\
-& 28 & 8 & Device address \\
+& 12 & 4 & Reserved (Must Be Zero - MBZ) \\
+& 16 & 8 & Descriptor address \\
+& 24 & 8 & Driver address \\
+& 32 & 8 & Device address \\
 \hline
 \end{tabular}
 
@@ -1027,9 +1028,10 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Virtqueue index \\
 & 4 & 4 & Reserved (Must Be Zero - MBZ) \\
 & 8 & 4 & Current virtqueue size \\
-& 12 & 8 & Descriptor address \\
-& 20 & 8 & Driver address \\
-& 28 & 8 & Device address \\
+& 12 & 4 & Reserved (Must Be Zero - MBZ) \\
+& 16 & 8 & Descriptor address \\
+& 24 & 8 & Driver address \\
+& 32 & 8 & Device address \\
 \hline
 Answer & 0 & 0 & no extra data \\
 \hline
