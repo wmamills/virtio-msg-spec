@@ -26,7 +26,7 @@ virtio-msg addresses several key objectives:
 
   \item \textbf{Reduce per-bus complexity:}
   Buses can implement a fully message-based workflow (including optional
-  enumeration via \busref{GET_DEVICES} and hotplug via \busref{EVENT_DEVICE}
+  enumeration via \busref{GET_DEVICES} and hotplug via \busref{EVENT_DEVICE})
   or they can discover and manage devices through
   alternative means such as platform firmware data. In either case, they
   forward transport messages to and from each device.
@@ -110,7 +110,8 @@ data for device discovery.
 \subsubsection{Transport Revisions and Maximum Message Size}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions}
 
-Each \textbf{virtio-msg bus instance} advertises:
+Each \textbf{virtio-msg bus instance} advertises the following to the transport
+layer:
 \begin{itemize}
   \item A \textbf{transport revision} indicating the protocol version it
         supports. This revision is separate from the overall Virtio
@@ -122,8 +123,8 @@ Each \textbf{virtio-msg bus instance} advertises:
 \end{itemize}
 
 These parameters \emph{MAY} vary between bus instances within the same system.
-The driver obtains a bus's revision, maximum message size and list of features
-through an \emph{implementation-defined} mechanism, which could be:
+The bus implementation obtains a bus's revision, maximum message size and list
+of features through an \emph{implementation-defined} mechanism, which could be:
 \begin{itemize}
   \item A device tree or firmware method providing bus configuration,
   \item A message exchange during bus setup,
@@ -131,10 +132,10 @@ through an \emph{implementation-defined} mechanism, which could be:
   \item A static definition built into the driver for a known environment.
 \end{itemize}
 
-After learning these parameters, the driver \emph{MUST} respect them for all
-messages involving that bus instance. For example, it \emph{MUST NOT} send a
-message exceeding the \textbf{maximum message size}, and it \emph{MUST} avoid
-using advanced features or messages unavailable in the bus's advertised
+After learning these parameters, the transport layer \emph{MUST} respect them
+for all messages involving that bus instance. For example, it \emph{MUST NOT}
+send a message exceeding the \textbf{maximum message size}, and it \emph{MUST}
+avoid using advanced features or messages unavailable in the bus's advertised
 \textbf{transport revision}.
 
 \paragraph{virtio-msg revisions}
@@ -188,8 +189,8 @@ A configuration change is made visible to the driver via \msgref{EVENT_CONFIG}
 or the response to \msgref{GET_CONFIG} which also both provide the device's
 current configuration count. The device may change any amount of data for one
 generation count increment. If the change cannot fit in one \msgref{EVENT_CONFIG}
-message, it \emph{SHOULD} be signaled to the driver via a \msgref{EVENT_CONFIG}
-message with a zero data length and the new generation count.
+message, the device \emph{SHOULD} send an \msgref{EVENT_CONFIG} message
+with a zero data length and the new generation count to the driver.
 The device \emph{MUST NOT} provide the same generation count in
 multiple \msgref{EVENT_CONFIG} messages that contain non-zero length config
 data. The driver includes its view of the current generation count in
@@ -296,7 +297,7 @@ fully message-based enumeration and hotplug if desired.
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
 
-All encoding of values and fields defined in the virtio-msg messages \emph{MUST}
+All values and fields defined in the virtio-msg messages \emph{MUST}
 be encoded in little-endian.
 
 \subsubsection{Common Message Format}
@@ -309,12 +310,12 @@ payload.
 The header layout is:
 \begin{lstlisting}
 struct virtio_msg_header {
-    uint8_t  type;      /* request/response + bus/transport */
-    uint8_t  msg_id;    /* message id */
-    uint16_t dev_num;   /* device number (0 for bus messages) */
-    uint16_t token;     /* correlation identifier (0 for events) */
-    uint16_t msg_size;  /* total size: header (8) + payload */
-    uint8_t  payload[];
+    u8       type;      /* request/response + bus/transport */
+    u8       msg_id;    /* message id */
+    le16     dev_num;   /* device number (0 for bus messages) */
+    le16     token;     /* correlation identifier (0 for events) */
+    le16     msg_size;  /* total size: header (8) + payload */
+    u8       payload[];
 };
 \end{lstlisting}
 
@@ -1342,10 +1343,10 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 \begin{itemize}
   \item A device or the driver side bus \emph{MUST} send \msgref{EVENT_CONFIG}
     to inform the driver of configuration of device status changes.
-  \item A device or the driver side bus \emph{MUST} \msgref{EVENT_USED}
+  \item A device or the driver side bus \emph{MUST} send \msgref{EVENT_USED}
     to inform the driver of (likely) buffer completions.
   \item A driver \emph{MUST} send \msgref{EVENT_AVAIL} to notify the device that
-    new buffers are posted.
+    new buffers are available.
 \end{itemize}
 
 \subsubsection{Compliance for Different Environments}
