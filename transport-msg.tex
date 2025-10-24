@@ -363,8 +363,7 @@ allow for that possibility.
 The token field in the message header is part of a tuple that is unique during
 a request to response interval.
 \begin{itemize}
-  \item Bus Message tuple: ( 1, 0, \field{token} ).
-  \item Transport Message tuple: ( 0, \field{dev_num}, \field{token} ).
+  \item Message tuple: ( \field{dev_num}, \field{token} ).
 \end{itemize}
 
 Rules:
@@ -372,13 +371,10 @@ Rules:
   \item The request originator assigns a non-zero \field{token} for every
     request such that the tuple is unique for all inflight requests.
   \item Event (one-way) messages \textbf{MUST} set \field{token}=0
-  \item A response \textbf{MUST} echo \field{token}, \field{dev_num} (for
-    transport), and \field{msg_id}.
+  \item A response \textbf{MUST} echo \field{token} and \field{dev_num}.
   \item Reception of unknown or already completed correlation tuples
     \textbf{SHOULD} result in discarding the response without further protocol
     action.
-  \item Implementations \textbf{MAY} deliver responses out of order unless a
-    specific message definition mandates ordering.
 \end{itemize}
 
 \subsection{Bus Operation}
