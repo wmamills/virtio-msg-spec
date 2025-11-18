@@ -1177,28 +1177,41 @@ message definitions below.
 
 \busdef{GET_DEVICES}
 
-This message is sent by the virtio-msg driver side bus and requires a response
-from the device side bus.
+The driver-side bus uses this request to enumerate device numbers on the
+device-side bus. The response describes a “window” of device numbers and signals
+which entries are present.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 2 & Offset \\
-        & 2 & 2 & Number of device numbers requested \\
+Request & 0 & 2 & offset: first device number in the window \\
+        & 2 & 2 & count: number of consecutive device numbers covered \\
 \hline
-Answer & 0 & 2 & Offset \\
-       & 2 & 2 & Number of device numbers in the answer \\
-       & 4 & 2 & Next offset or 0 if no devices after Offset \\
-       & 6 & .. & Bit[n]: Device[offset + n] not available(0)/available(1) \\
+Answer  & 0 & 2 & offset (echoed) \\
+        & 2 & 2 & count actually returned \\
+        & 4 & 2 & next\_offset: 0 or the start of the recommended next window \\
+        & 6 & count/8 & bitmap: bit $n$ ($0 \le n <$ count) describes device number $(offset + n)$ (0=absent, 1=present) \\
 \hline
 \end{tabular}
 
-The offset and number of device numbers requested \emph{MUST} be multiples of 8.
-The next offset \emph{MUST} also be a multiple of 8.
-The device available data is packed into a sequence of bytes with the first
-device in the least significant bit of the first byte, the eighth device in
-the most significant bit of the first byte, etc.
+\textbf{offset} and \textbf{count} MUST be multiples of 8; the bitmap length is
+\textbf{count/8} and is packed LSB-first (device number \textbf{offset} is the
+LSB of the first byte).
+\textbf{next_offset} is either 0 (no further windows) or an aligned value
+$\ge offset + count$ that the responder suggests querying next.
+
+The \textbf{(offset, count)} tuple defines a window of \textbf{count}
+consecutive device numbers beginning at \textbf{offset}. The number of present
+devices equals the number of 1-bits in the bitmap. Responders SHOULD return the
+requested \textbf{count} unless constrained (e.g., by maximum message size);
+otherwise they MAY return a smaller value, in which case the bitmap covers the
+reduced window.
+
+Example: a request with \textbf{offset}=0, \textbf{count}=16 might produce
+\textbf{bitmap}=0b00100101 00000000 and \textbf{next_offset}=16. That indicates
+devices 0, 2, and 5 are present within the 0–15 window and suggests continuing
+at device number 16.
 
 \busdef{EVENT_DEVICE}
 
