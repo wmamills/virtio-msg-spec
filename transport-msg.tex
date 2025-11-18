@@ -376,18 +376,12 @@ Rules:
     action.
 \end{itemize}
 
-\subsection{Bus Operation}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation}
+\subsection{Device Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Device Discovery}
 
-A \textbf{virtio-msg bus} is responsible for identifying available virtio devices
-and informing the operating system (or higher-level software environment) so
-that those devices can be bound to the appropriate driver. The following
-subsections describe optional messaging mechanisms that a bus MAY use to
-discover or manage devices, as well as general guidelines for completing the
-device registration process.
-
-\subsubsection{Device Discovery}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Device Discovery}
+A virtio-msg implementation can learn about devices via bus-level enumeration
+(e.g., \busref{GET_DEVICES}), platform data (e.g., device tree, ACPI), or
+hypervisor/firmware interfaces. The following informative text describes
+typical flows; the normative obligations follow.
 
 Bus implementations MAY discover their devices in various ways:
 \begin{itemize}
@@ -405,6 +399,16 @@ via a device tree). In any case, once a bus has established the presence of a
 device, it SHOULD call \msgref{GET_DEVICE_INFO} to retrieve the device ID
 and vendor ID. The bus can then register the device with the host OS
 so the appropriate virtio driver probe routine is invoked.
+
+\subsection{Bus Operation}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation}
+
+A \textbf{virtio-msg bus} is responsible for identifying available virtio devices
+and informing the operating system (or higher-level software environment) so
+that those devices can be bound to the appropriate driver. The following
+subsections describe optional messaging mechanisms that a bus MAY use to
+discover or manage devices, as well as general guidelines for completing the
+device registration process.
 
 \subsubsection{Device Hotplug}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Device Hotplug}
