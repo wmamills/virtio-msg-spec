@@ -376,6 +376,18 @@ Rules:
     action.
 \end{itemize}
 
+\subsubsection{Bus and Transport Messages}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Bus and Transport Messages}
+
+The bus is responsible for forwarding device-specific \emph{transport
+messages} to the correct device for each device number. Typically the bus does
+not interpret or modify these transport messages; its role is simply to ensure
+they reach the intended device. If the bus does not rely on messages for device
+enumeration or hotplug itself, it MUST still be capable of transporting
+\msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_CONFIG}, etc.
+once the OS driver has identified a device and is performing initialization
+via the virtio-msg transport.
+
 \subsection{Device Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Device Discovery}
 
 A virtio-msg implementation can learn about devices via bus-level enumeration
@@ -399,79 +411,6 @@ via a device tree). In any case, once a bus has established the presence of a
 device, it SHOULD call \msgref{GET_DEVICE_INFO} to retrieve the device ID
 and vendor ID. The bus can then register the device with the host OS
 so the appropriate virtio driver probe routine is invoked.
-
-\subsection{Bus Operation}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation}
-
-A \textbf{virtio-msg bus} is responsible for identifying available virtio devices
-and informing the operating system (or higher-level software environment) so
-that those devices can be bound to the appropriate driver. The following
-subsections describe optional messaging mechanisms that a bus MAY use to
-discover or manage devices, as well as general guidelines for completing the
-device registration process.
-
-\subsubsection{Device Hotplug}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Device Hotplug}
-
-If the bus supports dynamic addition or removal of devices at runtime, it
-MAY announce these events using messages:
-\begin{itemize}
-  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_READY for a newly
-    available device,
-  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_REMOVED for a device
-    that is no longer accessible.
-\end{itemize}
-
-Alternatively, the bus MAY rely on external signals (e.g., an event from
-the platform or hypervisor) and inform the OS of hotplug changes out-of-band.
-This specification \emph{defines} \busref{EVENT_DEVICE}
-for implementations that prefer a fully message-based
-approach but does not require their use. In any scenario, once notified that a
-device has appeared, the bus SHOULD query the device (e.g., via
-\msgref{GET_DEVICE_INFO}) and register it with the OS. If a device is
-removed, the bus SHOULD prompt the OS to unbind and release resources.
-
-\subsubsection{Monitoring the Bus}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Monitoring}
-
-An optional \busref{PING} message is provided for bus implementations that want
-to periodically verify connectivity with the other end (driver or device).
-Implementations MAY use other keepalive or health-check
-protocols instead. The general usage of \busref{PING} (if implemented) is:
-
-\begin{itemize}
-  \item The initiator sends a 32-bit data field,
-  \item The recipient responds by echoing this same 32-bit data,
-  \item If a response does not arrive in time, the initiator MAY treat
-        the bus as unresponsive and trigger a global reset or other fallback
-        procedure.
-\end{itemize}
-
-\subsubsection{Bus Specific Messages}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
-
-A range of message IDs are reserved for use by the specific bus
-implementation. These messages can be used for any implementation specific
-usage. Example usage could include:
-
-\begin{itemize}
-  \item Configuration of out-of-band notification methods
-  \item Setup shared memory regions to be used for buffers or virtqueues
-  \item Declare bus specific error conditions
-  \item Provide extra debug or logging information
-\end{itemize}
-
-\subsubsection{Interaction with Transport Messages}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Interaction with Transport}
-
-The bus is also responsible for forwarding device-specific \emph{transport
-messages} to the correct device for each device number. Typically the bus does
-not interpret or modify these transport messages; its role is simply to ensure
-they reach the intended device. If the bus does not rely on messages for device
-enumeration or hotplug itself, it MUST still be capable of transporting
-\msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_CONFIG}, etc.
-once the OS driver has identified a device and is performing initialization
-via the virtio-msg transport.
 
 \subsection{Device Initialization}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization}
@@ -753,6 +692,27 @@ an \msgref{EVENT_CONFIG} with a \emph{device status} with the DEVICE_NEEDS_RESET
 bit set.  The driver SHOULD reset the device by writing a status of 0
 via the \msgref{SET_DEVICE_STATUS} message. The driver MAY reinitialize
 the device if it wishes to use the device again.
+
+\subsubsection{Hotplug and Removal}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal}
+
+If the bus supports dynamic addition or removal of devices at runtime, it
+MAY announce these events using messages:
+\begin{itemize}
+  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_READY for a newly
+    available device,
+  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_REMOVED for a device
+    that is no longer accessible.
+\end{itemize}
+
+Alternatively, the bus MAY rely on external signals (e.g., an event from
+the platform or hypervisor) and inform the OS of hotplug changes out-of-band.
+This specification \emph{defines} \busref{EVENT_DEVICE}
+for implementations that prefer a fully message-based
+approach but does not require their use. In any scenario, once notified that a
+device has appeared, the bus SHOULD query the device (e.g., via
+\msgref{GET_DEVICE_INFO}) and register it with the OS. If a device is
+removed, the bus SHOULD prompt the OS to unbind and release resources.
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
 
@@ -1140,6 +1100,15 @@ They are intended for bus implementations that wish to perform these operations
 firmware tables, device trees). Each bus instance MAY use a subset of or
 all these messages according to its design.
 
+\subsubsection{Overview}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / Overview}
+
+A bus implementation \textbf{is not required} to use these
+messages if it already provides equivalent functionality through some
+platform-specific mechanism. However, if a bus chooses to handle enumeration,
+hotplug, etc. via virtio-msg, it SHOULD implement the corresponding
+message definitions below.
+
 \paragraph{Messages IDs and issuers}
 
 \begin{tabular}{|l|l|l|}
@@ -1168,11 +1137,19 @@ Bus message IDs 0x80 and above are bus implementation specific. Bus
 implementations MAY specify the policy that IDs below 0xC0 be used
 for request/response messages and IDs 0xC0 and above are used for event messages.
 
-\paragraph{Note:} A bus implementation \textbf{is not required} to use these
-messages if it already provides equivalent functionality through some
-platform-specific mechanism. However, if a bus chooses to handle enumeration,
-hotplug, etc. via virtio-msg, it SHOULD implement the corresponding
-message definitions below.
+\paragraph{Bus Specific Messages}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
+
+A range of message IDs are reserved for use by the specific bus
+implementation. These messages can be used for any implementation specific
+usage. Example usage could include:
+
+\begin{itemize}
+  \item Configuration of out-of-band notification methods
+  \item Setup shared memory regions to be used for buffers or virtqueues
+  \item Declare bus specific error conditions
+  \item Provide extra debug or logging information
+\end{itemize}
 
 \busdef{GET_DEVICES}
 
@@ -1212,6 +1189,11 @@ Example: a request with \textbf{offset}=0, \textbf{count}=16 might produce
 devices 0, 2, and 5 are present within the 0–15 window and suggests continuing
 at device number 16.
 
+\paragraph{Intended usage}
+Drivers MAY use this message to enumerate device numbers. Treat each window as
+a snapshot, advance using \textbf{next_offset}, and confirm candidates via
+\msgref{GET_DEVICE_INFO} before issuing other transport messages.
+
 \busdef{EVENT_DEVICE}
 
 This message is sent by the virtio-msg device side bus and there is no response.
@@ -1244,6 +1226,14 @@ This event is sent when the bus level state of the device has changed.
 It can indicate when a device is added or removed. It MAY also be used by
 bus implementations to indicate other states.
 
+\paragraph{Intended usage}
+This message advertises device presence or removal. Upon READY, drivers SHOULD
+probe the device via \msgref{GET_DEVICE_INFO} and proceed with initialization
+if successful. Upon REMOVED, drivers MUST stop queueing new requests,
+quiesce/reset as applicable, and release resources. Drivers SHOULD tolerate
+duplicates and out-of-order events, and MAY use bus-level monitoring (see
+\busref{PING}) to refine policy.
+
 \busdef{PING}
 
 This message is sent by the virtio-msg driver side bus or device side bus and
@@ -1252,12 +1242,17 @@ requires a response.
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
-\hline \hline
+ \hline \hline
 Request & 0 & 4 & Data \\
 \hline
 Answer & 0 & 4 & Request Data \\
 \hline
 \end{tabular}
+
+\paragraph{Intended usage}
+Drivers MAY treat \busref{PING} as an optional keepalive or monitoring
+mechanism. Timeouts or missing replies SHOULD trigger validation of device
+state via \msgref{GET_DEVICE_STATUS} and recovery as appropriate.
 
 \subsection{Compliance}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance}
