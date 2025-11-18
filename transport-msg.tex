@@ -20,7 +20,7 @@ virtio-msg addresses several key objectives:
 
 \begin{itemize}
   \item \textbf{Support multiple bus implementations:}
-  Systems may rely on various communication methods such as hypercalls, local
+  Systems can rely on various communication methods such as hypercalls, local
   IPC, network channels, or device trees for enumerating devices. virtio-msg
   defines a common transport interface suitable for any of these mechanisms.
 
@@ -43,14 +43,14 @@ virtio-msg operates around two layers:
 
 \begin{enumerate}
   \item \textbf{Bus Layer}: A \emph{bus instance} exposes zero or more virtio
-        devices. It can detect available devices through:
+        devices. It discovers available devices through mechanisms such as:
     \begin{itemize}
       \item Optional message-based queries (\busref{GET_DEVICES}),
       \item External data sources (e.g., device tree, ACPI tables, hypervisor
         firmware calls),
       \item Dynamic hotplug notifications (optionally via \busref{EVENT_DEVICE}).
     \end{itemize}
-    Once a device is identified, regardless of discovery method, the bus typically
+    Once a device is identified, regardless of discovery method, the bus
     uses \msgref{GET_DEVICE_INFO} to read its device ID and vendor ID, then
     \emph{registers} that device with the host OS so the usual virtio driver
     probe can occur.
@@ -74,9 +74,9 @@ virtio-msg operates around two layers:
 \subsubsection{System Topology}
 
 \begin{itemize}
-  \item \textbf{Bus Instances and Devices}: Each bus instance can advertise
-        different capabilities (e.g., transport revision, maximum message size)
-        and may discover devices via a message-based or external mechanism.
+  \item \textbf{Bus Instances and Devices}: Each bus instance advertises its
+        capabilities (e.g., transport revision, maximum message size) and
+        discovers devices via message-based queries or external data sources.
         Every discovered device has a unique \emph{device number}.
   \item \textbf{Driver}: Communicates with the bus to learn about
         available devices. Once a device is recognized, the driver uses the
@@ -94,7 +94,7 @@ This specification \emph{defines} messages such as \busref{GET_DEVICES},
 completely message-based approach to enumeration, hotplug, and bus-wide health.
 However, these are \emph{not} mandatory if a bus instance already handles those
 functions via firmware, device tree, or other platform features. The only strict
-requirement is that the bus \emph{MUST} be able to forward device-specific
+requirement is that the bus MUST be able to forward device-specific
 \emph{transport messages} once a device is recognized, so the virtio-msg driver
 can manage it.
 
@@ -122,7 +122,7 @@ layer:
         optional features that are supported or not by the bus instance.
 \end{itemize}
 
-These parameters \emph{MAY} vary between bus instances within the same system.
+These parameters MAY vary between bus instances within the same system.
 The bus implementation obtains a bus's revision, maximum message size and list
 of features through an \emph{implementation-defined} mechanism, which could be:
 \begin{itemize}
@@ -132,9 +132,9 @@ of features through an \emph{implementation-defined} mechanism, which could be:
   \item A static definition built into the driver for a known environment.
 \end{itemize}
 
-After learning these parameters, the transport layer \emph{MUST} respect them
-for all messages involving that bus instance. For example, it \emph{MUST NOT}
-send a message exceeding the \textbf{maximum message size}, and it \emph{MUST}
+After learning these parameters, the transport layer MUST respect them
+for all messages involving that bus instance. For example, it MUST NOT
+send a message exceeding the \textbf{maximum message size}, and it MUST
 avoid using advanced features or messages unavailable in the bus's advertised
 \textbf{transport revision}.
 
@@ -165,7 +165,7 @@ configuration data payload of 256 bytes.
 Device Numbers}
 
 Each virtio-msg bus instance contains one or more \emph{devices}, identified
-by a 16-bit \textbf{device number}. Buses \emph{MAY} discover these device
+by a 16-bit \textbf{device number}. Buses MAY discover these device
 numbers in multiple ways:
 \begin{itemize}
   \item \textbf{Message-Based Enumeration}: Using \busref{GET_DEVICES} to query
@@ -187,23 +187,23 @@ inconsistent updates. This count is incremented at least once by the device for
 every driver visible change it makes to its own copy of the configuration data.
 A configuration change is made visible to the driver via \msgref{EVENT_CONFIG}
 or the response to \msgref{GET_CONFIG} which also both provide the device's
-current configuration count. The device may change any amount of data for one
+current configuration count. The device MAY change any amount of data for one
 generation count increment. If the change cannot fit in one \msgref{EVENT_CONFIG}
-message, the device \emph{SHOULD} send an \msgref{EVENT_CONFIG} message
+message, the device SHOULD send an \msgref{EVENT_CONFIG} message
 with a zero data length and the new generation count to the driver.
-The device \emph{MUST NOT} provide the same generation count in
+The device MUST NOT provide the same generation count in
 multiple \msgref{EVENT_CONFIG} messages that contain non-zero length config
 data. The driver includes its view of the current generation count in
 \msgref{SET_CONFIG} requests. The configuration generation count does not
-necessarily start at 0 and \emph{SHOULD NOT} reset to 0 on device reset.
+necessarily start at 0 and SHOULD NOT reset to 0 on device reset.
 
 \begin{itemize}
   \item If the driver's generation count does not match the device's current
-        count, the \msgref{SET_CONFIG} request \emph{MUST} be rejected by the
+        count, the \msgref{SET_CONFIG} request MUST be rejected by the
         device.
-  \item The driver may have received \msgref{EVENT_CONFIG} messages
+  \item The driver MAY have received \msgref{EVENT_CONFIG} messages
         between the request and the response and will know the current
-        configuration data and generation count.  If not it \emph{SHOULD}
+        configuration data and generation count.  If not it SHOULD
         re-read the configuration and generation count via \msgref{GET_CONFIG}),
         and then resend the \msgref{SET_CONFIG} if still desired.
 \end{itemize}
@@ -227,30 +227,30 @@ The virtio-msg transport handles feature bits in one or more
         supported or requested feature bits.
 \end{itemize}
 
-A device \emph{MUST} respond with all zero feature data for features bit
+A device MUST respond with all zero feature data for features bit
 requested beyond those the device implements.
 
 \subsubsection{Error Signaling}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling}
 
-Errors may arise from: (a) malformed or unsupported transport messages, (b)
+Errors MAY arise from: (a) malformed or unsupported transport messages, (b)
 transmission or routing issues within a bus implementation, or (c) device-side
 failures while processing a valid request. Local detection and recovery are
-preferred, but a virtio-msg bus \textbf{MAY} report transmission errors to the
+preferred, but a virtio-msg bus MAY report transmission errors to the
 virtio-msg transport when it cannot deliver a request or obtain a response
 within a bounded policy.
 
 The following rules apply:
 \begin{itemize}
-  \item A bus implementation \textbf{MAY} surface a transport-visible failure
+  \item A bus implementation MAY surface a transport-visible failure
     (implementation-defined) after exhausting any bounded retry policy for
     a transmission error.
-  \item Malformed headers or unsupported \field{msg_id} values \textbf{SHOULD}
-    be discarded; the receiver \textbf{MAY} log them and \textbf{SHOULD NOT}
+  \item Malformed headers or unsupported \field{msg_id} values SHOULD
+    be discarded; the receiver MAY log them and SHOULD NOT
     generate further protocol traffic in response.
-  \item Event (one-way) messages \textbf{MUST NOT} elicit an error response.
+  \item Event (one-way) messages MUST NOT elicit an error response.
   \item Recovery actions (retry, selective reset, device removal) are
-    environment-specific but \textbf{MUST} comply with any normative reset
+    environment-specific but MUST comply with any normative reset
     or status handling semantics described in
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Operation}.
 \end{itemize}
@@ -272,7 +272,7 @@ virtio-msg groups messages into two categories:
     These messages are \emph{optional} in environments where
     device discovery or state changes occur through other means (e.g., device
     tree). However, if a bus chooses to handle those tasks via messages,
-    it \emph{should} implement the appropriate bus message definitions.
+    it SHOULD implement the appropriate bus message definitions.
 
   \item[\textbf{Transport Messages}:]
     Used for device-specific operations, such as:
@@ -285,7 +285,7 @@ virtio-msg groups messages into two categories:
       \item Handling device status and notifications (\msgref{SET_DEVICE_STATUS},
         \msgref{EVENT_USED}, etc.).
     \end{itemize}
-    The bus \emph{MUST} relay these messages to the correct device,
+    The bus MUST relay these messages to the correct device,
     regardless of how the bus discovered or enumerated that device.
 \end{description}
 
@@ -296,7 +296,7 @@ fully message-based enumeration and hotplug if desired.
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
 
-All values and fields defined in the virtio-msg messages \emph{MUST}
+All values and fields defined in the virtio-msg messages MUST
 be encoded in little-endian.
 
 \subsubsection{Common Message Format}
@@ -324,7 +324,7 @@ Field semantics:
     \begin{itemize}
   \item Bit[0]: 0=request, 1=response.
   \item Bit[1]: 0=Transport Message, 1=Bus Message.
-  \item Bits[2..7]: \textbf{MUST} be zero; receivers \textbf{MUST} ignore.
+  \item Bits[2..7]: MUST be zero; receivers MUST ignore.
     \end{itemize}
   \item \field{msg_id}: Message ID identifying the message definition. Ranges
     are defined in
@@ -332,20 +332,20 @@ Field semantics:
     and
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
   \item \field{dev_num}: For Transport Messages, the target device number; for
-    Bus Messages \textbf{MUST} be zero.
+    Bus Messages MUST be zero.
   \item \field{token}: Non-zero for requests (which expect a response); zero
-    \textbf{MUST} be used only for event (one-way) messages. Responses
-    \textbf{MUST} echo the request's \field{token}.
+    MUST be used only for event (one-way) messages. Responses
+    MUST echo the request's \field{token}.
   \item \field{msg_size}: Total size in bytes of the complete message (header +
-    payload). \textbf{MUST} be \(\ge 8\) and \textbf{MUST NOT} exceed the
+    payload). MUST be \(\ge 8\) and MUST NOT exceed the
     bus's maximum message size.
   \item \field{payload}: Operation-specific data. Unused trailing bytes (if any
-    introduced by a bus framing) \textbf{MUST} be zero and \textbf{MUST} be
+    introduced by a bus framing) MUST be zero and MUST be
     ignored by receivers.
 \end{itemize}
 
-All reserved header bits and any unspecified header values \textbf{MUST} be
-sent as zero and \textbf{MUST} be ignored on receive to preserve forward
+All reserved header bits and any unspecified header values MUST be
+sent as zero and MUST be ignored on receive to preserve forward
 compatibility.
 
 \subsubsection{Message Correlation}
@@ -353,7 +353,7 @@ compatibility.
 
 Messages are either requests or events. Requests require a response. Events are
 one way and do not have a response. Most requests defined today originate at the
-driver side but bus message requests such as \busref{PING} may originate at
+driver side but bus message requests such as \busref{PING} MAY originate at
 either driver side or device side.
 
 This section defines how responses are correlated to requests. An implementation
@@ -370,10 +370,10 @@ Rules:
 \begin{itemize}
   \item The request originator assigns a non-zero \field{token} for every
     request such that the tuple is unique for all inflight requests.
-  \item Event (one-way) messages \textbf{MUST} set \field{token}=0
-  \item A response \textbf{MUST} echo \field{token} and \field{dev_num}.
+  \item Event (one-way) messages MUST set \field{token}=0
+  \item A response MUST echo \field{token} and \field{dev_num}.
   \item Reception of unknown or already completed correlation tuples
-    \textbf{SHOULD} result in discarding the response without further protocol
+    SHOULD result in discarding the response without further protocol
     action.
 \end{itemize}
 
@@ -383,14 +383,14 @@ Rules:
 A \textbf{virtio-msg bus} is responsible for identifying available virtio devices
 and informing the operating system (or higher-level software environment) so
 that those devices can be bound to the appropriate driver. The following
-subsections describe optional messaging mechanisms that a bus \emph{MAY} use to
+subsections describe optional messaging mechanisms that a bus MAY use to
 discover or manage devices, as well as general guidelines for completing the
 device registration process.
 
 \subsubsection{Device Discovery}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Device Discovery}
 
-Bus implementations \emph{MAY} discover their devices in various ways:
+Bus implementations MAY discover their devices in various ways:
 \begin{itemize}
   \item By parsing platform data such as a device tree or ACPI tables,
   \item By receiving enumeration data from a hypervisor or firmware,
@@ -400,10 +400,10 @@ Bus implementations \emph{MAY} discover their devices in various ways:
 
 This specification \emph{defines} \busref{GET_DEVICES} for implementations that
 wish to carry out discovery entirely via messages, but it does \textbf{not}
-mandate use of this approach. A bus implementation \emph{MAY} skip
+mandate use of this approach. A bus implementation MAY skip
 \busref{GET_DEVICES} altogether if it already knows which devices exist (e.g.,
 via a device tree). In any case, once a bus has established the presence of a
-device, it \emph{SHOULD} call \msgref{GET_DEVICE_INFO} to retrieve the device ID
+device, it SHOULD call \msgref{GET_DEVICE_INFO} to retrieve the device ID
 and vendor ID. The bus can then register the device with the host OS
 so the appropriate virtio driver probe routine is invoked.
 
@@ -411,7 +411,7 @@ so the appropriate virtio driver probe routine is invoked.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Device Hotplug}
 
 If the bus supports dynamic addition or removal of devices at runtime, it
-\emph{MAY} announce these events using messages:
+MAY announce these events using messages:
 \begin{itemize}
   \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_READY for a newly
     available device,
@@ -419,27 +419,27 @@ If the bus supports dynamic addition or removal of devices at runtime, it
     that is no longer accessible.
 \end{itemize}
 
-Alternatively, the bus \emph{MAY} rely on external signals (e.g., an event from
+Alternatively, the bus MAY rely on external signals (e.g., an event from
 the platform or hypervisor) and inform the OS of hotplug changes out-of-band.
 This specification \emph{defines} \busref{EVENT_DEVICE}
 for implementations that prefer a fully message-based
 approach but does not require their use. In any scenario, once notified that a
-device has appeared, the bus \emph{SHOULD} query the device (e.g., via
+device has appeared, the bus SHOULD query the device (e.g., via
 \msgref{GET_DEVICE_INFO}) and register it with the OS. If a device is
-removed, the bus \emph{SHOULD} prompt the OS to unbind and release resources.
+removed, the bus SHOULD prompt the OS to unbind and release resources.
 
 \subsubsection{Monitoring the Bus}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Monitoring}
 
 An optional \busref{PING} message is provided for bus implementations that want
 to periodically verify connectivity with the other end (driver or device).
-Implementations \emph{MAY} use other keepalive or health-check
+Implementations MAY use other keepalive or health-check
 protocols instead. The general usage of \busref{PING} (if implemented) is:
 
 \begin{itemize}
   \item The initiator sends a 32-bit data field,
   \item The recipient responds by echoing this same 32-bit data,
-  \item If a response does not arrive in time, the initiator \emph{MAY} treat
+  \item If a response does not arrive in time, the initiator MAY treat
         the bus as unresponsive and trigger a global reset or other fallback
         procedure.
 \end{itemize}
@@ -465,7 +465,7 @@ The bus is also responsible for forwarding device-specific \emph{transport
 messages} to the correct device for each device number. Typically the bus does
 not interpret or modify these transport messages; its role is simply to ensure
 they reach the intended device. If the bus does not rely on messages for device
-enumeration or hotplug itself, it \emph{MUST} still be capable of transporting
+enumeration or hotplug itself, it MUST still be capable of transporting
 \msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_CONFIG}, etc.
 once the OS driver has identified a device and is performing initialization
 via the virtio-msg transport.
@@ -494,7 +494,7 @@ A typical device initialization flow includes:
     FEATURES_OK bit in the device status (\msgref{SET_DEVICE_STATUS}) and
     verifies that it is set in the return device status.
   \item \textbf{Initialize Configuration Space:}  
-    The driver may read (\msgref{GET_CONFIG}) or modify (\msgref{SET_CONFIG})
+    The driver MAY read (\msgref{GET_CONFIG}) or modify (\msgref{SET_CONFIG})
     configuration data, using the device's \emph{Configuration Generation Count}
     to prevent race conditions.
   \item \textbf{Set Up Virtqueues:}  
@@ -507,13 +507,13 @@ A typical device initialization flow includes:
     "driver," or "driver OK," following Virtio conventions).
 \end{enumerate}
 
-This sequence may vary slightly depending on the device's requirements, but it
+This sequence MAY vary slightly depending on the device's requirements, but it
 serves as a common baseline for virtio-msg transport implementations.
 
 \subsubsection{Device Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information}
 
-Once the bus or driver knows a device number is present, it \emph{SHOULD} send a
+Once the bus or driver knows a device number is present, it SHOULD send a
 \msgref{GET_DEVICE_INFO} to retrieve:
 
 \begin{itemize}
@@ -553,12 +553,12 @@ The driver then determines which features it can or wants to enable. Enabling a
 feature requires the driver to set the corresponding bit(s) and send
 them back to the device with \msgref{SET_DRIVER_FEATURES}. Once the driver has
 set all desired features it tries to set the FEATURES_OK bit in the device status
-via the \msgref{SET_DEVICE_STATUS} message.  The device may accept or reject the
+via the \msgref{SET_DEVICE_STATUS} message.  The device MAY accept or reject the
 selected features by returning the new device status with the FEATURES_OK bit
 set (accepted) or cleared (rejected).
 
 If the driver requests blocks beyond the number of feature bits the device
-exposes, the device \emph{MUST} respond with all zeros for the unsupported
+exposes, the device MUST respond with all zeros for the unsupported
 features.
 
 \subsubsection{Device Configuration}
@@ -588,8 +588,8 @@ To write a portion of the configuration space, the driver uses
 \end{itemize}
 
 If the generation count does not match the device's current value, the device
-\emph{MUST} reject the update as defined in the \msgref{SET_CONFIG} response.
-The driver \emph{SHOULD} then read the updated configuration space and
+MUST reject the update as defined in the \msgref{SET_CONFIG} response.
+The driver SHOULD then read the updated configuration space and
 reattempt if necessary.
 
 \subsubsection{Virtqueue Configuration}
@@ -622,7 +622,7 @@ The driver repeats these steps for each queue the device supports.
 \subsubsection{Status Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information}
 
-During initialization, the driver \emph{MAY} query the device's status via
+During initialization, the driver MAY query the device's status via
 \msgref{GET_DEVICE_STATUS} to check for errors or to see if the device is ready
 for feature negotiation or configuration changes. To advance or reset the
 device's state, the driver sends \msgref{SET_DEVICE_STATUS} with the desired
@@ -650,25 +650,25 @@ runtime resets or shutdown sequences.
 \subsubsection{Driver Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications}
 
-After setting up one or more virtqueues, the driver \emph{MUST} send notifications
+After setting up one or more virtqueues, the driver MUST send notifications
 to signal that new buffers are available for processing. The virtio-msg transport
 defines the message, \msgref{EVENT_AVAIL}, that the driver will use to
 notify the device of pending buffers.
 
-The driver side bus \emph{MAY} convert them to some form of
+The driver side bus MAY convert them to some form of
 out-of-band (OoB) notification.  If not using OoB notifications, the driver
-side bus \emph{SHOULD} send the messages via the normal message channel.
-As a final option, the bus \emph{MAY} discard the messages but only if it knows
+side bus SHOULD send the messages via the normal message channel.
+As a final option, the bus MAY discard the messages but only if it knows
 that the device will poll the virtqueues directly.
 
 \paragraph{EVENT\_AVAIL Usage}
 \begin{itemize}
   \item \textbf{Virtqueue Index}: Identifies which queue has new buffers.
   \item \textbf{Next Offset and Wrap}: If the VIRTIO_F_NOTIFICATION_DATA feature
-        has been negotiated, the driver \emph{MUST} sets these fields to
+        has been negotiated, the driver MUST sets these fields to
         indicate the next descriptor offset and wrap state
         so the device can jump directly to the updated buffers.
-        If this features has not been negotiated these fields \emph{MUST} be 0.
+        If this features has not been negotiated these fields MUST be 0.
   \item \textbf{Response}: The \msgref{EVENT_AVAIL} message does not have a
         direct response, but the device will subsequently process available
         buffers and eventually notify the driver when they are used.
@@ -677,10 +677,10 @@ that the device will poll the virtqueues directly.
 \subsubsection{Device Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications}
 
-During normal operation, the driver side bus \emph{MUST} send notifications to
+During normal operation, the driver side bus MUST send notifications to
 the driver about configuration changes, device status changes, or the
 completion of buffers in virtqueues using the messages described below.
-These notifications may be the result of:
+These notifications MAY be the result of:
 
 \begin{itemize}
     \item The same messages received in-band on the message channel from the
@@ -689,7 +689,7 @@ These notifications may be the result of:
         out-of-band (OoB) notification from the device side.  Example OoB
         notifications include things like specific MSIX or other IRQ signals.
     \item Manufactured by the device side bus periodically (polling).
-        This option should be reserved only for situation where nothing else
+        This option SHOULD be reserved only for situation where nothing else
         will work.
   \end{itemize}
 
@@ -699,7 +699,7 @@ These notifications may be the result of:
     at runtime.
   \item Includes the new \emph{Configuration Generation Count}, current device
     status, and optionally the updated portion of the configuration data.
-  \item If the data is not included, the driver \emph{SHOULD} issue
+  \item If the data is not included, the driver SHOULD issue
     \msgref{GET_CONFIG} to discover the updated configuration.
 \end{itemize}
 
@@ -711,7 +711,7 @@ These notifications may be the result of:
   \item The driver uses normal virtio methods (e.g., reading the "used" ring) to
     identify which buffers are complete.
   \item If a device does not support sending \msgref{EVENT_USED}, the driver
-     \emph{MAY} rely on standard virtqueue polling mechanisms to detect
+     MAY rely on standard virtqueue polling mechanisms to detect
      completion.
 \end{itemize}
 
@@ -720,42 +720,42 @@ These messages enable asynchronous updates from the device.
 \subsubsection{Configuration Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates}
 
-The driver \emph{MAY} issue new \msgref{SET_CONFIG}
+The driver MAY issue new \msgref{SET_CONFIG}
 messages after initialization if device configuration needs to be
-changed at runtime. The device \emph{MAY} also make configuration changes at
-runtime and \emph{MUST} signal those changes with \msgref{EVENT_CONFIG}
+changed at runtime. The device MAY also make configuration changes at
+runtime and MUST signal those changes with \msgref{EVENT_CONFIG}
 messages.
 
 \subsubsection{Virtqueue Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates}
 
-The driver \emph{MAY} issue new \msgref{SET_VQUEUE} for virtqueues that have not
+The driver MAY issue new \msgref{SET_VQUEUE} for virtqueues that have not
 yet be setup.  If the VIRTIO_F_RING_RESET feature has been negotiated,
 individual virtqueues can be reset and then optionally re-configured.
 
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
 
-The driver \emph{MAY} reset or shut down a device at any time by writing a status
+The driver MAY reset or shut down a device at any time by writing a status
 of 0 via \msgref{SET_DEVICE_STATUS}. This forces the device to discard its state
 and any pending operations on virtqueues. Once a device is reset, the driver
-\emph{MAY} reinitialize the device (see
+MAY reinitialize the device (see
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization})
 if it wishes to use the device again.
 
 \paragraph{Device Side Initiated Reset}
-In some circumstances, the device \emph{MAY} also trigger a reset if it
+In some circumstances, the device MAY also trigger a reset if it
 encounters an unrecoverable error. This can be signaled to the driver by sending
 an \msgref{EVENT_CONFIG} with a \emph{device status} with the DEVICE_NEEDS_RESET
-bit set.  The driver \emph{SHOULD} reset the device by writing a status of 0
-via the \msgref{SET_DEVICE_STATUS} message. The driver \emph{MAY} reinitialize
+bit set.  The driver SHOULD reset the device by writing a status of 0
+via the \msgref{SET_DEVICE_STATUS} message. The driver MAY reinitialize
 the device if it wishes to use the device again.
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
 
 Transport messages are used to configure and operate individual virtio devices.
 Unlike bus messages (which handle device enumeration, hotplug, or global resets),
-transport messages \textbf{MUST} be implemented by any virtio-msg device and
+transport messages MUST be implemented by any virtio-msg device and
 driver pair to enable standard virtio functionality (feature negotiation,
 configuration, virtqueues, etc.). The subsections below describe each message
 and clarify its required fields, typical usage patterns, and possible responses.
@@ -819,7 +819,7 @@ and above are reserved by this specification.
 
 \paragraph{Mandatory Transport Messages}
 For a virtio-msg device to be fully operational, the following messages
-\textbf{MUST} be supported:
+MUST be supported:
 \begin{itemize}
   \item \msgref{GET_DEVICE_INFO}
   \item \msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}
@@ -828,7 +828,7 @@ For a virtio-msg device to be fully operational, the following messages
   \item \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE}, and \msgref{RESET_VQUEUE}
 \end{itemize}
 
-The functionality of the following messages \textbf{MUST} be provided by
+The functionality of the following messages MUST be provided by
 in-band messages, out-of-band event notification, or bus implementation based
 polling:
 \begin{itemize}
@@ -860,10 +860,10 @@ Answer & 0 & 4 & Device ID \\
 \hline
 \end{tabular}
 
-The number of feature bits must be a multiple of 32.
+The number of feature bits MUST be a multiple of 32.
 
 This is the only message allowed for an inactive device. If this message queries
-an inactive device all fields in the response should be 0.
+an inactive device all fields in the response SHOULD be 0.
 
 \msgdef{GET_DEVICE_FEATURES}
 
@@ -883,7 +883,7 @@ Answer & 0 & 4 & Feature block index \\
 \hline
 \end{tabular}
 
-A feature block is a group of 32 bits.  The feature data \emph{MUST} be a
+A feature block is a group of 32 bits.  The feature data MUST be a
 multiple of 4 bytes in length.
 
 \msgdef{SET_DRIVER_FEATURES}
@@ -903,11 +903,11 @@ Answer & 0 & 0 & no extra data \\
 \hline
 \end{tabular}
 
-A feature block is a group of 32 bits.  The feature data \emph{MUST} be a
+A feature block is a group of 32 bits.  The feature data MUST be a
 multiple of 4 bytes in length.
 
 Note: As defined in \ref{sec:Basic Facilities of a Virtio Device / Feature Bits},
-if the device is not OK with the features set, it \emph{MUST} not allow
+if the device is not OK with the features set, it MUST not allow
 the FEATURES_OK bit in the device status to be set.
 
 \msgdef{GET_CONFIG}
@@ -983,8 +983,8 @@ Answer & 0 & 4 & New device status \\
 \hline
 \end{tabular}
 
-The resulting device status is returned and may not match the status set.  The
-device may set the DEVICE_NEEDS_RESET bit if it has an issue.  The device may
+The resulting device status is returned and MAY not match the status set.  The
+device MAY set the DEVICE_NEEDS_RESET bit if it has an issue.  The device MAY
 refuse to set the FEATURES_OK bit if it cannot operate with the features set
 by the driver.
 
@@ -1010,7 +1010,7 @@ Answer & 0 & 4 & Virtqueue index \\
 \end{tabular}
 
 If the maximum virtqueue size is zero, the virtqueue is not valid and
-\emph{MUST} not be used.
+MUST not be used.
 
 \msgdef{SET_VQUEUE}
 
@@ -1038,7 +1038,7 @@ Answer & 0 & 0 & no extra data \\
 This message is sent by the virtio-msg transport driver and requires a
 response from the device.
 
-The driver \emph{SHOULD NOT} send this message unless the VIRTIO_F_RING_RESET
+The driver SHOULD NOT send this message unless the VIRTIO_F_RING_RESET
 feature has been negotiated.
 
 \begin{tabular}{|l|l|l|l|}
@@ -1086,12 +1086,12 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Device status \\
 & 4 & 4 & Configuration generation count \\
 & 8 & 4 & Configuration offset \\
-& 12 & 4 & Number of bytes (\emph{MAY} be zero) \\
+& 12 & 4 & Number of bytes (MAY be zero) \\
 & 16 & ... & Configuration data \\
 \hline
 \end{tabular}
 
-The number of bytes field \emph{MAY} be zero. If so the configuration data field
+The number of bytes field MAY be zero. If so the configuration data field
 will also be of zero length. This is the normal case when the configuration
 generation count has not been changed.
 
@@ -1113,9 +1113,9 @@ Request & 0 & 4 & Virtqueue index \\
 \end{tabular}
 
 The \textbf{Next wrap} field is the MSB of the 32 bit value. The
-\textbf{Next offset} field is the other 31 bits. These fields should be 0 if
+\textbf{Next offset} field is the other 31 bits. These fields SHOULD be 0 if
 the VIRTIO_F_NOTIFICATION_DATA feature has not been negotiated. If the bus
-implementation is using out-of-band notifications, it should prevent this
+implementation is using out-of-band notifications, it SHOULD prevent this
 feature from being negotiated.
 
 \msgdef{EVENT_USED}
@@ -1136,7 +1136,7 @@ The bus messages defined in this specification facilitate device discovery,
 hotplug management, and liveness checks at the bus level.
 They are intended for bus implementations that wish to perform these operations
 \emph{via virtio-msg} rather than relying exclusively on external means (e.g.,
-firmware tables, device trees). Each bus instance \emph{may} use a subset of or
+firmware tables, device trees). Each bus instance MAY use a subset of or
 all these messages according to its design.
 
 \paragraph{Messages IDs and issuers}
@@ -1164,13 +1164,13 @@ IDs below 0x40 are used for request/response messages and 0x40 and above for
 event messages.
 
 Bus message IDs 0x80 and above are bus implementation specific. Bus
-implementations \emph{MAY} specify the policy that IDs below 0xC0 be used
+implementations MAY specify the policy that IDs below 0xC0 be used
 for request/response messages and IDs 0xC0 and above are used for event messages.
 
 \paragraph{Note:} A bus implementation \textbf{is not required} to use these
 messages if it already provides equivalent functionality through some
 platform-specific mechanism. However, if a bus chooses to handle enumeration,
-hotplug, etc. via virtio-msg, it \emph{should} implement the corresponding
+hotplug, etc. via virtio-msg, it SHOULD implement the corresponding
 message definitions below.
 
 \newcommand{\busdef}[1]{\subsubsection{BUS_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / BUS_MSG_#1}}
@@ -1237,12 +1237,12 @@ DEVICE_BUS_STATE_REMOVED    & 0x2  & Device is no longer present \\
 \hline
 reserved          & 0x3 to 0x7FFF & Reserved for standard use \\
 \hline
-any               & 0x8000 to 0xFFFF & may be used by bus implementations \\
+any               & 0x8000 to 0xFFFF & MAY be used by bus implementations \\
 \hline
 \end{tabular}
 
 This event is sent when the bus level state of the device has changed.
-It can indicate when a device is added or removed. It may also be used by
+It can indicate when a device is added or removed. It MAY also be used by
 bus implementations to indicate other states.
 
 \busdef{PING}
@@ -1263,15 +1263,15 @@ Answer & 0 & 4 & Request Data \\
 \subsection{Compliance}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance}
 
-This section details the requirements that an implementation \emph{MUST} meet to
+This section details the requirements that an implementation MUST meet to
 be considered compliant with the virtio-msg transport. It distinguishes between
-\emph{mandatory} behaviors that all implementations \emph{MUST} support and
+\emph{mandatory} behaviors that all implementations MUST support and
 \emph{optional} behaviors that are permissible but not required.
 
 \subsubsection{Normative References}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance / NormativeRefs}
-The terms \textbf{MUST}, \textbf{MUST NOT}, \textbf{SHOULD}, \textbf{SHOULD NOT},
-and \textbf{MAY} in this document are to be interpreted as specified by
+The terms MUST, MUST NOT, SHOULD, SHOULD NOT,
+and MAY in this document are to be interpreted as specified by
 \href{https://www.rfc-editor.org/rfc/rfc2119}{RFC 2119}.
 
 \subsubsection{Mandatory Requirements}
@@ -1279,7 +1279,7 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 
 \paragraph{General Transport Requirements}
 \begin{itemize}
-  \item An implementation \textbf{MUST} correctly process or generate all
+  \item An implementation MUST correctly process or generate all
     \emph{transport messages} defined by this specification that are necessary
     for device operation. At minimum, this includes:
     \begin{itemize}
@@ -1289,41 +1289,41 @@ and \textbf{MAY} in this document are to be interpreted as specified by
       \item \msgref{GET_DEVICE_STATUS}, \msgref{SET_DEVICE_STATUS}
     \end{itemize}
     Failure to support these messages renders a device or driver noncompliant.
-  \item An implementation \textbf{MUST} adhere to the
+  \item An implementation MUST adhere to the
     \textbf{transport revision} and \textbf{maximum message size} constraints
-    indicated by each bus instance. For example, it \textbf{MUST NOT} exceed
+    indicated by each bus instance. For example, it MUST NOT exceed
     the \textbf{maximum message size} in any message.
 \end{itemize}
 
 \paragraph{Device-Side Requirements}
 \begin{itemize}
-  \item A device \textbf{MUST} provide accurate data in response to
+  \item A device MUST provide accurate data in response to
     \msgref{GET_DEVICE_INFO}, including the correct \emph{device ID}, \emph{vendor ID},
     number of feature bits, and configuration size.
-  \item A device \textbf{MUST} accept or reject driver-requested features via
-    \msgref{SET_DRIVER_FEATURES} consistently with its capabilities and \textbf{MUST}
+  \item A device MUST accept or reject driver-requested features via
+    \msgref{SET_DRIVER_FEATURES} consistently with its capabilities and MUST
     return the final agreed-upon feature bits to the driver.
-  \item A device \textbf{MUST} maintain a valid \emph{Configuration Generation
-    Count} and \textbf{MUST} reject \msgref{SET_CONFIG} or similar operations if
+  \item A device MUST maintain a valid \emph{Configuration Generation
+    Count} and MUST reject \msgref{SET_CONFIG} or similar operations if
     the generation count supplied by the driver does not match.
-  \item A device \textbf{MUST} properly manage virtqueues configured via
+  \item A device MUST properly manage virtqueues configured via
     \msgref{SET_VQUEUE}, including storing and using the provided addresses for
     descriptor, driver, and device areas.
-  \item A device \textbf{MUST} respect \msgref{SET_DEVICE_STATUS} changes: if the
-    status is set to zero, the device \emph{MUST} reset its internal state and
+  \item A device MUST respect \msgref{SET_DEVICE_STATUS} changes: if the
+    status is set to zero, the device MUST reset its internal state and
     discard any pending operations.
 \end{itemize}
 
 \paragraph{Driver-Side Requirements}
 \begin{itemize}
-  \item A driver \textbf{MUST} send valid requests that do not exceed
+  \item A driver MUST send valid requests that do not exceed
     the \textbf{maximum message size}, including correct offsets and block
     counts in \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES}, \msgref{GET_CONFIG},
     and \msgref{SET_CONFIG}.
-  \item A driver \emph{MUST} handle a \msgref{SET_CONFIG} being rejected for a
+  \item A driver MUST handle a \msgref{SET_CONFIG} being rejected for a
     mismatched configuration generation count.
-  \item A driver \textbf{MUST} initialize each device's virtqueues (where needed)
-    via \msgref{SET_VQUEUE} before attempting normal I/O and \textbf{SHOULD}
+  \item A driver MUST initialize each device's virtqueues (where needed)
+    via \msgref{SET_VQUEUE} before attempting normal I/O and SHOULD
     query the device's status or configuration if an unexpected
     \msgref{EVENT_CONFIG} or error arises.
 \end{itemize}
@@ -1333,28 +1333,28 @@ and \textbf{MAY} in this document are to be interpreted as specified by
 
 \paragraph{Bus Messages for Enumeration and Hotplug}
 \begin{itemize}
-  \item Implementations \emph{MAY} use \busref{GET_DEVICES}
+  \item Implementations MAY use \busref{GET_DEVICES}
     and \busref{EVENT_DEVICE} for discovering and managing devices in a
     message-driven manner. However, this is not mandatory if other enumeration
     methods (e.g., device tree, ACPI, hypervisor firmware) are used.
-  \item If a bus chooses to implement these messages, it \textbf{MUST} do
+  \item If a bus chooses to implement these messages, it MUST do
     so in compliance with their defined formats and semantics (see
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}).
 \end{itemize}
 
 \paragraph{Optional Bus-Level Messages}
 \begin{itemize}
-  \item \busref{PING} \emph{MAY} be implemented for keepalive or health checks.
-    If used, both sides \textbf{MUST} echo the 32-bit data field precisely.
+  \item \busref{PING} MAY be implemented for keepalive or health checks.
+    If used, both sides MUST echo the 32-bit data field precisely.
 \end{itemize}
 
 \paragraph{Runtime Notifications}
 \begin{itemize}
-  \item A device or the driver side bus \emph{MUST} send \msgref{EVENT_CONFIG}
+  \item A device or the driver side bus MUST send \msgref{EVENT_CONFIG}
     to inform the driver of configuration of device status changes.
-  \item A device or the driver side bus \emph{MUST} send \msgref{EVENT_USED}
+  \item A device or the driver side bus MUST send \msgref{EVENT_USED}
     to inform the driver of (likely) buffer completions.
-  \item A driver \emph{MUST} send \msgref{EVENT_AVAIL} to notify the device that
+  \item A driver MUST send \msgref{EVENT_AVAIL} to notify the device that
     new buffers are available.
 \end{itemize}
 
@@ -1369,7 +1369,7 @@ A \emph{bus implementation} is compliant if:
   \item It enforces the \textbf{maximum message size} and \textbf{transport
     revision} advertised for its instance.
   \item If it implements bus messages (e.g., \busref{GET_DEVICES}, \busref{PING}),
-    those must follow the formats in
+    those MUST follow the formats in
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
 \end{itemize}
 
@@ -1398,7 +1398,7 @@ A \emph{device} is compliant if:
 \subsubsection{Conformance Statements}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance / Conformance}
 
-An implementation \textbf{MUST} meet all "MUST" requirements stated in:
+An implementation MUST meet all "MUST" requirements stated in:
 \begin{itemize}
   \item \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts} (Basic Concepts)
   \item \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation} (Bus Operation)
@@ -1408,8 +1408,8 @@ An implementation \textbf{MUST} meet all "MUST" requirements stated in:
 \end{itemize}
 to claim compliance with the virtio-msg specification.
 
-Implementations that do not follow these mandatory rules \emph{MUST NOT} declare
-themselves conformant. Features or messages labeled as "optional" (\emph{MAY})
+Implementations that do not follow these mandatory rules MUST NOT declare
+themselves conformant. Features or messages labeled as "optional" (MAY)
 do not invalidate compliance if omitted, provided all required behaviors are
 still correctly implemented.
 
@@ -1417,9 +1417,9 @@ still correctly implemented.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance / Versioning}
 
 A higher transport \textbf{transport revision} or additional \textbf{feature
-bits} \emph{MAY} extend the protocol with new messages or capabilities. However,
-to remain compliant with earlier revisions, devices and drivers \emph{SHOULD}
+bits} MAY extend the protocol with new messages or capabilities. However,
+to remain compliant with earlier revisions, devices and drivers SHOULD
 continue to honor the mandatory messages and semantics from prior revisions. If
-a bus instance or device does not support an advanced feature, it \emph{SHOULD}
+a bus instance or device does not support an advanced feature, it SHOULD
 reject or ignore those requests rather than undefined behavior.
 
