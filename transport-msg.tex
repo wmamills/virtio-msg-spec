@@ -3,9 +3,8 @@
 \newcommand{\conceptref}[1]{\hyperref[sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / #1]{#1}}
 \newcommand{\msgref}[1]{\hyperref[sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_#1]{VIRTIO_MSG_#1}}
 \newcommand{\busref}[1]{\hyperref[sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / BUS_MSG_#1]{BUS_MSG_#1}}
-
-\subsection{Introduction}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Introduction}
+\newcommand{\msgdef}[1]{\subsubsection{VIRTIO_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_#1}}
+\newcommand{\busdef}[1]{\subsubsection{BUS_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / BUS_MSG_#1}}
 
 This section defines \textbf{virtio-msg}, a transport mechanism that encapsulates
 virtio operations as discrete message exchanges rather than relying on PCI or
@@ -13,8 +12,6 @@ memory-mapped I/O regions. It separates bus-level functionality (e.g., device
 enumeration, hotplug events) from device-specific operations (e.g., feature
 negotiation, virtqueue setup), ensuring that a single, generic transport layer
 can be reused across multiple bus implementations.
-
-\subsubsection{Purpose}
 
 virtio-msg addresses several key objectives:
 
@@ -36,6 +33,15 @@ virtio-msg addresses several key objectives:
   space, virtqueues), so existing virtio drivers and device implementations can
   integrate smoothly once a device is discovered and registered.
 \end{itemize}
+
+\subsection{Basic Concepts}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts}
+
+The virtio-msg transport relies on a set of foundational concepts to ensure
+reusability across different bus implementations and flexibility in device
+capabilities. This section defines those concepts and clarifies how they apply,
+regardless of whether the bus leverages message-based enumeration or platform
+data for device discovery.
 
 \subsubsection{High-Level Architecture}
 
@@ -73,6 +79,8 @@ virtio-msg operates around two layers:
 
 \subsubsection{System Topology}
 
+A virtio-msg system contains the following elements:
+
 \begin{itemize}
   \item \textbf{Bus Instances and Devices}: Each bus instance advertises its
         capabilities (e.g., transport revision, maximum message size) and
@@ -86,26 +94,6 @@ virtio-msg operates around two layers:
         respond to the transport messages. The bus forwards these messages to
         the correct device instance based on device number.
 \end{itemize}
-
-\subsubsection{Optional Bus Messages}
-
-This specification \emph{defines} messages such as \busref{GET_DEVICES},
-\busref{EVENT_DEVICE}, and \busref{PING} for a
-completely message-based approach to enumeration, hotplug, and bus-wide health.
-However, these are \emph{not} mandatory if a bus instance already handles those
-functions via firmware, device tree, or other platform features. The only strict
-requirement is that the bus MUST be able to forward device-specific
-\emph{transport messages} once a device is recognized, so the virtio-msg driver
-can manage it.
-
-\subsection{Basic Concepts}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts}
-
-The virtio-msg transport relies on a set of foundational concepts to ensure
-reusability across different bus implementations and flexibility in device
-capabilities. This section defines those concepts and clarifies how they apply,
-regardless of whether the bus leverages message-based enumeration or platform
-data for device discovery.
 
 \subsubsection{Transport Revisions and Maximum Message Size}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions}
@@ -292,6 +280,17 @@ virtio-msg groups messages into two categories:
 The resulting design allows a bus to remain minimal if it obtains device
 information from a device tree or firmware tables, while still supporting
 fully message-based enumeration and hotplug if desired.
+
+\subsubsection{Optional Bus Messages}
+
+This specification \emph{defines} messages such as \busref{GET_DEVICES},
+\busref{EVENT_DEVICE}, and \busref{PING} for a
+completely message-based approach to enumeration, hotplug, and bus-wide health.
+However, these are \emph{not} mandatory if a bus instance already handles those
+functions via firmware, device tree, or other platform features. The only strict
+requirement is that the bus MUST be able to forward device-specific
+\emph{transport messages} once a device is recognized, so the virtio-msg driver
+can manage it.
 
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
@@ -837,8 +836,6 @@ polling:
   \item \msgref{EVENT_CONFIG}
 \end{itemize}
 
-\newcommand{\msgdef}[1]{\subsubsection{VIRTIO_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_#1}}
-
 \msgdef{GET_DEVICE_INFO}
 
 This message is sent by the virtio-msg transport driver and requires a
@@ -1172,8 +1169,6 @@ messages if it already provides equivalent functionality through some
 platform-specific mechanism. However, if a bus chooses to handle enumeration,
 hotplug, etc. via virtio-msg, it SHOULD implement the corresponding
 message definitions below.
-
-\newcommand{\busdef}[1]{\subsubsection{BUS_MSG_#1}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / BUS_MSG_#1}}
 
 \busdef{GET_DEVICES}
 
