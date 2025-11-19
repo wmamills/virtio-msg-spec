@@ -190,6 +190,15 @@ size. The maximum useful message size is currently expected to be 274.
 This value is large enough to support a GET_CONFIG or SET_CONFIG message with a
 configuration data payload of 256 bytes.
 
+\paragraph{Versioning and Forward Compatibility}
+
+A higher transport \textbf{transport revision} or additional \textbf{feature
+bits} MAY extend the protocol with new messages or capabilities. However,
+to remain compliant with earlier revisions, devices and drivers SHOULD
+continue to honor the mandatory messages and semantics from prior revisions. If
+a bus instance or device does not support an advanced feature, it SHOULD
+reject or ignore those requests rather than undefined behavior.
+
 \subsubsection{Device Numbers and Enumeration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts /
 Device Numbers}
@@ -1391,14 +1400,4 @@ Implementations that do not follow these mandatory rules MUST NOT declare
 themselves conformant. Features or messages labeled as "optional" (MAY)
 do not invalidate compliance if omitted, provided all required behaviors are
 still correctly implemented.
-
-\subsubsection{Versioning and Forward Compatibility}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Compliance / Versioning}
-
-A higher transport \textbf{transport revision} or additional \textbf{feature
-bits} MAY extend the protocol with new messages or capabilities. However,
-to remain compliant with earlier revisions, devices and drivers SHOULD
-continue to honor the mandatory messages and semantics from prior revisions. If
-a bus instance or device does not support an advanced feature, it SHOULD
-reject or ignore those requests rather than undefined behavior.
 
