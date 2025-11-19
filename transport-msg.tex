@@ -77,6 +77,48 @@ virtio-msg operates around two layers:
     environments.
 \end{enumerate}
 
+\subsubsection{Relationship Between Bus and Transport}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Relationship between bus and transport}
+
+This subsubsection explains the division of responsibilities: the bus layer is
+the mandatory carrier that moves messages between driver and device endpoints
+(e.g., over IPC, shared memory with signalling or hardware messaging), while
+the virtio-msg transport defines the semantics of those messages.
+
+virtio-msg groups messages into two categories:
+
+\begin{description}
+  \item[\textbf{Bus Messages}:]
+    Intended for global bus operations such as enumerating device numbers
+    (\busref{GET_DEVICES}), managing device hotplug events (\busref{EVENT_DEVICE})
+    or assessing bus-wide health (\busref{PING}).
+    These messages are \emph{optional} in environments where
+    device discovery or state changes occur through other means (e.g., device
+    tree). However, if a bus chooses to handle those tasks via messages,
+    it SHOULD implement the appropriate bus message definitions.
+
+  \item[\textbf{Transport Messages}:]
+    Used for device-specific operations, such as:
+    \begin{itemize}
+      \item Retrieving or setting features (\msgref{GET_DEVICE_FEATURES},
+        \msgref{SET_DRIVER_FEATURES}),
+      \item Accessing device configuration (\msgref{GET_CONFIG},
+        \msgref{SET_CONFIG}),
+      \item Managing virtqueues (\msgref{SET_VQUEUE}, \msgref{RESET_VQUEUE}),
+      \item Handling device status and notifications (\msgref{SET_DEVICE_STATUS},
+        \msgref{EVENT_USED}, etc.).
+    \end{itemize}
+    A bus implementation MUST relay these messages to the device number
+    identified in the header, regardless of how it discovered or enumerated
+    that device. Apart from enforcing generic transport limits (for example,
+    maximum message size), a bus SHOULD treat transport messages as opaque and
+    avoid modifying them.
+\end{description}
+
+This separation lets a bus remain minimal if it obtains device information from
+firmware tables, while still supporting fully message-based enumeration and
+hotplug when desired.
+
 \subsubsection{System Topology}
 
 A virtio-msg system contains the following elements:
@@ -247,51 +289,6 @@ This specification does not mandate a specific error reporting message for
 transmission failures; it only permits a virtio-msg bus to surface such
 failures to the virtio-msg transport when silent recovery is not feasible.
 
-\subsubsection{Bus vs. Transport Messages}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / BusVsTransport}
-
-virtio-msg groups messages into two categories:
-
-\begin{description}
-  \item[\textbf{Bus Messages}:]
-    Intended for global bus operations such as enumerating device numbers
-    (\busref{GET_DEVICES}), managing device hotplug events (\busref{EVENT_DEVICE})
-    or assessing bus-wide health (\busref{PING}).
-    These messages are \emph{optional} in environments where
-    device discovery or state changes occur through other means (e.g., device
-    tree). However, if a bus chooses to handle those tasks via messages,
-    it SHOULD implement the appropriate bus message definitions.
-
-  \item[\textbf{Transport Messages}:]
-    Used for device-specific operations, such as:
-    \begin{itemize}
-      \item Retrieving or setting features (\msgref{GET_DEVICE_FEATURES},
-        \msgref{SET_DRIVER_FEATURES}),
-      \item Accessing device configuration (\msgref{GET_CONFIG},
-        \msgref{SET_CONFIG}),
-      \item Managing virtqueues (\msgref{SET_VQUEUE}, \msgref{RESET_VQUEUE}),
-      \item Handling device status and notifications (\msgref{SET_DEVICE_STATUS},
-        \msgref{EVENT_USED}, etc.).
-    \end{itemize}
-    The bus MUST relay these messages to the correct device,
-    regardless of how the bus discovered or enumerated that device.
-\end{description}
-
-The resulting design allows a bus to remain minimal if it obtains device
-information from a device tree or firmware tables, while still supporting
-fully message-based enumeration and hotplug if desired.
-
-\subsubsection{Optional Bus Messages}
-
-This specification \emph{defines} messages such as \busref{GET_DEVICES},
-\busref{EVENT_DEVICE}, and \busref{PING} for a
-completely message-based approach to enumeration, hotplug, and bus-wide health.
-However, these are \emph{not} mandatory if a bus instance already handles those
-functions via firmware, device tree, or other platform features. The only strict
-requirement is that the bus MUST be able to forward device-specific
-\emph{transport messages} once a device is recognized, so the virtio-msg driver
-can manage it.
-
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
 
@@ -375,18 +372,6 @@ Rules:
     SHOULD result in discarding the response without further protocol
     action.
 \end{itemize}
-
-\subsubsection{Bus and Transport Messages}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Bus and Transport Messages}
-
-The bus is responsible for forwarding device-specific \emph{transport
-messages} to the correct device for each device number. Typically the bus does
-not interpret or modify these transport messages; its role is simply to ensure
-they reach the intended device. If the bus does not rely on messages for device
-enumeration or hotplug itself, it MUST still be capable of transporting
-\msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES}, \msgref{SET_CONFIG}, etc.
-once the OS driver has identified a device and is performing initialization
-via the virtio-msg transport.
 
 \subsection{Device Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Device Discovery}
 
