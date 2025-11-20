@@ -852,11 +852,27 @@ or polling.
 \subsubsection{Configuration Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates}
 
-The driver MAY issue new \msgref{SET_CONFIG}
-messages after initialization if device configuration needs to be
-changed at runtime. The device MAY also make configuration changes at
-runtime and MUST signal those changes with \msgref{EVENT_CONFIG}
-messages.
+Drivers may update configuration fields at runtime using \msgref{SET_CONFIG}
+when features such as device modes or limits need to change. Devices can also
+update configuration data autonomously but must signal those changes via
+\msgref{EVENT_CONFIG}.
+
+\drivernormative{\paragraph}{Runtime Configuration (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Driver}
+\begin{itemize}
+  \item A driver MAY issue \msgref{SET_CONFIG} after initialization, provided it
+        includes the current configuration generation count and follows the same
+        validation rules as during setup.
+  \item Upon receiving an \msgref{EVENT_CONFIG}, the driver SHOULD refresh its
+        view of the configuration (via the data provided or by reissuing
+        \msgref{GET_CONFIG}) before relying on the updated values.
+\end{itemize}
+
+\devicenormative{\paragraph}{Runtime Configuration (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Device}
+\begin{itemize}
+  \item If a device updates its configuration after initialization, it MUST send
+        \msgref{EVENT_CONFIG} to inform the driver of the change and provide the
+        new configuration generation count.
+\end{itemize}
 
 \subsubsection{Virtqueue Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates}
