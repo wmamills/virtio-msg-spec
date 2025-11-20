@@ -338,21 +338,25 @@ information.
 \subsubsection{Feature Negotiation Blocks}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks}
 
-The virtio-msg transport handles feature bits in one or more
-\textbf{32-bits blocks}, accessed via \msgref{GET_DEVICE_FEATURES} and
-\msgref{SET_DRIVER_FEATURES}. Each block corresponds to up to 32 features:
+The virtio-msg transport organizes feature bits into 32-bit blocks accessed by
+\msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}. Each block
+represents up to 32 feature bits:
 
 \begin{itemize}
   \item \textbf{Block Index}: The starting block (e.g., block 0 for
         features 0--31, block 1 for features 32--63, etc.).
   \item \textbf{Number of Blocks}: How many blocks the driver wishes to retrieve
         or modify in a single message.
-  \item \textbf{Feature Data}: The 32 bits values representing a device's
-        supported or requested feature bits.
+  \item \textbf{Feature Data}: The 32-bit values representing the supported (or
+        driver-requested) feature bits in the selected blocks.
 \end{itemize}
 
-A device MUST respond with all zero feature data for features bit
-requested beyond those the device implements.
+\devicenormative{\paragraph}{Feature Blocks (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks / Device}
+\begin{itemize}
+  \item When \msgref{GET_DEVICE_FEATURES} covers blocks that extend beyond the
+        features a device implements, the device MUST return zero for the
+        feature data in those positions.
+\end{itemize}
 
 \subsubsection{Error Signaling}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling}
