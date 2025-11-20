@@ -1102,27 +1102,36 @@ Answer  & 0 & 4 & Feature block index (echoed) \\
 
 \msgdef{SET_DRIVER_FEATURES}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+Drivers use \msgref{SET_DRIVER_FEATURES} to acknowledge the subset of feature
+bits they wish to enable. The payload mirrors \msgref{GET_DEVICE_FEATURES},
+supplying an index, count, and 32-bit feature data for the selected blocks.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Feature block index \\
-& 4 & 4 & Number of feature blocks \\
-& 8 & ... & Feature data \\
+        & 4 & 4 & Number of feature blocks \\
+        & 8 & ... & Feature data \\
 \hline
-Answer & 0 & 0 & no extra data \\
+Answer  & 0 & 0 & No additional data \\
 \hline
 \end{tabular}
 
-A feature block is a group of 32 bits.  The feature data MUST be a
-multiple of 4 bytes in length.
+\drivernormative{\paragraph}{SET\_DRIVER\_FEATURES (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Driver}
+\begin{itemize}
+  \item A driver MUST set only the feature bits it intends to enable in the
+        blocks supplied to \msgref{SET_DRIVER_FEATURES}.
+\end{itemize}
 
-Note: As defined in \ref{sec:Basic Facilities of a Virtio Device / Feature Bits},
-if the device is not OK with the features set, it MUST not allow
-the FEATURES_OK bit in the device status to be set.
+\devicenormative{\paragraph}{SET\_DRIVER\_FEATURES (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Device}
+\begin{itemize}
+  \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update its
+        acknowledged feature set to match the data supplied and MUST report that
+        set consistently in subsequent \msgref{GET_DEVICE_FEATURES} responses.
+        If it cannot support the requested set, it SHOULD clear the FEATURES\_OK
+        bit in the device status.
+\end{itemize}
 
 \msgdef{GET_CONFIG}
 
