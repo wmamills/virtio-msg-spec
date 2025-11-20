@@ -877,9 +877,28 @@ update configuration data autonomously but must signal those changes via
 \subsubsection{Virtqueue Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates}
 
-The driver MAY issue new \msgref{SET_VQUEUE} for virtqueues that have not
-yet be setup.  If the VIRTIO_F_RING_RESET feature has been negotiated,
-individual virtqueues can be reset and then optionally re-configured.
+Drivers may provision unused virtqueues later in the device lifetime by issuing
+\msgref{SET_VQUEUE}, and they may reconfigure existing queues if the
+VIRTIO\_F\_RING\_RESET feature has been negotiated.
+
+\drivernormative{\paragraph}{Runtime Virtqueue Changes (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Driver}
+\begin{itemize}
+  \item A driver MAY configure additional virtqueues after initialization using
+        \msgref{SET_VQUEUE}, provided it follows the same validation steps
+        (e.g., checking the maximum queue size).
+  \item If VIRTIO\_F\_RING\_RESET is negotiated, the driver SHOULD use
+        \msgref{RESET_VQUEUE} before reprogramming a queue to avoid races with
+        the device.
+\end{itemize}
+
+\devicenormative{\paragraph}{Runtime Virtqueue Changes (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Device}
+\begin{itemize}
+  \item A device MUST honor \msgref{SET_VQUEUE} requests issued after
+        initialization and update the queue parameters accordingly.
+  \item When \msgref{RESET_VQUEUE} is received (and VIRTIO\_F\_RING\_RESET is
+        negotiated), the device MUST quiesce the queue and allow the driver to
+        reconfigure it without processing stale data.
+\end{itemize}
 
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
