@@ -1070,24 +1070,35 @@ Answer & 0 & 4 & Device ID \\
 
 \msgdef{GET_DEVICE_FEATURES}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+Drivers retrieve device feature bits in 32-bit blocks via
+\msgref{GET_DEVICE_FEATURES}; the response echoes the requested block index and
+returns one or more 32-bit values with the feature bits in that range.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Feature block index \\
-& 4 & 4 & Number of feature blocks \\
+        & 4 & 4 & Number of feature blocks \\
 \hline
-Answer & 0 & 4 & Feature block index \\
-& 4 & 4 & Number of feature blocks \\
-& 8 & ... & Feature data \\
+Answer  & 0 & 4 & Feature block index (echoed) \\
+        & 4 & 4 & Number of feature blocks (echoed) \\
+        & 8 & ... & Feature data (multiples of 32 bits) \\
 \hline
 \end{tabular}
 
-A feature block is a group of 32 bits.  The feature data MUST be a
-multiple of 4 bytes in length.
+\devicenormative{\paragraph}{GET\_DEVICE\_FEATURES (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Device}
+\begin{itemize}
+  \item A device MUST return zero for any feature bits beyond those it
+        implements when responding to \msgref{GET_DEVICE_FEATURES}.
+\end{itemize}
+
+\drivernormative{\paragraph}{GET\_DEVICE\_FEATURES (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Driver}
+\begin{itemize}
+  \item A driver MUST treat the returned data as 32-bit feature blocks starting
+        at the requested index, padding with zeros as needed, before deciding
+        which features to enable.
+\end{itemize}
 
 \msgdef{SET_DRIVER_FEATURES}
 
