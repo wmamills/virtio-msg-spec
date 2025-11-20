@@ -1205,8 +1205,9 @@ Answer  & 0 & 4 & Updated configuration generation count \\
 
 \msgdef{GET_DEVICE_STATUS}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+\msgref{GET_DEVICE_STATUS} reads the current device status (e.g., ACKNOWLEDGE,
+DRIVER, DRIVER\_OK, FEATURES\_OK, or DEVICE\_NEEDS\_RESET bits). The request has
+no payload; the response returns the 32-bit status value.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1214,29 +1215,47 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 0 & None \\
 \hline
-Answer & 0 & 4 & Device status \\
+Answer  & 0 & 4 & Device status \\
 \hline
 \end{tabular}
 
+\devicenormative{\paragraph}{GET\_DEVICE\_STATUS (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_STATUS / Device}
+\begin{itemize}
+  \item A device MUST report its current status accurately via
+        \msgref{GET_DEVICE_STATUS}, including whether FEATURES\_OK or
+        DEVICE\_NEEDS\_RESET are set.
+\end{itemize}
+
 \msgdef{SET_DEVICE_STATUS}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+\msgref{SET_DEVICE_STATUS} writes a new device status value. Drivers use it to
+progress through the virtio-defined states or to request a reset by writing 0.
+The device responds with its resulting status, which may differ (for example,
+if it refuses FEATURES\_OK or sets DEVICE\_NEEDS\_RESET).
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Device status \\
+Request & 0 & 4 & Device status value \\
 \hline
-Answer & 0 & 4 & New device status \\
+Answer  & 0 & 4 & Resulting device status \\
 \hline
 \end{tabular}
 
-The resulting device status is returned and MAY not match the status set.  The
-device MAY set the DEVICE_NEEDS_RESET bit if it has an issue.  The device MAY
-refuse to set the FEATURES_OK bit if it cannot operate with the features set
-by the driver.
+\drivernormative{\paragraph}{SET\_DEVICE\_STATUS (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Driver}
+\begin{itemize}
+  \item A driver MUST write 0 via \msgref{SET_DEVICE_STATUS} to request a device
+        reset and MUST re-read the status (e.g., via \msgref{GET_DEVICE_STATUS})
+        if it needs to confirm acceptance.
+\end{itemize}
+
+\devicenormative{\paragraph}{SET\_DEVICE\_STATUS (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Device}
+\begin{itemize}
+  \item A device MAY clear FEATURES\_OK or set DEVICE\_NEEDS\_RESET in its
+        response if it cannot accept the requested status, but it MUST report
+        the resulting status accurately.
+\end{itemize}
 
 \msgdef{GET_VQUEUE}
 
