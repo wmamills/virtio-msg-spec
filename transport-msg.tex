@@ -1474,21 +1474,18 @@ Request & 0 & 4 & Virtqueue index \\
 
 \subsection{Bus Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}
 
-The bus messages defined in this specification facilitate device discovery,
-hotplug management, and liveness checks at the bus level.
-They are intended for bus implementations that wish to perform these operations
-\emph{via virtio-msg} rather than relying exclusively on external means (e.g.,
-firmware tables, device trees). Each bus instance MAY use a subset of or
-all these messages according to its design.
+Bus messages cover device discovery, hotplug notifications, and bus-level
+liveness checks. Implementations that already provide equivalent functionality
+through platform mechanisms (e.g., ACPI, device tree, hypervisor events) may
+reuse that infrastructure instead of the messages defined here. The following
+subsections describe standardized bus messages that virtio-msg supports today.
 
 \subsubsection{Overview}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / Overview}
 
-A bus implementation \textbf{is not required} to use these
-messages if it already provides equivalent functionality through some
-platform-specific mechanism. However, if a bus chooses to handle enumeration,
-hotplug, etc. via virtio-msg, it SHOULD implement the corresponding
-message definitions below.
+Each bus implementation chooses which of these messages to support. Some may
+implement all of them for a fully message-based workflow, while others may rely
+on out-of-band enumeration and use only the subset that fits their needs.
 
 \paragraph{Messages IDs and issuers}
 
@@ -1509,14 +1506,10 @@ Reserved                    & 0x1  &        \\
 \hline
 \end{tabular}
 
-Bus message IDs below 0x80 are reserved for standardized (but optional) bus
-messages.  A few are used here and more are expected in the future. Bus message
-IDs below 0x40 are used for request/response messages and 0x40 and above for
-event messages.
-
-Bus message IDs 0x80 and above are bus implementation specific. Bus
-implementations MAY specify the policy that IDs below 0xC0 be used
-for request/response messages and IDs 0xC0 and above are used for event messages.
+Bus message IDs below 0x40 cover request/response messages and 0x40–0x7F cover
+events. IDs 0x80 and above are reserved for bus-specific extensions; some
+implementations further subdivide that range (for example, IDs below 0xC0 for
+requests and IDs 0xC0 and above for events).
 
 \paragraph{Bus Specific Messages}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
