@@ -567,32 +567,42 @@ details the recommended order of operations and the associated messages.
 
 A typical device initialization flow includes:
 \begin{enumerate}
-  \item \textbf{Obtain Device Information:}  
-    The driver queries the device's Device ID, vendor ID, feature block count,
-    configuration size, and other static parameters of the device using
-    \msgref{GET_DEVICE_INFO}.
-  \item \textbf{Negotiate Features:}  
-    The driver retrieves the device's feature bits (\msgref{GET_DEVICE_FEATURES}),
-    determines which features it wants to enable, and writes the desired set
-    with (\msgref{SET_DRIVER_FEATURES}).  It then attempts to set the
-    FEATURES_OK bit in the device status (\msgref{SET_DEVICE_STATUS}) and
-    verifies that it is set in the return device status.
-  \item \textbf{Initialize Configuration Space:}  
-    The driver MAY read (\msgref{GET_CONFIG}) or modify (\msgref{SET_CONFIG})
-    configuration data, using the device's \emph{Configuration Generation Count}
-    to prevent race conditions.
-  \item \textbf{Set Up Virtqueues:}  
-    The driver configures each virtqueue (e.g., number of descriptors, base
-    addresses) via \msgref{SET_VQUEUE} and verifies each queue's readiness
-    (\msgref{GET_VQUEUE}).
-  \item \textbf{Set Device Status:}  
-    The driver updates the device's status with \msgref{SET_DEVICE_STATUS} to
-    indicate initialization progress (e.g., from "reset" to "acknowledge,"
-    "driver," or "driver OK," following Virtio conventions).
+  \item \textbf{Obtain Device Information:}
+    Query static parameters with \msgref{GET_DEVICE_INFO}.
+  \item \textbf{Negotiate Features:}
+    Read feature blocks via \msgref{GET_DEVICE_FEATURES}, decide which to
+    enable, and write them back with \msgref{SET_DRIVER_FEATURES} before
+    updating the device status.
+  \item \textbf{Initialize Configuration Space:}
+    Read or write configuration data with
+    \msgref{GET_CONFIG}/\msgref{SET_CONFIG}, guarding updates with the
+    configuration generation count.
+  \item \textbf{Set Up Virtqueues:}
+    Configure each virtqueue via \msgref{SET_VQUEUE} and verify the settings
+    with \msgref{GET_VQUEUE}.
+  \item \textbf{Set Device Status:}
+    Use \msgref{SET_DEVICE_STATUS} to drive the device through the standard
+    virtio status states.
 \end{enumerate}
 
-This sequence MAY vary slightly depending on the device's requirements, but it
-serves as a common baseline for virtio-msg transport implementations.
+The exact order may vary slightly across implementations, but these steps form
+the baseline for virtio-msg initialization.
+
+\drivernormative{\paragraph}{Initialization Flow (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Overview / Driver}
+\begin{itemize}
+  \item A driver MUST issue \msgref{GET_DEVICE_INFO} before attempting feature
+        negotiation or queue setup.
+  \item A driver MUST complete feature negotiation via
+        \msgref{GET_DEVICE_FEATURES}/\msgref{SET_DRIVER_FEATURES}
+        and confirm the FEATURES\_OK state via \msgref{SET_DEVICE_STATUS} before
+        enabling virtqueues.
+  \item A driver MUST configure each virtqueue via \msgref{SET_VQUEUE} and
+        confirm its parameters (e.g., with \msgref{GET_VQUEUE}) before marking
+        the queue ready for I/O.
+  \item A driver MUST drive the device status transitions using
+        \msgref{SET_DEVICE_STATUS}, ensuring the device reaches DRIVER\_OK
+        before issuing normal I/O.
+\end{itemize}
 
 \subsubsection{Device Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information}
