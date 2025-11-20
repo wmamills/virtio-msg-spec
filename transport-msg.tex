@@ -607,33 +607,22 @@ the baseline for virtio-msg initialization.
 \subsubsection{Device Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information}
 
-Once the bus or driver knows a device number is present, it SHOULD send a
-\msgref{GET_DEVICE_INFO} to retrieve:
+Once a device number is confirmed, the driver uses \msgref{GET_DEVICE_INFO} to
+retrieve static identification data (device ID, vendor ID), the number of
+feature bits, configuration space size, maximum virtqueues, shared memory
+segments, and any admin virtqueue details. This information determines which
+virtio driver should bind to the device, how many feature blocks to query, and
+how much configuration space is valid.
 
+\drivernormative{\paragraph}{Device Information (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information / Driver}
 \begin{itemize}
-  \item \textbf{Device ID}: Identifies the type of Virtio device (e.g., network,
-    block, console).
-  \item \textbf{Vendor ID}: Identifies the vendor or implementation source.
-  \item \textbf{Number of Feature Bits}: Indicates how many bits (organized in
-    32-bit blocks) the device uses for feature negotiation.
-  \item \textbf{Configuration Size}: The total size (in bytes) of the device's
-    configuration space.
-  \item \textbf{Number of virtqueues}: The maximum number of virtqueues the
-    device supports.
-  \item \textbf{Number of SHM segments}: The number of device owned
-    shared memory segments this device has.
-  \item \textbf{Admin virtqueue starting index}: The virtqueue index for the
-    first admin virtqueue supported by the device.
-  \item \textbf{Admin virtqueue count}: The number of admin virtqueues
-    supported by the device.
+  \item A driver MUST issue \msgref{GET_DEVICE_INFO} before attempting feature
+        negotiation or queue setup so it can discover the device ID, vendor ID,
+        feature count, configuration size, and virtqueue limits.
+  \item A driver MUST use the configuration size reported via
+        \msgref{GET_DEVICE_INFO} to bound any offsets and lengths supplied in
+        \msgref{GET_CONFIG} and \msgref{SET_CONFIG} requests.
 \end{itemize}
-
-Armed with these details, the driver knows how many feature blocks to query,
-what portion of the configuration space is valid, and which OS-level virtio
-driver might bind to this device based on the Device ID.
-
-It also knows of any device owned shared memory segments and any admin
-virtqueues supported by the device.
 
 \subsubsection{Feature Negotiation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}
