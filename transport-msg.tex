@@ -1135,46 +1135,73 @@ Answer  & 0 & 0 & No additional data \\
 
 \msgdef{GET_CONFIG}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+\msgref{GET_CONFIG} reads a portion of the configuration space. The request
+specifies the byte offset and length; the response echoes those values, returns
+the data, and includes the current configuration generation count.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 4 & Configuration offset in bytes \\
-& 4 & 4 & Number of bytes \\
+Request & 0 & 4 & Configuration offset \\
+        & 4 & 4 & Number of bytes \\
 \hline
-Answer & 0 & 4 & Configuration generation count \\
-& 4 & 4 & Configuration offset in bytes \\  \\
-& 8 & 4 & Number of bytes \\
-& 12 & ... & Configuration data \\
+Answer  & 0 & 4 & Configuration generation count \\
+        & 4 & 4 & Configuration offset (echoed) \\
+        & 8 & 4 & Number of bytes (echoed) \\
+        & 12 & ... & Configuration data \\
 \hline
 \end{tabular}
 
+\drivernormative{\paragraph}{GET\_CONFIG (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Driver}
+\begin{itemize}
+  \item A driver MUST ensure the requested offset and length in \msgref{GET_CONFIG}
+        stay within the configuration size reported by \msgref{GET_DEVICE_INFO}.
+\end{itemize}
+
+\devicenormative{\paragraph}{GET\_CONFIG (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Device}
+\begin{itemize}
+  \item A device MUST return the current configuration generation count with
+        every \msgref{GET_CONFIG} response.
+\end{itemize}
+
 \msgdef{SET_CONFIG}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+\msgref{SET_CONFIG} writes a portion of configuration space, supplying the
+offset, length, the driver's view of the generation count, and the new data.
+The device echoes the offset/length, returns the resulting generation count,
+and may mirror the applied data or set the length to zero if the write was
+rejected.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Configuration generation count \\
-& 4 & 4 & Configuration offset in bytes \\
-& 8 & 4 & Number of bytes \\
-& 12 & ... & Configuration data \\
+        & 4 & 4 & Configuration offset \\
+        & 8 & 4 & Number of bytes \\
+        & 12 & ... & Configuration data \\
 \hline
-Answer & 0 & 4 & New Configuration generation count \\
-& 4 & 4 & Configuration offset in bytes \\
-& 8 & 4 &  Number of bytes, or 0 if rejected \\
-& 12 & ... & Configuration data \\
+Answer  & 0 & 4 & Updated configuration generation count \\
+        & 4 & 4 & Configuration offset (echoed) \\
+        & 8 & 4 & Number of bytes applied (0 if rejected) \\
+        & 12 & ... & Configuration data (optional) \\
 \hline
 \end{tabular}
 
-See \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration}
-for details about rejection and for new data not equal to written data.
+\drivernormative{\paragraph}{SET\_CONFIG (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Driver}
+\begin{itemize}
+  \item A driver MUST include its most recent configuration generation count in
+        each \msgref{SET_CONFIG} request and MUST keep the offset and length
+        within the reported configuration size.
+\end{itemize}
+
+\devicenormative{\paragraph}{SET\_CONFIG (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Device}
+\begin{itemize}
+  \item A device MUST reject a \msgref{SET_CONFIG} request if the supplied
+        generation count does not match its current value and MUST report that
+        rejection in the response.
+\end{itemize}
 
 \msgdef{GET_DEVICE_STATUS}
 
