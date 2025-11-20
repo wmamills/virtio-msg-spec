@@ -1545,12 +1545,6 @@ Answer  & 0 & 2 & offset (echoed) \\
 \hline
 \end{tabular}
 
-\textbf{offset} and \textbf{count} MUST be multiples of 8; the bitmap length is
-\textbf{count/8} and is packed LSB-first (device number \textbf{offset} is the
-LSB of the first byte).
-\textbf{next_offset} is either 0 (no further windows) or an aligned value
-$\ge offset + count$ that the responder suggests querying next.
-
 The \textbf{(offset, count)} tuple defines a window of \textbf{count}
 consecutive device numbers beginning at \textbf{offset}. The number of present
 devices equals the number of 1-bits in the bitmap. Responders SHOULD return the
@@ -1567,6 +1561,20 @@ at device number 16.
 Drivers MAY use this message to enumerate device numbers. Treat each window as
 a snapshot, advance using \textbf{next_offset}, and confirm candidates via
 \msgref{GET_DEVICE_INFO} before issuing other transport messages.
+
+\busnormative{\paragraph}{GET\_DEVICES (Bus)}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
+\begin{itemize}
+  \item The bus-side responder MUST enforce that \textbf{offset} and
+        \textbf{count} are multiples of 8, and it MUST return a bitmap of length
+        \textbf{count/8} packed least-significant-bit first.
+  \item \textbf{next\_offset} MUST be 0 (indicating no further windows) or an
+        aligned value $\ge \textbf{offset} + \textbf{count}$ recommending where
+        the driver should query next.
+  \item Responders SHOULD return the requested \textbf{count} unless constrained
+        (e.g., by maximum message size); if a smaller count is returned, the
+        bitmap MUST still represent the window defined by the echoed
+        \textbf{offset} and \textbf{count}.
+\end{itemize}
 
 \busdef{EVENT_DEVICE}
 
