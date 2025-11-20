@@ -182,7 +182,7 @@ vary between bus instances. Common approaches include:
         MUST inform the transport layer before accepting additional messages.
 \end{itemize}
 
-\drivernormative{\paragraph}{Respecting Bus Limits (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Driver Limits}
+\drivernormative{\paragraph}{Respecting Bus Limits}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Driver Limits}
 \begin{itemize}
   \item A driver MUST NOT send a transport message whose total size exceeds the
         maximum message size advertised for the target bus instance.
@@ -190,7 +190,7 @@ vary between bus instances. Common approaches include:
         higher transport revision than the bus instance reports.
 \end{itemize}
 
-\devicenormative{\paragraph}{Respecting Bus Limits (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Device Limits}
+\devicenormative{\paragraph}{Respecting Bus Limits}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Device Limits}
 \begin{itemize}
   \item A device MUST ensure its responses and device-originated messages do
         not exceed the maximum message size advertised by the bus instance that
@@ -307,7 +307,7 @@ the driver can determine whether its view of the configuration is current. The
 count does not necessarily start at zero and is not automatically reset when
 the device resets.
 
-\devicenormative{\paragraph}{Configuration Generation Count (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Device}
+\devicenormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Device}
 \begin{itemize}
   \item A device MUST increment the generation count before it makes a change
         that is visible to the driver and MUST ensure that each
@@ -322,7 +322,7 @@ the device resets.
         request.
 \end{itemize}
 
-\drivernormative{\paragraph}{Configuration Generation Count (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Driver}
+\drivernormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Driver}
 \begin{itemize}
   \item A driver MUST track the most recent generation count observed (via
         \msgref{EVENT_CONFIG} or \msgref{GET_CONFIG}) and include it in every
@@ -351,7 +351,7 @@ represents up to 32 feature bits:
         driver-requested) feature bits in the selected blocks.
 \end{itemize}
 
-\devicenormative{\paragraph}{Feature Blocks (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks / Device}
+\devicenormative{\paragraph}{Feature Blocks}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks / Device}
 \begin{itemize}
   \item When \msgref{GET_DEVICE_FEATURES} covers blocks that extend beyond the
         features a device implements, the device MUST return zero for the
@@ -367,7 +367,7 @@ Implementations should handle such faults locally where possible, but a bus may
 surface an error to the virtio-msg transport if it cannot deliver a request or
 obtain a response within its policy.
 
-\busnormative{\paragraph}{Error Handling (Bus)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Bus}
+\busnormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Bus}
 \begin{itemize}
   \item A bus implementation MAY report a transport-visible failure (for
         example, after exhausting a bounded retry policy) when it cannot deliver
@@ -379,7 +379,7 @@ obtain a response within its policy.
         (one-way) messages.
 \end{itemize}
 
-\devicenormative{\paragraph}{Error Handling (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Device}
+\devicenormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Device}
 \begin{itemize}
   \item A device receiving a malformed or unsupported transport message MUST
         discard it without producing further protocol traffic.
@@ -399,13 +399,13 @@ feasible.
 Unless otherwise stated, all numeric fields defined for virtio-msg messages use
 little-endian encoding.
 
-\drivernormative{\paragraph}{Endianness (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Driver}
+\drivernormative{\paragraph}{Endianness}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Driver}
 \begin{itemize}
   \item A driver MUST encode and decode the common header and payload fields
         defined by this transport using little-endian byte order.
 \end{itemize}
 
-\devicenormative{\paragraph}{Endianness (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Device}
+\devicenormative{\paragraph}{Endianness}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Device}
 \begin{itemize}
   \item A device MUST emit and consume the common header and payload fields
         defined by this transport using little-endian byte order.
@@ -454,7 +454,7 @@ Field semantics:
     padding bytes, those bytes are not part of the payload semantics.
 \end{itemize}
 
-\drivernormative{\paragraph}{Common Header (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Driver}
+\drivernormative{\paragraph}{Common Header}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Driver}
 \begin{itemize}
   \item A driver MUST set bits 2..7 of \field{type} to zero and MUST treat them
         as reserved when parsing received headers.
@@ -469,7 +469,7 @@ Field semantics:
         on its value when processing received messages.
 \end{itemize}
 
-\devicenormative{\paragraph}{Common Header (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Device}
+\devicenormative{\paragraph}{Common Header}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Device}
 \begin{itemize}
   \item A device MUST set bits 2..7 of \field{type} to zero in transmitted
         messages and MUST ignore those bits on receive.
@@ -483,7 +483,7 @@ Field semantics:
         on its value when processing received messages.
 \end{itemize}
 
-\busnormative{\paragraph}{Common Header (Bus)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Bus}
+\busnormative{\paragraph}{Common Header}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Bus}
 \begin{itemize}
   \item A bus implementation MUST deliver bus messages with \field{dev_num}=0
         and MUST NOT alter \field{dev_num} for transport messages beyond the
@@ -511,7 +511,7 @@ events (which are one-way). Drivers and devices rely on the bus to preserve the
 relative ordering of request/response pairs for each device number; they do not
 interpret the \field{token} field directly.
 
-\busnormative{\paragraph}{Message Ordering (Bus)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
+\busnormative{\paragraph}{Message Ordering}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \begin{itemize}
   \item For each device number, a bus implementation MUST deliver responses to
         the driver in the same order that it forwarded the corresponding
@@ -534,7 +534,7 @@ hypervisor-provided enumeration, or message-based queries such as
 environments that prefer message-driven enumeration, but it does not require
 its use when equivalent information is already known out-of-band.
 
-\busnormative{\paragraph}{Device Discovery (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Discovery / Bus}
+\busnormative{\paragraph}{Device Discovery}{Virtio Transport Options / Virtio Over Messages / Device Discovery / Bus}
 \begin{itemize}
   \item A bus implementation MUST ensure that every device number it exposes to
         the driver has been validated via either platform data or a successful
@@ -581,7 +581,7 @@ A typical device initialization flow includes:
 The exact order may vary slightly across implementations, but these steps form
 the baseline for virtio-msg initialization.
 
-\drivernormative{\paragraph}{Initialization Flow (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Overview / Driver}
+\drivernormative{\paragraph}{Initialization Flow}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Overview / Driver}
 \begin{itemize}
   \item A driver MUST issue \msgref{GET_DEVICE_INFO} before attempting feature
         negotiation or queue setup.
@@ -607,7 +607,7 @@ segments, and any admin virtqueue details. This information determines which
 virtio driver should bind to the device, how many feature blocks to query, and
 how much configuration space is valid.
 
-\drivernormative{\paragraph}{Device Information (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information / Driver}
+\drivernormative{\paragraph}{Device Information}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information / Driver}
 \begin{itemize}
   \item A driver MUST issue \msgref{GET_DEVICE_INFO} before attempting feature
         negotiation or queue setup so it can discover the device ID, vendor ID,
@@ -627,7 +627,7 @@ driver writes them back with \msgref{SET_DRIVER_FEATURES} and then updates the
 device status via \msgref{SET_DEVICE_STATUS}, checking whether the FEATURES\_OK
 bit remains set.
 
-\drivernormative{\paragraph}{Feature Negotiation (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Driver}
+\drivernormative{\paragraph}{Feature Negotiation}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Driver}
 \begin{itemize}
   \item A driver MUST use \msgref{GET_DEVICE_FEATURES} to discover the feature
         bits offered by the device and MUST write back only the features it
@@ -637,7 +637,7 @@ bit remains set.
         returned status to ensure the device accepted the set.
 \end{itemize}
 
-\devicenormative{\paragraph}{Feature Negotiation (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
+\devicenormative{\paragraph}{Feature Negotiation}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
 \begin{itemize}
   \item When handling \msgref{GET_DEVICE_FEATURES}, a device MUST return zero
         for any requested bits that fall outside the number of feature bits it
@@ -657,7 +657,7 @@ current configuration generation count. Writing is performed via
 \msgref{SET_CONFIG}, which carries the same offset/length along with the
 driver's notion of the generation count and the new data.
 
-\drivernormative{\paragraph}{Device Configuration (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Driver}
+\drivernormative{\paragraph}{Device Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Driver}
 \begin{itemize}
   \item A driver MUST ensure that the offset and length in each
         \msgref{GET_CONFIG} or \msgref{SET_CONFIG} request stay within the
@@ -668,7 +668,7 @@ driver's notion of the generation count and the new data.
         generation mismatch.
 \end{itemize}
 
-\devicenormative{\paragraph}{Device Configuration (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Device}
+\devicenormative{\paragraph}{Device Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Device}
 \begin{itemize}
   \item A device MUST reject a \msgref{SET_CONFIG} request whose generation
         count does not match its current value and MUST indicate the rejection
@@ -687,7 +687,7 @@ reading its maximum size, provisioning descriptor/available/used buffers, and
 then calling \msgref{SET_VQUEUE} with the chosen size and guest-physical
 addresses.
 
-\drivernormative{\paragraph}{Virtqueue Configuration (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Driver}
+\drivernormative{\paragraph}{Virtqueue Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Driver}
 \begin{itemize}
   \item A driver MUST use \msgref{GET_VQUEUE} to determine the maximum queue
         size and confirm that a queue is inactive before programming it.
@@ -699,7 +699,7 @@ addresses.
         reprogramming it.
 \end{itemize}
 
-\devicenormative{\paragraph}{Virtqueue Configuration (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Device}
+\devicenormative{\paragraph}{Virtqueue Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Device}
 \begin{itemize}
   \item A device MUST report accurate maximum queue sizes in \msgref{GET_VQUEUE}
         and MUST persist the parameters supplied via \msgref{SET_VQUEUE} (size,
@@ -717,7 +717,7 @@ progress or detect errors, and they drive the Virtio status transitions via
 \msgref{SET_DEVICE_STATUS}. Writing zero to the status field resets the device,
 invalidating any configuration or virtqueue state.
 
-\drivernormative{\paragraph}{Status Handling (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Driver}
+\drivernormative{\paragraph}{Status Handling}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Driver}
 \begin{itemize}
   \item A driver SHOULD read the device status via \msgref{GET_DEVICE_STATUS}
         when diagnosing errors or determining whether the device is ready to
@@ -727,7 +727,7 @@ invalidating any configuration or virtqueue state.
         reset when needed.
 \end{itemize}
 
-\devicenormative{\paragraph}{Status Handling (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Device}
+\devicenormative{\paragraph}{Status Handling}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Device}
 \begin{itemize}
   \item Upon receiving a \msgref{SET_DEVICE_STATUS} write of 0, a device MUST
         reset its internal state, invalidate existing configuration and
@@ -744,7 +744,7 @@ the device to DRIVER\_OK (and any other required status bits) via
 \msgref{SET_DEVICE_STATUS}. At that point, the device is considered ready for
 normal virtqueue I/O.
 
-\drivernormative{\paragraph}{Final Status (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Driver}
+\drivernormative{\paragraph}{Final Status}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Driver}
 \begin{itemize}
   \item A driver MUST set DRIVER\_OK via \msgref{SET_DEVICE_STATUS} only after
         it has completed feature negotiation and initialized all required
@@ -755,7 +755,7 @@ normal virtqueue I/O.
         virtqueue until that queue has been configured via \msgref{SET_VQUEUE}.
 \end{itemize}
 
-\devicenormative{\paragraph}{Final Status (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Device}
+\devicenormative{\paragraph}{Final Status}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Device}
 \begin{itemize}
   \item A device MUST NOT process normal virtqueue I/O until the driver has set
         DRIVER\_OK.
@@ -780,7 +780,7 @@ After buffers are made available to a virtqueue, the driver issues
 \msgref{EVENT_AVAIL} to notify the device. A bus implementation may translate
 these notifications into an out-of-band mechanism or deliver them in-band.
 
-\drivernormative{\paragraph}{Driver Notifications (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Driver}
+\drivernormative{\paragraph}{Driver Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Driver}
 \begin{itemize}
   \item A driver MUST send \msgref{EVENT_AVAIL} when it places new buffers on a
         virtqueue.
@@ -790,7 +790,7 @@ these notifications into an out-of-band mechanism or deliver them in-band.
         head of the updated ring; otherwise those fields MUST be zero.
 \end{itemize}
 
-\busnormative{\paragraph}{Driver Notifications (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Bus}
+\busnormative{\paragraph}{Driver Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Bus}
 \begin{itemize}
   \item A bus implementation MAY convert \msgref{EVENT_AVAIL} into an
         out-of-band notification but, if it does not, it MUST relay the message
@@ -808,7 +808,7 @@ from the device (or device-side bus) to the driver. The bus may forward these
 messages in-band or synthesize them based on other signals such as interrupts
 or polling.
 
-\devicenormative{\paragraph}{Device Notifications (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Device}
+\devicenormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Device}
 \begin{itemize}
   \item A device (or device-side bus) MUST send \msgref{EVENT_CONFIG} whenever
         it makes a configuration change or status update that becomes visible to
@@ -822,7 +822,7 @@ or polling.
         an alternative, agreed-upon completion mechanism.
 \end{itemize}
 
-\drivernormative{\paragraph}{Device Notifications (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Driver}
+\drivernormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Driver}
 \begin{itemize}
   \item Upon receiving \msgref{EVENT_CONFIG}, a driver SHOULD update its view of
         the configuration using the provided data (or by issuing
@@ -832,7 +832,7 @@ or polling.
         buffers.
 \end{itemize}
 
-\busnormative{\paragraph}{Device Notifications (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Bus}
+\busnormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Bus}
 \begin{itemize}
   \item A bus implementation MUST forward \msgref{EVENT_CONFIG} and
         \msgref{EVENT_USED} notifications (or their equivalents) to the driver,
@@ -850,7 +850,7 @@ when features such as device modes or limits need to change. Devices can also
 update configuration data autonomously but must signal those changes via
 \msgref{EVENT_CONFIG}.
 
-\drivernormative{\paragraph}{Runtime Configuration (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Driver}
+\drivernormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Driver}
 \begin{itemize}
   \item A driver MAY issue \msgref{SET_CONFIG} after initialization, provided it
         includes the current configuration generation count and follows the same
@@ -860,7 +860,7 @@ update configuration data autonomously but must signal those changes via
         \msgref{GET_CONFIG}) before relying on the updated values.
 \end{itemize}
 
-\devicenormative{\paragraph}{Runtime Configuration (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Device}
+\devicenormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Device}
 \begin{itemize}
   \item If a device updates its configuration after initialization, it MUST send
         \msgref{EVENT_CONFIG} to inform the driver of the change and provide the
@@ -874,7 +874,7 @@ Drivers may provision unused virtqueues later in the device lifetime by issuing
 \msgref{SET_VQUEUE}, and they may reconfigure existing queues if the
 VIRTIO\_F\_RING\_RESET feature has been negotiated.
 
-\drivernormative{\paragraph}{Runtime Virtqueue Changes (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Driver}
+\drivernormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Driver}
 \begin{itemize}
   \item A driver MAY configure additional virtqueues after initialization using
         \msgref{SET_VQUEUE}, provided it follows the same validation steps
@@ -884,7 +884,7 @@ VIRTIO\_F\_RING\_RESET feature has been negotiated.
         the device.
 \end{itemize}
 
-\devicenormative{\paragraph}{Runtime Virtqueue Changes (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Device}
+\devicenormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Device}
 \begin{itemize}
   \item A device MUST honor \msgref{SET_VQUEUE} requests issued after
         initialization and update the queue parameters accordingly.
@@ -901,7 +901,7 @@ which forces the device to discard pending operations and return to the initial 
 A device may also signal that a reset is required by sending \msgref{EVENT_CONFIG}
 with the DEVICE\_NEEDS\_RESET bit set.
 
-\drivernormative{\paragraph}{Reset and Shutdown (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Driver}
+\drivernormative{\paragraph}{Reset and Shutdown}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Driver}
 \begin{itemize}
   \item A driver MAY request a device reset at any time by writing 0 through
         \msgref{SET_DEVICE_STATUS} and MAY reinitialize the device afterwards if
@@ -912,7 +912,7 @@ with the DEVICE\_NEEDS\_RESET bit set.
         I/O.
 \end{itemize}
 
-\devicenormative{\paragraph}{Reset and Shutdown (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Device}
+\devicenormative{\paragraph}{Reset and Shutdown}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Device}
 \begin{itemize}
   \item Upon receiving a \msgref{SET_DEVICE_STATUS} write of 0, a device MUST
         reset its internal state, discard pending virtqueue operations, and
@@ -930,7 +930,7 @@ those changes with \busref{EVENT_DEVICE} (READY or REMOVED). Some platforms may
 instead rely on external signals such as ACPI, device tree updates, or
 hypervisor events; virtio-msg does not mandate a specific mechanism.
 
-\busnormative{\paragraph}{Hotplug and Removal (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal / Bus}
+\busnormative{\paragraph}{Hotplug and Removal}{Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal / Bus}
 \begin{itemize}
   \item A bus implementation that uses \busref{EVENT_DEVICE} MUST send the READY
         event when a device becomes accessible and the REMOVED event when it is
@@ -1002,7 +1002,7 @@ Reserved                   & 0x1 & \\
 IDs 0x00–0x3F are reserved for request/response messages and 0x40–0x7F for
 events. IDs 0x80 and above are reserved for future extensions.
 
-\devicenormative{\paragraph}{Core Messages (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Device}
+\devicenormative{\paragraph}{Core Messages}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Device}
 \begin{itemize}
   \item A device MUST implement \msgref{GET_DEVICE_INFO},
         \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES},
@@ -1011,7 +1011,7 @@ events. IDs 0x80 and above are reserved for future extensions.
         and \msgref{RESET_VQUEUE}.
 \end{itemize}
 
-\drivernormative{\paragraph}{Core Messages (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Driver}
+\drivernormative{\paragraph}{Core Messages}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Driver}
 \begin{itemize}
   \item A driver MUST support sending and interpreting the messages listed
         above in order to initialize and operate a virtio-msg device.
@@ -1047,14 +1047,14 @@ Answer & 0 & 4 & Device ID \\
 \hline
 \end{tabular}
 
-\devicenormative{\paragraph}{GET\_DEVICE\_INFO (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Device}
+\devicenormative{\paragraph}{GET\_DEVICE\_INFO}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Device}
 \begin{itemize}
   \item A device MUST respond to \msgref{GET_DEVICE_INFO} while inactive and
         MUST supply consistent values for device ID, vendor ID, feature count (a
         multiple of 32 bits), configuration size, and virtqueue limits.
 \end{itemize}
 
-\drivernormative{\paragraph}{GET\_DEVICE\_INFO (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Driver}
+\drivernormative{\paragraph}{GET\_DEVICE\_INFO}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Driver}
 \begin{itemize}
   \item A driver SHOULD treat the response as the authoritative source for
         feature count, configuration size, and virtqueue limits before
@@ -1080,13 +1080,13 @@ Answer  & 0 & 4 & Feature block index (echoed) \\
 \hline
 \end{tabular}
 
-\devicenormative{\paragraph}{GET\_DEVICE\_FEATURES (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Device}
+\devicenormative{\paragraph}{GET\_DEVICE\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Device}
 \begin{itemize}
   \item A device MUST return zero for any feature bits beyond those it
         implements when responding to \msgref{GET_DEVICE_FEATURES}.
 \end{itemize}
 
-\drivernormative{\paragraph}{GET\_DEVICE\_FEATURES (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Driver}
+\drivernormative{\paragraph}{GET\_DEVICE\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Driver}
 \begin{itemize}
   \item A driver MUST treat the returned data as 32-bit feature blocks starting
         at the requested index, padding with zeros as needed, before deciding
@@ -1111,13 +1111,13 @@ Answer  & 0 & 0 & No additional data \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{SET\_DRIVER\_FEATURES (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Driver}
+\drivernormative{\paragraph}{SET\_DRIVER\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Driver}
 \begin{itemize}
   \item A driver MUST set only the feature bits it intends to enable in the
         blocks supplied to \msgref{SET_DRIVER_FEATURES}.
 \end{itemize}
 
-\devicenormative{\paragraph}{SET\_DRIVER\_FEATURES (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Device}
+\devicenormative{\paragraph}{SET\_DRIVER\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Device}
 \begin{itemize}
   \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update its
         acknowledged feature set to match the data supplied and MUST report that
@@ -1146,13 +1146,13 @@ Answer  & 0 & 4 & Configuration generation count \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{GET\_CONFIG (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Driver}
+\drivernormative{\paragraph}{GET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Driver}
 \begin{itemize}
   \item A driver MUST ensure the requested offset and length in \msgref{GET_CONFIG}
         stay within the configuration size reported by \msgref{GET_DEVICE_INFO}.
 \end{itemize}
 
-\devicenormative{\paragraph}{GET\_CONFIG (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Device}
+\devicenormative{\paragraph}{GET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Device}
 \begin{itemize}
   \item A device MUST return the current configuration generation count with
         every \msgref{GET_CONFIG} response.
@@ -1182,14 +1182,14 @@ Answer  & 0 & 4 & Updated configuration generation count \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{SET\_CONFIG (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Driver}
+\drivernormative{\paragraph}{SET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Driver}
 \begin{itemize}
   \item A driver MUST include its most recent configuration generation count in
         each \msgref{SET_CONFIG} request and MUST keep the offset and length
         within the reported configuration size.
 \end{itemize}
 
-\devicenormative{\paragraph}{SET\_CONFIG (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Device}
+\devicenormative{\paragraph}{SET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Device}
 \begin{itemize}
   \item A device MUST reject a \msgref{SET_CONFIG} request if the supplied
         generation count does not match its current value and MUST report that
@@ -1212,7 +1212,7 @@ Answer  & 0 & 4 & Device status \\
 \hline
 \end{tabular}
 
-\devicenormative{\paragraph}{GET\_DEVICE\_STATUS (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_STATUS / Device}
+\devicenormative{\paragraph}{GET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_STATUS / Device}
 \begin{itemize}
   \item A device MUST report its current status accurately via
         \msgref{GET_DEVICE_STATUS}, including whether FEATURES\_OK or
@@ -1236,14 +1236,14 @@ Answer  & 0 & 4 & Resulting device status \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{SET\_DEVICE\_STATUS (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Driver}
+\drivernormative{\paragraph}{SET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Driver}
 \begin{itemize}
   \item A driver MUST write 0 via \msgref{SET_DEVICE_STATUS} to request a device
         reset and MUST re-read the status (e.g., via \msgref{GET_DEVICE_STATUS})
         if it needs to confirm acceptance.
 \end{itemize}
 
-\devicenormative{\paragraph}{SET\_DEVICE\_STATUS (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Device}
+\devicenormative{\paragraph}{SET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Device}
 \begin{itemize}
   \item A device MAY clear FEATURES\_OK or set DEVICE\_NEEDS\_RESET in its
         response if it cannot accept the requested status, but it MUST report
@@ -1272,7 +1272,7 @@ Answer  & 0 & 4 & Virtqueue index (echoed) \\
 \hline
 \end{tabular}
 
-\devicenormative{\paragraph}{GET\_VQUEUE (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_VQUEUE / Device}
+\devicenormative{\paragraph}{GET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_VQUEUE / Device}
 \begin{itemize}
   \item A device MUST report accurate maxima and current queue sizes for each
         virtqueue and MUST return zero as the current size if the queue has not
@@ -1302,14 +1302,14 @@ Answer  & 0 & 0 & No additional data \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{SET\_VQUEUE (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
+\drivernormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
 \begin{itemize}
   \item A driver MUST set the virtqueue size field to a value not exceeding the
         maximum reported by \msgref{GET_VQUEUE} and MUST ensure the supplied
         addresses point to properly aligned memory.
 \end{itemize}
 
-\devicenormative{\paragraph}{SET\_VQUEUE (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Device}
+\devicenormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Device}
 \begin{itemize}
   \item A device MUST configure the queue using the parameters provided via
         \msgref{SET_VQUEUE} and treat the queue as inactive until
@@ -1332,14 +1332,14 @@ Answer  & 0 & 0 & No additional data \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{RESET\_VQUEUE (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Driver}
+\drivernormative{\paragraph}{RESET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Driver}
 \begin{itemize}
   \item A driver SHOULD issue \msgref{RESET_VQUEUE} only if
         VIRTIO\_F\_RING\_RESET has been negotiated and it needs to reconfigure
         or recover a specific queue.
 \end{itemize}
 
-\devicenormative{\paragraph}{RESET\_VQUEUE (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Device}
+\devicenormative{\paragraph}{RESET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Device}
 \begin{itemize}
   \item Upon receiving \msgref{RESET_VQUEUE}, a device MUST stop processing the
         indicated queue, reset its internal state for that queue, and allow the
@@ -1365,7 +1365,7 @@ Answer  & 0 & 4 & Shared memory region index (echoed) \\
 \hline
 \end{tabular}
 
-\devicenormative{\paragraph}{GET\_SHM (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
+\devicenormative{\paragraph}{GET\_SHM}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
 \begin{itemize}
   \item A device MUST return zero length if the requested shared memory region
         does not exist and MUST report accurate address/length information for
@@ -1392,14 +1392,14 @@ Request & 0 & 4 & Device status \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{EVENT\_CONFIG (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Driver}
+\drivernormative{\paragraph}{EVENT\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Driver}
 \begin{itemize}
   \item When \msgref{EVENT_CONFIG} provides configuration data, the driver
         SHOULD apply it; otherwise it SHOULD re-read the affected range via
         \msgref{GET_CONFIG} before proceeding.
 \end{itemize}
 
-\devicenormative{\paragraph}{EVENT\_CONFIG (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Device}
+\devicenormative{\paragraph}{EVENT\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Device}
 \begin{itemize}
   \item A device MUST send \msgref{EVENT_CONFIG} whenever it changes
         configuration data or status in a way that is visible to the driver,
@@ -1422,7 +1422,7 @@ Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
-\drivernormative{\paragraph}{EVENT\_AVAIL (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Driver}
+\drivernormative{\paragraph}{EVENT\_AVAIL}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Driver}
 \begin{itemize}
   \item If VIRTIO\_F\_NOTIFICATION\_DATA has not been negotiated, a driver MUST
         set the next offset/wrap field to zero in \msgref{EVENT_AVAIL} messages.
@@ -1430,7 +1430,7 @@ Request & 0 & 4 & Virtqueue index \\
         current available ring position.
 \end{itemize}
 
-\busnormative{\paragraph}{EVENT\_AVAIL (Bus)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Bus}
+\busnormative{\paragraph}{EVENT\_AVAIL}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Bus}
 \begin{itemize}
   \item A bus implementation that uses out-of-band notifications SHOULD prevent
         negotiation of VIRTIO\_F\_NOTIFICATION\_DATA so that devices do not
@@ -1451,14 +1451,14 @@ Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
 
-\devicenormative{\paragraph}{EVENT\_USED (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Device}
+\devicenormative{\paragraph}{EVENT\_USED}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Device}
 \begin{itemize}
   \item A device SHOULD send \msgref{EVENT_USED} (or an equivalent notification)
         when it processes buffers on a virtqueue unless the driver has
         explicitly disabled such notifications.
 \end{itemize}
 
-\drivernormative{\paragraph}{EVENT\_USED (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Driver}
+\drivernormative{\paragraph}{EVENT\_USED}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Driver}
 \begin{itemize}
   \item Upon receiving \msgref{EVENT_USED}, a driver MUST examine the indicated
         virtqueue (for example, by reading the used ring) to reclaim completed
@@ -1555,7 +1555,7 @@ Drivers MAY use this message to enumerate device numbers. Treat each window as
 a snapshot, advance using \textbf{next_offset}, and confirm candidates via
 \msgref{GET_DEVICE_INFO} before issuing other transport messages.
 
-\busnormative{\paragraph}{GET\_DEVICES (Bus)}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
+\busnormative{\paragraph}{GET\_DEVICES}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
 \begin{itemize}
   \item The bus-side responder MUST enforce that \textbf{offset} and
         \textbf{count} are multiples of 8, and it MUST return a bitmap of length
@@ -1614,7 +1614,7 @@ Drivers or bus implementations MAY use \busref{PING} as a keepalive. If a reply
 is missing or delayed beyond policy, the initiator SHOULD verify device status
 (e.g., via \msgref{GET_DEVICE_STATUS}) and take recovery actions as needed.
 
-\busnormative{\paragraph}{PING (Bus)}{Virtio Transport Options / Virtio Over Messages / Bus Messages / PING / Bus}
+\busnormative{\paragraph}{PING}{Virtio Transport Options / Virtio Over Messages / Bus Messages / PING / Bus}
 \begin{itemize}
   \item The bus-side responder MUST echo the 32-bit data field from the request
         exactly in the \busref{PING} response.
