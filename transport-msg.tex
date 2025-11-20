@@ -783,28 +783,28 @@ runtime resets or shutdown sequences.
 \subsubsection{Driver Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications}
 
-After setting up one or more virtqueues, the driver MUST send notifications
-to signal that new buffers are available for processing. The virtio-msg transport
-defines the message, \msgref{EVENT_AVAIL}, that the driver will use to
-notify the device of pending buffers.
+After buffers are made available to a virtqueue, the driver issues
+\msgref{EVENT_AVAIL} to notify the device. A bus implementation may translate
+these notifications into an out-of-band mechanism or deliver them in-band.
 
-The driver side bus MAY convert them to some form of
-out-of-band (OoB) notification.  If not using OoB notifications, the driver
-side bus SHOULD send the messages via the normal message channel.
-As a final option, the bus MAY discard the messages but only if it knows
-that the device will poll the virtqueues directly.
-
-\paragraph{EVENT\_AVAIL Usage}
+\drivernormative{\paragraph}{Driver Notifications (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Driver}
 \begin{itemize}
-  \item \textbf{Virtqueue Index}: Identifies which queue has new buffers.
-  \item \textbf{Next Offset and Wrap}: If the VIRTIO_F_NOTIFICATION_DATA feature
-        has been negotiated, the driver MUST sets these fields to
-        indicate the next descriptor offset and wrap state
-        so the device can jump directly to the updated buffers.
-        If this features has not been negotiated these fields MUST be 0.
-  \item \textbf{Response}: The \msgref{EVENT_AVAIL} message does not have a
-        direct response, but the device will subsequently process available
-        buffers and eventually notify the driver when they are used.
+  \item A driver MUST send \msgref{EVENT_AVAIL} when it places new buffers on a
+        virtqueue.
+  \item Each \msgref{EVENT_AVAIL} MUST identify the target virtqueue index.
+  \item If VIRTIO\_F\_NOTIFICATION\_DATA has been negotiated, the driver MUST
+        populate the “next offset and wrap” fields so the device can locate the
+        head of the updated ring; otherwise those fields MUST be zero.
+\end{itemize}
+
+\busnormative{\paragraph}{Driver Notifications (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Bus}
+\begin{itemize}
+  \item A bus implementation MAY convert \msgref{EVENT_AVAIL} into an
+        out-of-band notification but, if it does not, it MUST relay the message
+        over the virtio-msg channel.
+  \item A bus implementation MUST NOT drop \msgref{EVENT_AVAIL} unless it has
+        arranged for the device to detect new buffers through polling or an
+        equivalent mechanism.
 \end{itemize}
 
 \subsubsection{Device Notifications}
