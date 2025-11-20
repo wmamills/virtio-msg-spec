@@ -301,28 +301,35 @@ driver binding process can begin.
 
 Each device maintains a \textbf{Configuration Generation Count} to prevent
 inconsistent updates. This count is incremented at least once by the device for
-every driver visible change it makes to its own copy of the configuration data.
-A configuration change is made visible to the driver via \msgref{EVENT_CONFIG}
-or the response to \msgref{GET_CONFIG} which also both provide the device's
-current configuration count. The device MAY change any amount of data for one
-generation count increment. If the change cannot fit in one \msgref{EVENT_CONFIG}
-message, the device SHOULD send an \msgref{EVENT_CONFIG} message
-with a zero data length and the new generation count to the driver.
-The device MUST NOT provide the same generation count in
-multiple \msgref{EVENT_CONFIG} messages that contain non-zero length config
-data. The driver includes its view of the current generation count in
-\msgref{SET_CONFIG} requests. The configuration generation count does not
-necessarily start at 0 and SHOULD NOT reset to 0 on device reset.
+every driver-visible change it makes to its configuration data. The current
+count is exposed in \msgref{EVENT_CONFIG} and \msgref{GET_CONFIG} responses so
+the driver can determine whether its view of the configuration is current. The
+count does not necessarily start at zero and is not automatically reset when
+the device resets.
 
+\devicenormative{\paragraph}{Configuration Generation Count (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Device}
 \begin{itemize}
-  \item If the driver's generation count does not match the device's current
-        count, the \msgref{SET_CONFIG} request MUST be rejected by the
-        device.
-  \item The driver MAY have received \msgref{EVENT_CONFIG} messages
-        between the request and the response and will know the current
-        configuration data and generation count.  If not it SHOULD
-        re-read the configuration and generation count via \msgref{GET_CONFIG}),
-        and then resend the \msgref{SET_CONFIG} if still desired.
+  \item A device MUST increment the generation count before it makes a change
+        that is visible to the driver and MUST ensure that each
+        \msgref{EVENT_CONFIG} carrying configuration data uses a unique
+        generation count.
+  \item If updated configuration data cannot fit in a single
+        \msgref{EVENT_CONFIG}, the device SHOULD send an \msgref{EVENT_CONFIG}
+        with zero data length to advertise the new generation count and MUST
+        make the updated data available via \msgref{GET_CONFIG}.
+  \item If a \msgref{SET_CONFIG} request includes a generation count that does
+        not match the device's current count, the device MUST reject the
+        request.
+\end{itemize}
+
+\drivernormative{\paragraph}{Configuration Generation Count (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Driver}
+\begin{itemize}
+  \item A driver MUST track the most recent generation count observed (via
+        \msgref{EVENT_CONFIG} or \msgref{GET_CONFIG}) and include it in every
+        \msgref{SET_CONFIG} request.
+  \item If a \msgref{SET_CONFIG} request is rejected due to a mismatched
+        generation count, the driver SHOULD issue \msgref{GET_CONFIG} to obtain
+        the latest configuration data and generation count before retrying.
 \end{itemize}
 
 This mechanism ensures updates are not lost or overwritten due to stale
