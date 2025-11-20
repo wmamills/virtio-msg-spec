@@ -1578,63 +1578,54 @@ a snapshot, advance using \textbf{next_offset}, and confirm candidates via
 
 \busdef{EVENT_DEVICE}
 
-This message is sent by the virtio-msg device side bus and there is no response.
+\busref{EVENT_DEVICE} signals device-level hotplug changes. The driver-side bus
+receives these indications from the device-side bus; READY announces that a
+device is present and REMOVED indicates that it is no longer accessible. Standard
+states use values 0x1–0x2, while higher values (0x3 and above) are reserved for
+future or implementation-specific meanings.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
-Request & 0 & 2 & Device Number \\
-        & 2 & 2 & Device Bus State \\
+Request & 0 & 2 & Device number \\
+        & 2 & 2 & Device bus state \\
 \hline
 \end{tabular}
-
-\begin{tabular}{|l|l|l|}
-\hline
-Device Bus State & Value & Meaning \\
-\hline
-\hline
-DEVICE_BUS_STATE_READY      & 0x1  & Device is present and ready \\
-\hline
-DEVICE_BUS_STATE_REMOVED    & 0x2  & Device is no longer present \\
-\hline
-reserved          & 0x3 to 0x7FFF & Reserved for standard use \\
-\hline
-any               & 0x8000 to 0xFFFF & MAY be used by bus implementations \\
-\hline
-\end{tabular}
-
-This event is sent when the bus level state of the device has changed.
-It can indicate when a device is added or removed. It MAY also be used by
-bus implementations to indicate other states.
 
 \paragraph{Intended usage}
-This message advertises device presence or removal. Upon READY, drivers SHOULD
-probe the device via \msgref{GET_DEVICE_INFO} and proceed with initialization
-if successful. Upon REMOVED, drivers MUST stop queueing new requests,
-quiesce/reset as applicable, and release resources. Drivers SHOULD tolerate
-duplicates and out-of-order events, and MAY use bus-level monitoring (see
-\busref{PING}) to refine policy.
+Upon receiving DEVICE\_BUS\_STATE\_READY, drivers SHOULD probe the device via
+\msgref{GET_DEVICE_INFO} and proceed with initialization if successful. Upon
+DEVICE\_BUS\_STATE\_REMOVED, drivers MUST stop queueing new work, quiesce and
+reset as applicable, and release resources. Drivers SHOULD tolerate duplicate or
+out-of-order events and MAY rely on additional bus-level monitoring (e.g.,
+\busref{PING}) if needed.
 
 \busdef{PING}
 
-This message is sent by the virtio-msg driver side bus or device side bus and
-requires a response.
+\busref{PING} is a simple liveness check that can be sent by either side of the
+bus; the response echoes the 32-bit data value from the request.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
- \hline \hline
-Request & 0 & 4 & Data \\
+\hline \hline
+Request & 0 & 4 & Data (arbitrary 32-bit value) \\
 \hline
-Answer & 0 & 4 & Request Data \\
+Answer  & 0 & 4 & Echoed request data \\
 \hline
 \end{tabular}
 
 \paragraph{Intended usage}
-Drivers MAY treat \busref{PING} as an optional keepalive or monitoring
-mechanism. Timeouts or missing replies SHOULD trigger validation of device
-state via \msgref{GET_DEVICE_STATUS} and recovery as appropriate.
+Drivers or bus implementations MAY use \busref{PING} as a keepalive. If a reply
+is missing or delayed beyond policy, the initiator SHOULD verify device status
+(e.g., via \msgref{GET_DEVICE_STATUS}) and take recovery actions as needed.
+
+\busnormative{\paragraph}{PING (Bus)}{Virtio Transport Options / Virtio Over Messages / Bus Messages / PING / Bus}
+\begin{itemize}
+  \item The bus-side responder MUST echo the 32-bit data field from the request
+        exactly in the \busref{PING} response.
+\end{itemize}
 
 \subsection{Compliance}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Compliance}
