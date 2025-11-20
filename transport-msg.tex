@@ -627,22 +627,33 @@ how much configuration space is valid.
 \subsubsection{Feature Negotiation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}
 
-The driver reads the device's available features in \textbf{blocks of 32 bits}
-using \msgref{GET_DEVICE_FEATURES}, supplying a \emph{block index} and
-\emph{number of blocks} to retrieve. The device responds with the feature bits
-in that range, filling any out-of-range blocks with zero.
+Drivers read available features in 32-bit blocks using
+\msgref{GET_DEVICE_FEATURES}; the device returns the requested bitfields,
+padding with zeros for any out-of-range blocks. To enable selected features, the
+driver writes them back with \msgref{SET_DRIVER_FEATURES} and then updates the
+device status via \msgref{SET_DEVICE_STATUS}, checking whether the FEATURES\_OK
+bit remains set.
 
-The driver then determines which features it can or wants to enable. Enabling a
-feature requires the driver to set the corresponding bit(s) and send
-them back to the device with \msgref{SET_DRIVER_FEATURES}. Once the driver has
-set all desired features it tries to set the FEATURES_OK bit in the device status
-via the \msgref{SET_DEVICE_STATUS} message.  The device MAY accept or reject the
-selected features by returning the new device status with the FEATURES_OK bit
-set (accepted) or cleared (rejected).
+\drivernormative{\paragraph}{Feature Negotiation (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Driver}
+\begin{itemize}
+  \item A driver MUST use \msgref{GET_DEVICE_FEATURES} to discover the feature
+        bits offered by the device and MUST write back only the features it
+        intends to enable via \msgref{SET_DRIVER_FEATURES}.
+  \item After writing the desired features, the driver MUST attempt to set the
+        FEATURES\_OK bit using \msgref{SET_DEVICE_STATUS} and MUST check the
+        returned status to ensure the device accepted the set.
+\end{itemize}
 
-If the driver requests blocks beyond the number of feature bits the device
-exposes, the device MUST respond with all zeros for the unsupported
-features.
+\devicenormative{\paragraph}{Feature Negotiation (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
+\begin{itemize}
+  \item When handling \msgref{GET_DEVICE_FEATURES}, a device MUST return zero
+        for any requested bits that fall outside the number of feature bits it
+        implements.
+  \item After receiving \msgref{SET_DRIVER_FEATURES}, a device MUST update its
+        internal feature mask to match the acknowledged set and MUST reflect
+        acceptance or rejection by leaving the FEATURES\_OK bit set or clearing
+        it in the status returned by \msgref{SET_DEVICE_STATUS}.
+\end{itemize}
 
 \subsubsection{Device Configuration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration}
