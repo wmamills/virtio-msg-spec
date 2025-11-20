@@ -903,20 +903,31 @@ VIRTIO\_F\_RING\_RESET feature has been negotiated.
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
 
-The driver MAY reset or shut down a device at any time by writing a status
-of 0 via \msgref{SET_DEVICE_STATUS}. This forces the device to discard its state
-and any pending operations on virtqueues. Once a device is reset, the driver
-MAY reinitialize the device (see
-\ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization})
-if it wishes to use the device again.
+Drivers reset a device by writing 0 to the status field via \msgref{SET_DEVICE_STATUS},
+which forces the device to discard pending operations and return to the initial state.
+A device may also signal that a reset is required by sending \msgref{EVENT_CONFIG}
+with the DEVICE\_NEEDS\_RESET bit set.
 
-\paragraph{Device Side Initiated Reset}
-In some circumstances, the device MAY also trigger a reset if it
-encounters an unrecoverable error. This can be signaled to the driver by sending
-an \msgref{EVENT_CONFIG} with a \emph{device status} with the DEVICE_NEEDS_RESET
-bit set.  The driver SHOULD reset the device by writing a status of 0
-via the \msgref{SET_DEVICE_STATUS} message. The driver MAY reinitialize
-the device if it wishes to use the device again.
+\drivernormative{\paragraph}{Reset and Shutdown (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Driver}
+\begin{itemize}
+  \item A driver MAY request a device reset at any time by writing 0 through
+        \msgref{SET_DEVICE_STATUS} and MAY reinitialize the device afterwards if
+        it intends to resume operation.
+  \item If a device signals DEVICE\_NEEDS\_RESET (for example, via
+        \msgref{EVENT_CONFIG}), the driver SHOULD write 0 to
+        \msgref{SET_DEVICE_STATUS} and reinitialize the device before resuming
+        I/O.
+\end{itemize}
+
+\devicenormative{\paragraph}{Reset and Shutdown (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Device}
+\begin{itemize}
+  \item Upon receiving a \msgref{SET_DEVICE_STATUS} write of 0, a device MUST
+        reset its internal state, discard pending virtqueue operations, and
+        present the status field as 0.
+  \item If the device encounters an unrecoverable error that requires driver
+        intervention, it SHOULD signal DEVICE\_NEEDS\_RESET (such as via
+        \msgref{EVENT_CONFIG}) so the driver can initiate a reset.
+\end{itemize}
 
 \subsubsection{Hotplug and Removal}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal}
