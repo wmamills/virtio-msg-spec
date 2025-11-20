@@ -396,8 +396,20 @@ feasible.
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
 
-All values and fields defined in the virtio-msg messages MUST
-be encoded in little-endian.
+Unless otherwise stated, all numeric fields defined for virtio-msg messages use
+little-endian encoding.
+
+\drivernormative{\paragraph}{Endianness (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Driver}
+\begin{itemize}
+  \item A driver MUST encode and decode the common header and payload fields
+        defined by this transport using little-endian byte order.
+\end{itemize}
+
+\devicenormative{\paragraph}{Endianness (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Device}
+\begin{itemize}
+  \item A device MUST emit and consume the common header and payload fields
+        defined by this transport using little-endian byte order.
+\end{itemize}
 
 \subsubsection{Common Message Format}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format}
