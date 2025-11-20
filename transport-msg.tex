@@ -1259,8 +1259,9 @@ Answer  & 0 & 4 & Resulting device status \\
 
 \msgdef{GET_VQUEUE}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+\msgref{GET_VQUEUE} returns information about a specific virtqueue, including
+its maximum size, current size, and, if already configured, the descriptor,
+driver, and device area addresses.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1268,47 +1269,65 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
 \hline
-Answer & 0 & 4 & Virtqueue index \\
-& 4 & 4 & Maximum virtqueue size \\
-& 8 & 4 & Current virtqueue size \\
-& 12 & 4 & Reserved (Must Be Zero - MBZ) \\
-& 16 & 8 & Descriptor address \\
-& 24 & 8 & Driver address \\
-& 32 & 8 & Device address \\
+Answer  & 0 & 4 & Virtqueue index (echoed) \\
+        & 4 & 4 & Maximum virtqueue size \\
+        & 8 & 4 & Current virtqueue size (0 if unused) \\
+        & 12 & 4 & Reserved (must be zero) \\
+        & 16 & 8 & Descriptor area address \\
+        & 24 & 8 & Driver area address \\
+        & 32 & 8 & Device area address \\
 \hline
 \end{tabular}
 
-If the maximum virtqueue size is zero, the virtqueue is not valid and
-MUST not be used.
+\devicenormative{\paragraph}{GET\_VQUEUE (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_VQUEUE / Device}
+\begin{itemize}
+  \item A device MUST report accurate maxima and current queue sizes for each
+        virtqueue and MUST return zero as the current size if the queue has not
+        yet been configured.
+\end{itemize}
 
 \msgdef{SET_VQUEUE}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+\msgref{SET_VQUEUE} programs a virtqueue's size and buffer addresses. The driver
+selects a queue index, supplies the desired size (not exceeding the maximum
+reported via \msgref{GET_VQUEUE}), and provides guest-physical addresses for the
+descriptor, driver, and device areas.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
-& 4 & 4 & Reserved (Must Be Zero - MBZ) \\
-& 8 & 4 & Current virtqueue size \\
-& 12 & 4 & Reserved (Must Be Zero - MBZ) \\
-& 16 & 8 & Descriptor address \\
-& 24 & 8 & Driver address \\
-& 32 & 8 & Device address \\
+        & 4 & 4 & Reserved (must be zero) \\
+        & 8 & 4 & Virtqueue size \\
+        & 12 & 4 & Reserved (must be zero) \\
+        & 16 & 8 & Descriptor address \\
+        & 24 & 8 & Driver address \\
+        & 32 & 8 & Device address \\
 \hline
-Answer & 0 & 0 & no extra data \\
+Answer  & 0 & 0 & No additional data \\
 \hline
 \end{tabular}
+
+\drivernormative{\paragraph}{SET\_VQUEUE (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
+\begin{itemize}
+  \item A driver MUST set the virtqueue size field to a value not exceeding the
+        maximum reported by \msgref{GET_VQUEUE} and MUST ensure the supplied
+        addresses point to properly aligned memory.
+\end{itemize}
+
+\devicenormative{\paragraph}{SET\_VQUEUE (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Device}
+\begin{itemize}
+  \item A device MUST configure the queue using the parameters provided via
+        \msgref{SET_VQUEUE} and treat the queue as inactive until
+        \msgref{SET_VQUEUE} has successfully completed.
+\end{itemize}
 
 \msgdef{RESET_VQUEUE}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
-
-The driver SHOULD NOT send this message unless the VIRTIO_F_RING_RESET
-feature has been negotiated.
+\msgref{RESET_VQUEUE} resets an individual virtqueue (if VIRTIO\_F\_RING\_RESET
+has been negotiated). It requires only the queue index; the device responds
+after the queue has been quiesced.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1316,9 +1335,23 @@ Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
 \hline
-Answer & 0 & 0 & no extra data \\
+Answer  & 0 & 0 & No additional data \\
 \hline
 \end{tabular}
+
+\drivernormative{\paragraph}{RESET\_VQUEUE (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Driver}
+\begin{itemize}
+  \item A driver SHOULD issue \msgref{RESET_VQUEUE} only if
+        VIRTIO\_F\_RING\_RESET has been negotiated and it needs to reconfigure
+        or recover a specific queue.
+\end{itemize}
+
+\devicenormative{\paragraph}{RESET\_VQUEUE (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Device}
+\begin{itemize}
+  \item Upon receiving \msgref{RESET_VQUEUE}, a device MUST stop processing the
+        indicated queue, reset its internal state for that queue, and allow the
+        driver to reconfigure it via \msgref{SET_VQUEUE}.
+\end{itemize}
 
 \msgdef{GET_SHM}
 
