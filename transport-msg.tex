@@ -687,29 +687,34 @@ driver's notion of the generation count and the new data.
 \subsubsection{Virtqueue Configuration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration}
 
-Virtqueues are configured via a set of transport messages:
+Drivers query virtqueue parameters with \msgref{GET_VQUEUE}, configure them via
+\msgref{SET_VQUEUE}, and optionally reset them using \msgref{RESET_VQUEUE} (if
+VIRTIO\_F\_RING\_RESET is negotiated). Each queue is typically configured by
+reading its maximum size, provisioning descriptor/available/used buffers, and
+then calling \msgref{SET_VQUEUE} with the chosen size and guest-physical
+addresses.
 
+\drivernormative{\paragraph}{Virtqueue Configuration (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Driver}
 \begin{itemize}
-  \item \msgref{GET_VQUEUE} obtains information about a specific virtqueue,
-    including its maximum size (e.g., number of descriptors) and current
-    configuration if already set.
-  \item \msgref{SET_VQUEUE} sets or updates the virtqueue parameters (e.g.,
-    queue size, descriptor area addresses, driver address, device address).
-  \item \msgref{RESET_VQUEUE} disables and resets the virtqueue, freeing its
-    resources on the device side.  The use of this message is dependent on the
-    VIRTIO_F_RING_RESET feature being negotiated.
+  \item A driver MUST use \msgref{GET_VQUEUE} to determine the maximum queue
+        size and confirm that a queue is inactive before programming it.
+  \item A driver MUST ensure the queue size provided in \msgref{SET_VQUEUE} does
+        not exceed the maximum reported by the device and MUST supply valid
+        descriptor/driver/device addresses before enabling the queue.
+  \item If VIRTIO\_F\_RING\_RESET has been negotiated and a queue requires
+        reinitialization, the driver SHOULD use \msgref{RESET_VQUEUE} before
+        reprogramming it.
 \end{itemize}
 
-A typical approach is:
-\begin{enumerate}
-  \item \textbf{GET\_VQUEUE}: Determine maximum size and confirm that the queue
-        is inactive or empty.
-  \item \textbf{SET\_VQUEUE}: Specify the number of descriptors (not exceeding
-        the maximum) and the addresses for the descriptor table, driver area,
-        and device area.  
-\end{enumerate}
-
-The driver repeats these steps for each queue the device supports.
+\devicenormative{\paragraph}{Virtqueue Configuration (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Device}
+\begin{itemize}
+  \item A device MUST report accurate maximum queue sizes in \msgref{GET_VQUEUE}
+        and MUST persist the parameters supplied via \msgref{SET_VQUEUE} (size,
+        descriptor, driver, and device addresses).
+  \item When \msgref{RESET_VQUEUE} is issued (and VIRTIO\_F\_RING\_RESET is
+        negotiated), the device MUST quiesce the queue, release any resources
+        associated with it, and allow the driver to reconfigure it.
+\end{itemize}
 
 \subsubsection{Status Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information}
