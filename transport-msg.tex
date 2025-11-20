@@ -950,24 +950,20 @@ hypervisor events; virtio-msg does not mandate a specific mechanism.
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
 
-Transport messages are used to configure and operate individual virtio devices.
-Unlike bus messages (which handle device enumeration, hotplug, or global resets),
-transport messages MUST be implemented by any virtio-msg device and
-driver pair to enable standard virtio functionality (feature negotiation,
-configuration, virtqueues, etc.). The subsections below describe each message
-and clarify its required fields, typical usage patterns, and possible responses.
+Transport messages configure and operate virtio devices once they have been
+discovered. Unlike bus messages (which cover enumeration or hotplug), transport
+messages focus on feature negotiation, configuration access, virtqueue setup,
+and runtime notifications. The subsections below describe each message and how
+it is used in the virtio-msg transport.
 
 \subsubsection{Overview}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages / Overview}
 
-A driver typically sends these messages to a known device number,
-and the virtio-msg device responds or notifies as appropriate. The
-bus \emph{forwards} these messages but does not interpret or modify them beyond
-basic checks (e.g., ensuring the size does not exceed the maximum size
-supported, verifying the target device number exists).
-
-Most transport messages adopt a \emph{request/response} pattern, but some are
-unidirectional (e.g., asynchronous notifications).
+Drivers send transport messages to a specific device number, and the virtio-msg
+device replies or emits events accordingly. The bus simply forwards these
+messages after enforcing generic checks such as maximum size or verifying that
+the target device exists. Most transport messages are request/response pairs,
+with events reserved for asynchronous notifications.
 
 \paragraph{Messages IDs and issuers}
 
@@ -1010,29 +1006,31 @@ Reserved                   & 0x1 & \\
 \hline
 \end{tabular}
 
-Transport message IDs 0x00 to 0x3F are used for messages that require a response
-and IDs 0x40 to 0x7F are used for event messages. Transport message IDs 0x80
-and above are reserved by this specification.
+IDs 0x00–0x3F are reserved for request/response messages and 0x40–0x7F for
+events. IDs 0x80 and above are reserved for future extensions.
 
-\paragraph{Mandatory Transport Messages}
-For a virtio-msg device to be fully operational, the following messages
-MUST be supported:
+\devicenormative{\paragraph}{Core Messages (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Device}
 \begin{itemize}
-  \item \msgref{GET_DEVICE_INFO}
-  \item \msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}
-  \item \msgref{GET_CONFIG} and \msgref{SET_CONFIG}
-  \item \msgref{GET_DEVICE_STATUS} and \msgref{SET_DEVICE_STATUS}
-  \item \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE}, and \msgref{RESET_VQUEUE}
+  \item A device MUST implement \msgref{GET_DEVICE_INFO},
+        \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES},
+        \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, \msgref{GET_DEVICE_STATUS},
+        \msgref{SET_DEVICE_STATUS}, \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE},
+        and \msgref{RESET_VQUEUE}.
 \end{itemize}
 
-The functionality of the following messages MUST be provided by
-in-band messages, out-of-band event notification, or bus implementation based
-polling:
+\drivernormative{\paragraph}{Core Messages (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Driver}
 \begin{itemize}
-  \item \msgref{EVENT_AVAIL}
-  \item \msgref{EVENT_USED}
-  \item \msgref{EVENT_CONFIG}
+  \item A driver MUST support sending and interpreting the messages listed
+        above in order to initialize and operate a virtio-msg device.
 \end{itemize}
+
+As described in Sections
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications}
+and
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications},
+runtime notifications (\msgref{EVENT_AVAIL}, \msgref{EVENT_USED}, and
+\msgref{EVENT_CONFIG}) may be delivered in-band or via equivalent out-of-band
+mechanisms.
 
 \msgdef{GET_DEVICE_INFO}
 
