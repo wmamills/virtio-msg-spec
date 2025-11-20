@@ -932,23 +932,21 @@ with the DEVICE\_NEEDS\_RESET bit set.
 \subsubsection{Hotplug and Removal}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal}
 
-If the bus supports dynamic addition or removal of devices at runtime, it
-MAY announce these events using messages:
-\begin{itemize}
-  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_READY for a newly
-    available device,
-  \item \busref{EVENT_DEVICE} with state DEVICE_BUS_STATE_REMOVED for a device
-    that is no longer accessible.
-\end{itemize}
+If the bus supports dynamic addition or removal of devices, it can advertise
+those changes with \busref{EVENT_DEVICE} (READY or REMOVED). Some platforms may
+instead rely on external signals such as ACPI, device tree updates, or
+hypervisor events; virtio-msg does not mandate a specific mechanism.
 
-Alternatively, the bus MAY rely on external signals (e.g., an event from
-the platform or hypervisor) and inform the OS of hotplug changes out-of-band.
-This specification \emph{defines} \busref{EVENT_DEVICE}
-for implementations that prefer a fully message-based
-approach but does not require their use. In any scenario, once notified that a
-device has appeared, the bus SHOULD query the device (e.g., via
-\msgref{GET_DEVICE_INFO}) and register it with the OS. If a device is
-removed, the bus SHOULD prompt the OS to unbind and release resources.
+\busnormative{\paragraph}{Hotplug and Removal (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal / Bus}
+\begin{itemize}
+  \item A bus implementation that uses \busref{EVENT_DEVICE} MUST send the READY
+        event when a device becomes accessible and the REMOVED event when it is
+        no longer available.
+  \item Regardless of how hotplug information is delivered, once a new device is
+        reported the bus SHOULD query it (e.g., via \msgref{GET_DEVICE_INFO})
+        and register it with the host OS. When a device is removed, the bus
+        SHOULD prompt the OS to quiesce and release the associated driver.
+\end{itemize}
 
 \subsection{Transport Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
 
