@@ -504,30 +504,28 @@ and ignored on receive to preserve forward compatibility.
 \subsubsection{Message Correlation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation}
 
-Messages are either requests or events. Requests require a response. Events are
-one way and do not have a response. Most requests defined today originate at the
-driver side but bus message requests such as \busref{PING} MAY originate at
-either driver side or device side.
+Requests expect responses, whereas events are one-way and do not. Correlation is
+based on the tuple (\field{dev_num}, \field{token}) from the message header.
 
-This section defines how responses are correlated to requests. An implementation
-does not need to support sending multiple requests in parallel but these rules
-allow for that possibility.
-
-The token field in the message header is part of a tuple that is unique during
-a request to response interval.
+\drivernormative{\paragraph}{Message Correlation (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation / Driver}
 \begin{itemize}
-  \item Message tuple: ( \field{dev_num}, \field{token} ).
+  \item A driver MUST assign a non-zero \field{token} for each outstanding
+        request so that the (\field{dev_num}, \field{token}) tuple remains
+        unique among inflight requests.
+  \item A driver MUST set \field{token}=0 when sending event (one-way) messages
+        and MUST ignore any error responses purportedly referencing such events.
+  \item When processing responses, a driver SHOULD discard any response whose
+        correlation tuple does not match an outstanding request.
 \end{itemize}
 
-Rules:
+\devicenormative{\paragraph}{Message Correlation (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation / Device}
 \begin{itemize}
-  \item The request originator assigns a non-zero \field{token} for every
-    request such that the tuple is unique for all inflight requests.
-  \item Event (one-way) messages MUST set \field{token}=0
-  \item A response MUST echo \field{token} and \field{dev_num}.
-  \item Reception of unknown or already completed correlation tuples
-    SHOULD result in discarding the response without further protocol
-    action.
+  \item A device MUST echo the \field{token} and \field{dev_num} from the
+        corresponding request when generating a response.
+  \item A device MUST set \field{token}=0 when generating event (one-way)
+        messages and MUST NOT send error responses referencing those events.
+  \item A device SHOULD discard responses from the other side that reference a
+        correlation tuple that is unknown or already completed.
 \end{itemize}
 
 \subsection{Device Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Device Discovery}
