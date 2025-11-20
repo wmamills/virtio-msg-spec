@@ -535,22 +535,24 @@ A virtio-msg implementation can learn about devices via bus-level enumeration
 hypervisor/firmware interfaces. The following informative text describes
 typical flows; the normative obligations follow.
 
-Bus implementations MAY discover their devices in various ways:
-\begin{itemize}
-  \item By parsing platform data such as a device tree or ACPI tables,
-  \item By receiving enumeration data from a hypervisor or firmware,
-  \item By using \busref{GET_DEVICES} messages
-    to query which device numbers are present on this bus instance.
-\end{itemize}
+Bus implementations discover their devices through a mix of platform data,
+hypervisor-provided enumeration, or message-based queries such as
+\busref{GET_DEVICES}. This specification defines \busref{GET_DEVICES} for
+environments that prefer message-driven enumeration, but it does not require
+its use when equivalent information is already known out-of-band.
 
-This specification \emph{defines} \busref{GET_DEVICES} for implementations that
-wish to carry out discovery entirely via messages, but it does \textbf{not}
-mandate use of this approach. A bus implementation MAY skip
-\busref{GET_DEVICES} altogether if it already knows which devices exist (e.g.,
-via a device tree). In any case, once a bus has established the presence of a
-device, it SHOULD call \msgref{GET_DEVICE_INFO} to retrieve the device ID
-and vendor ID. The bus can then register the device with the host OS
-so the appropriate virtio driver probe routine is invoked.
+\busnormative{\paragraph}{Device Discovery (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Discovery / Bus}
+\begin{itemize}
+  \item A bus implementation MUST ensure that every device number it exposes to
+        the driver has been validated via either platform data or a successful
+        query such as \busref{GET_DEVICES}.
+  \item Once a device number is deemed present, the bus implementation SHOULD
+        invoke \msgref{GET_DEVICE_INFO} so it can register the device with the
+        host OS and allow the appropriate virtio driver to bind.
+  \item If a bus implementation provides an alternative enumeration mechanism
+        (e.g., ACPI, device tree), it MAY omit \busref{GET_DEVICES} provided the
+        alternative delivers equivalent information to the driver.
+\end{itemize}
 
 \subsection{Device Initialization}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization}
