@@ -658,33 +658,31 @@ bit remains set.
 \subsubsection{Device Configuration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration}
 
-\paragraph{Reading Configuration}
+Drivers use \msgref{GET_CONFIG} to read portions of the configuration space by
+supplying an offset and length; the device returns the requested data plus the
+current configuration generation count. Writing is performed via
+\msgref{SET_CONFIG}, which carries the same offset/length along with the
+driver's notion of the generation count and the new data.
 
-The driver can read portions of the device's configuration space using
-\msgref{GET_CONFIG}. It supplies:
+\drivernormative{\paragraph}{Device Configuration (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Driver}
 \begin{itemize}
-  \item \textbf{Offset}: The byte offset from the start of the configuration
-    space,
-  \item \textbf{Number of bytes}: How many bytes to retrieve.
-\end{itemize}
-The device returns the requested data along with the current \emph{Configuration
-Generation Count}, which changes each time the device updates its configuration
-internally.
-
-\paragraph{Writing Configuration}
-
-To write a portion of the configuration space, the driver uses
-\msgref{SET_CONFIG}, providing:
-\begin{itemize}
-  \item \textbf{Offset} and \textbf{Number of bytes},
-  \item \textbf{Configuration generation count} as read earlier,
-  \item The \textbf{new configuration data} to be written.
+  \item A driver MUST ensure that the offset and length in each
+        \msgref{GET_CONFIG} or \msgref{SET_CONFIG} request stay within the
+        configuration size reported by \msgref{GET_DEVICE_INFO}.
+  \item A driver MUST include its most recently observed configuration
+        generation count in a \msgref{SET_CONFIG} request and SHOULD re-read the
+        configuration (via \msgref{GET_CONFIG}) if the request is rejected for a
+        generation mismatch.
 \end{itemize}
 
-If the generation count does not match the device's current value, the device
-MUST reject the update as defined in the \msgref{SET_CONFIG} response.
-The driver SHOULD then read the updated configuration space and
-reattempt if necessary.
+\devicenormative{\paragraph}{Device Configuration (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Device}
+\begin{itemize}
+  \item A device MUST reject a \msgref{SET_CONFIG} request whose generation
+        count does not match its current value and MUST indicate the rejection
+        in the response.
+  \item A device MUST return the current configuration generation count
+        alongside any data returned via \msgref{GET_CONFIG}.
+\end{itemize}
 
 \subsubsection{Virtqueue Configuration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration}
