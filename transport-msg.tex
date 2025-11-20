@@ -746,10 +746,29 @@ invalidating any configuration or virtqueue state.
 
 \subsubsection{Finalizing Initialization}
 
-Once all virtqueues are configured and any required features have been enabled,
-the driver typically sets the final status bits (e.g., "DRIVER OK") via
-\msgref{SET_DEVICE_STATUS}. At this point, the device is considered fully
-initialized, and normal I/O operations can begin using virtio queues.
+After configuring virtqueues and agreeing on features, the driver transitions
+the device to DRIVER\_OK (and any other required status bits) via
+\msgref{SET_DEVICE_STATUS}. At that point, the device is considered ready for
+normal virtqueue I/O.
+
+\drivernormative{\paragraph}{Final Status (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Driver}
+\begin{itemize}
+  \item A driver MUST set DRIVER\_OK via \msgref{SET_DEVICE_STATUS} only after
+        it has completed feature negotiation and initialized all required
+        virtqueues.
+  \item A driver MUST NOT queue normal I/O until the device reports a status
+        that includes DRIVER\_OK.
+  \item A driver MUST NOT supply buffers or send driver notifications for a
+        virtqueue until that queue has been configured via \msgref{SET_VQUEUE}.
+\end{itemize}
+
+\devicenormative{\paragraph}{Final Status (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Device}
+\begin{itemize}
+  \item A device MUST NOT process normal virtqueue I/O until the driver has set
+        DRIVER\_OK.
+  \item Once DRIVER\_OK is set, the device MUST begin processing virtqueue
+        requests subject to the negotiated features and queue configurations.
+\end{itemize}
 
 \subsection{Device Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation}
