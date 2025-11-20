@@ -1381,50 +1381,74 @@ Answer  & 0 & 4 & Shared memory region index (echoed) \\
 
 \msgdef{EVENT_CONFIG}
 
-This message is sent by the virtio-msg device and there is no response.
+\msgref{EVENT_CONFIG} notifies the driver about configuration or status changes.
+The payload includes the current device status, configuration generation count,
+and optionally the updated configuration data (offset plus length). A length of
+zero indicates that the driver should re-fetch the affected range via
+\msgref{GET_CONFIG}.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Device status \\
-& 4 & 4 & Configuration generation count \\
-& 8 & 4 & Configuration offset \\
-& 12 & 4 & Number of bytes (MAY be zero) \\
-& 16 & ... & Configuration data \\
+        & 4 & 4 & Configuration generation count \\
+        & 8 & 4 & Configuration offset \\
+        & 12 & 4 & Number of bytes (may be zero) \\
+        & 16 & ... & Configuration data (optional) \\
 \hline
 \end{tabular}
 
-The number of bytes field MAY be zero. If so the configuration data field
-will also be of zero length. This is the normal case when the configuration
-generation count has not been changed.
+\drivernormative{\paragraph}{EVENT\_CONFIG (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Driver}
+\begin{itemize}
+  \item When \msgref{EVENT_CONFIG} provides configuration data, the driver
+        SHOULD apply it; otherwise it SHOULD re-read the affected range via
+        \msgref{GET_CONFIG} before proceeding.
+\end{itemize}
 
-If the number of bytes field is zero and the configuration generation count is
-changed, then the driver is responsible for discovering any changed
-configuration data via \msgref{GET_CONFIG} messages.
+\devicenormative{\paragraph}{EVENT\_CONFIG (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Device}
+\begin{itemize}
+  \item A device MUST send \msgref{EVENT_CONFIG} whenever it changes
+        configuration data or status in a way that is visible to the driver,
+        including the new configuration generation count.
+\end{itemize}
 
 \msgdef{EVENT_AVAIL}
 
-This message is sent by the virtio-msg driver and there is no response.
+\msgref{EVENT_AVAIL} notifies the device that a virtqueue has new buffers. The
+message includes the queue index and, if VIRTIO\_F\_NOTIFICATION\_DATA is
+negotiated, a combined next-offset/next-wrap field so the device can jump
+directly to the updated position. Otherwise that field is zero.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
 Type & Offset & Size (bytes) & Content \\
 \hline \hline
 Request & 0 & 4 & Virtqueue index \\
-& 4 & 4 & Next offset and Next wrap \\
+        & 4 & 4 & Next offset (31 bits) and wrap (MSB) \\
 \hline
 \end{tabular}
 
-The \textbf{Next wrap} field is the MSB of the 32 bit value. The
-\textbf{Next offset} field is the other 31 bits. These fields SHOULD be 0 if
-the VIRTIO_F_NOTIFICATION_DATA feature has not been negotiated. If the bus
-implementation is using out-of-band notifications, it SHOULD prevent this
-feature from being negotiated.
+\drivernormative{\paragraph}{EVENT\_AVAIL (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Driver}
+\begin{itemize}
+  \item If VIRTIO\_F\_NOTIFICATION\_DATA has not been negotiated, a driver MUST
+        set the next offset/wrap field to zero in \msgref{EVENT_AVAIL} messages.
+        If it has been negotiated, the driver MUST fill in the field with the
+        current available ring position.
+\end{itemize}
+
+\busnormative{\paragraph}{EVENT\_AVAIL (Bus)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Bus}
+\begin{itemize}
+  \item A bus implementation that uses out-of-band notifications SHOULD prevent
+        negotiation of VIRTIO\_F\_NOTIFICATION\_DATA so that devices do not
+        expect in-band offset/wrap values.
+\end{itemize}
 
 \msgdef{EVENT_USED}
 
-This message is sent by the virtio-msg device and there is no response.
+\msgref{EVENT_USED} notifies the driver that buffers on a particular virtqueue
+have been consumed. The payload carries only the queue index; the driver uses
+its used ring to determine which descriptors completed.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1433,6 +1457,20 @@ Type & Offset & Size (bytes) & Content \\
 Request & 0 & 4 & Virtqueue index \\
 \hline
 \end{tabular}
+
+\devicenormative{\paragraph}{EVENT\_USED (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Device}
+\begin{itemize}
+  \item A device SHOULD send \msgref{EVENT_USED} (or an equivalent notification)
+        when it processes buffers on a virtqueue unless the driver has
+        explicitly disabled such notifications.
+\end{itemize}
+
+\drivernormative{\paragraph}{EVENT\_USED (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Driver}
+\begin{itemize}
+  \item Upon receiving \msgref{EVENT_USED}, a driver MUST examine the indicated
+        virtqueue (for example, by reading the used ring) to reclaim completed
+        buffers.
+\end{itemize}
 
 \subsection{Bus Messages}\label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}
 
