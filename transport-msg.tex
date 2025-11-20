@@ -272,8 +272,8 @@ revisions.
 Device Numbers}
 
 Each virtio-msg bus instance contains one or more \emph{devices}, identified
-by a 16-bit \textbf{device number}. Buses MAY discover these device
-numbers in multiple ways:
+by a 16-bit \textbf{device number}. Buses discover these device numbers through
+mechanisms such as:
 \begin{itemize}
   \item \textbf{Message-Based Enumeration}: Using \busref{GET_DEVICES} to query
         which numbers exist (optional).
@@ -281,10 +281,20 @@ numbers in multiple ways:
         might inform the bus of available device numbers and their properties.
 \end{itemize}
 
-Once a bus confirms that a given device number is valid (regardless of the method),
-it typically issues \msgref{GET_DEVICE_INFO} to retrieve the device's Device ID
-and vendor ID. The bus can then register the device with the host OS to initiate
-the usual Virtio driver binding process.
+Once a bus confirms that a device number is valid—regardless of the discovery
+method—it normally issues \msgref{GET_DEVICE_INFO} to retrieve the device and
+vendor IDs before registering the device with the host OS so the usual Virtio
+driver binding process can begin.
+
+\busnormative{\paragraph}{Device Number Assignment}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Numbers / Assignment}
+\begin{itemize}
+  \item A bus implementation MUST assign a unique device number to every
+        device on a given bus instance and MUST NOT forward transport messages
+        for a device number that has not been validated.
+  \item A bus implementation SHOULD provide the driver with sufficient
+        information—either via \busref{GET_DEVICES} or equivalent platform
+        data—to discover each valid device number.
+\end{itemize}
 
 \subsubsection{Configuration Generation Count}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen}
