@@ -719,13 +719,30 @@ addresses.
 \subsubsection{Status Information}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information}
 
-During initialization, the driver MAY query the device's status via
-\msgref{GET_DEVICE_STATUS} to check for errors or to see if the device is ready
-for feature negotiation or configuration changes. To advance or reset the
-device's state, the driver sends \msgref{SET_DEVICE_STATUS} with the desired
-status bits (e.g., "ACKNOWLEDGE," "DRIVER," "DRIVER OK"). Setting the device's
-status to 0 triggers a device reset, invalidating configuration and
-virtqueues.
+Drivers query the device status via \msgref{GET_DEVICE_STATUS} to observe
+progress or detect errors, and they drive the Virtio status transitions via
+\msgref{SET_DEVICE_STATUS}. Writing zero to the status field resets the device,
+invalidating any configuration or virtqueue state.
+
+\drivernormative{\paragraph}{Status Handling (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Driver}
+\begin{itemize}
+  \item A driver SHOULD read the device status via \msgref{GET_DEVICE_STATUS}
+        when diagnosing errors or determining whether the device is ready to
+        move to the next initialization phase.
+  \item A driver MUST use \msgref{SET_DEVICE_STATUS} to drive the device through
+        the virtio-defined status states and MUST write 0 to request a device
+        reset when needed.
+\end{itemize}
+
+\devicenormative{\paragraph}{Status Handling (Device)}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Device}
+\begin{itemize}
+  \item Upon receiving a \msgref{SET_DEVICE_STATUS} write of 0, a device MUST
+        reset its internal state, invalidate existing configuration and
+        virtqueue settings, and present the status field as 0.
+  \item A device MUST report its current status accurately via
+        \msgref{GET_DEVICE_STATUS}, including whether the FEATURES\_OK bit has
+        been accepted or cleared.
+\end{itemize}
 
 \subsubsection{Finalizing Initialization}
 
