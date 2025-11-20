@@ -95,7 +95,8 @@ virtio-msg groups messages into two categories:
     These messages are \emph{optional} in environments where
     device discovery or state changes occur through other means (e.g., device
     tree). However, if a bus chooses to handle those tasks via messages,
-    it SHOULD implement the appropriate bus message definitions.
+    it implements the appropriate bus message definitions described in this
+    section.
 
   \item[\textbf{Transport Messages}:]
     Used for device-specific operations, such as:
@@ -108,16 +109,28 @@ virtio-msg groups messages into two categories:
       \item Handling device status and notifications (\msgref{SET_DEVICE_STATUS},
         \msgref{EVENT_USED}, etc.).
     \end{itemize}
-    A bus implementation MUST relay these messages to the device number
-    identified in the header, regardless of how it discovered or enumerated
-    that device. Apart from enforcing generic transport limits (for example,
-    maximum message size), a bus SHOULD treat transport messages as opaque and
-    avoid modifying them.
 \end{description}
 
 This separation lets a bus remain minimal if it obtains device information from
 firmware tables, while still supporting fully message-based enumeration and
 hotplug when desired.
+
+\busnormative{\paragraph}{Bus Message Implementation}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Relationship between bus and transport / Bus Messages}
+\begin{itemize}
+  \item A bus implementation that provides enumeration, hotplug, or bus
+        health handling via bus messages SHOULD implement the corresponding Bus
+        Message definitions described in this section.
+\end{itemize}
+
+\busnormative{\paragraph}{Transport Message Forwarding}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Relationship between bus and transport / Transport Message Forwarding}
+\begin{itemize}
+  \item A bus implementation MUST relay each transport message to the device
+        number identified in the message header, regardless of how it
+        discovered or enumerated that device.
+  \item A bus implementation SHOULD treat transport messages as opaque apart
+        from enforcing generic transport limits, such as the advertised maximum
+        message size, and SHOULD NOT modify the transport payload.
+\end{itemize}
 
 \subsubsection{System Topology}
 
@@ -1400,4 +1413,3 @@ Implementations that do not follow these mandatory rules MUST NOT declare
 themselves conformant. Features or messages labeled as "optional" (MAY)
 do not invalidate compliance if omitted, provided all required behaviors are
 still correctly implemented.
-
