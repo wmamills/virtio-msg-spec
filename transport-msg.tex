@@ -156,30 +156,49 @@ A virtio-msg system contains the following elements:
 Each \textbf{virtio-msg bus instance} advertises the following to the transport
 layer:
 \begin{itemize}
-  \item A \textbf{transport revision} indicating the protocol version it
-        supports. This revision is separate from the overall Virtio
-        specification version.
-  \item A \textbf{maximum message size} representing the largest payload
-        (in bytes) the bus can reliably carry per request or response.
-  \item A \textbf{feature bits} indicating a list of revision specific
-        optional features that are supported or not by the bus instance.
+  \item \textbf{Transport revision}: the protocol version supported by the bus
+        instance (independent of the overall Virtio specification version).
+  \item \textbf{Maximum message size}: the largest payload (in bytes) that can
+        be carried per request or response, including the common header.
+  \item \textbf{Transport feature bits}: revision-specific optional features
+        implemented by the bus instance.
 \end{itemize}
 
-These parameters MAY vary between bus instances within the same system.
-The bus implementation obtains a bus's revision, maximum message size and list
-of features through an \emph{implementation-defined} mechanism, which could be:
+The mechanism for obtaining these parameters is implementation-defined and can
+vary between bus instances. Common approaches include:
 \begin{itemize}
-  \item A device tree or firmware method providing bus configuration,
-  \item A message exchange during bus setup,
-  \item A per bus instance list of properties,
-  \item A static definition built into the driver for a known environment.
+  \item Reading firmware or device-tree data that describes each bus instance,
+  \item Performing a message exchange during bus setup to retrieve the values,
+  \item Relying on per-bus configuration structures or driver-specific defaults.
 \end{itemize}
 
-After learning these parameters, the transport layer MUST respect them
-for all messages involving that bus instance. For example, it MUST NOT
-send a message exceeding the \textbf{maximum message size}, and it MUST
-avoid using advanced features or messages unavailable in the bus's advertised
-\textbf{transport revision}.
+\busnormative{\paragraph}{Advertising Transport Parameters}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Advertising Transport Parameters}
+\begin{itemize}
+  \item Each bus instance MUST make its transport revision, maximum message
+        size, and transport feature bits available to the virtio-msg transport
+        before any transport messages are exchanged for that device.
+  \item A bus instance MUST apply the same limits to both driver-originated and
+        device-originated transport messages; if the values change, the bus
+        MUST inform the transport layer before accepting additional messages.
+\end{itemize}
+
+\drivernormative{\paragraph}{Respecting Bus Limits (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Driver Limits}
+\begin{itemize}
+  \item A driver MUST NOT send a transport message whose total size exceeds the
+        maximum message size advertised for the target bus instance.
+  \item A driver MUST NOT rely on transport features or messages that require a
+        higher transport revision than the bus instance reports.
+\end{itemize}
+
+\devicenormative{\paragraph}{Respecting Bus Limits (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Device Limits}
+\begin{itemize}
+  \item A device MUST ensure its responses and device-originated messages do
+        not exceed the maximum message size advertised by the bus instance that
+        relays them.
+  \item A device MUST NOT require transport features or messages beyond the
+        transport revision reported by the bus instance, and MUST respond with
+        an error or ignore requests for unsupported features.
+\end{itemize}
 
 \paragraph{virtio-msg revisions}
 
@@ -196,21 +215,22 @@ The following table lists the currently defined virtio-msg revisions:
 Note that a change in the virtio standard does not necessarily
 correspond to a change in the virtio-msg revision.
 
-The maximum message size is from the common transport level point of
-view and includes the headers and payload described here.  If the bus adds its
-own overhead (e.x. its own header) this is not included in the maximum message
-size. The maximum useful message size is currently expected to be 274.
-This value is large enough to support a GET_CONFIG or SET_CONFIG message with a
-configuration data payload of 256 bytes.
+The maximum message size is specified from the transport-layer point of view
+and includes the 8-byte common header plus payload. Any extra encapsulation
+imposed by the underlying bus (for example, a framing header) does not count
+against this limit. Today the maximum useful transport payload is expected to
+be 274 bytes, which is sufficient for a GET_CONFIG or SET_CONFIG transfer with
+256 bytes of configuration data.
 
 \paragraph{Versioning and Forward Compatibility}
 
-A higher transport \textbf{transport revision} or additional \textbf{feature
-bits} MAY extend the protocol with new messages or capabilities. However,
-to remain compliant with earlier revisions, devices and drivers SHOULD
-continue to honor the mandatory messages and semantics from prior revisions. If
-a bus instance or device does not support an advanced feature, it SHOULD
-reject or ignore those requests rather than undefined behavior.
+A higher transport revision or additional transport feature bits extend the
+protocol with new messages or capabilities. Implementations are expected to
+remain interoperable across revisions: devices and drivers designed for a newer
+revision still implement the mandatory messages and semantics defined in prior
+revisions. When a bus instance, driver, or device encounters an unsupported
+message or feature, it should reject the request explicitly or ignore it rather
+than exhibit undefined behavior.
 
 \subsubsection{Device Numbers and Enumeration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts /
