@@ -1034,8 +1034,9 @@ mechanisms.
 
 \msgdef{GET_DEVICE_INFO}
 
-This message is sent by the virtio-msg transport driver and requires a
-response from the device.
+The driver issues \msgref{GET_DEVICE_INFO} to discover static identification
+data and limits for a device. It is the only transport message permitted before
+the device transitions out of the inactive state.
 
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -1053,10 +1054,19 @@ Answer & 0 & 4 & Device ID \\
 \hline
 \end{tabular}
 
-The number of feature bits MUST be a multiple of 32.
+\devicenormative{\paragraph}{GET\_DEVICE\_INFO (Device)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Device}
+\begin{itemize}
+  \item A device MUST respond to \msgref{GET_DEVICE_INFO} while inactive and
+        MUST supply consistent values for device ID, vendor ID, feature count (a
+        multiple of 32 bits), configuration size, and virtqueue limits.
+\end{itemize}
 
-This is the only message allowed for an inactive device. If this message queries
-an inactive device all fields in the response SHOULD be 0.
+\drivernormative{\paragraph}{GET\_DEVICE\_INFO (Driver)}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Driver}
+\begin{itemize}
+  \item A driver SHOULD treat the response as the authoritative source for
+        feature count, configuration size, and virtqueue limits before
+        proceeding with initialization.
+\end{itemize}
 
 \msgdef{GET_DEVICE_FEATURES}
 
