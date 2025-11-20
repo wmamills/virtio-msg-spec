@@ -414,9 +414,9 @@ little-endian encoding.
 \subsubsection{Common Message Format}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format}
 
-All virtio-msg exchanges, whether \emph{bus messages} or
-\emph{transport messages}, begin with an 8 byte header followed by an optional
-payload.
+All virtio-msg exchanges, whether \emph{bus messages} or \emph{transport
+messages}, begin with an 8-byte header followed by an optional payload. The
+fields below describe the wire format for that header.
 
 The header layout is:
 \begin{lstlisting}
@@ -435,30 +435,71 @@ Field semantics:
   \item \field{type}:
     \begin{itemize}
   \item Bit[0]: 0=request, 1=response.
-  \item Bit[1]: 0=Transport Message, 1=Bus Message.
-  \item Bits[2..7]: MUST be zero; receivers MUST ignore.
+  \item Bit[1]: 0=transport message, 1=bus message.
+  \item Bits[2..7]: reserved for future use.
     \end{itemize}
   \item \field{msg_id}: Message ID identifying the message definition. Ranges
     are defined in
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
     and
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
-  \item \field{dev_num}: For Transport Messages, the target device number; for
-    Bus Messages MUST be zero.
-  \item \field{token}: Non-zero for requests (which expect a response); zero
-    MUST be used only for event (one-way) messages. Responses
-    MUST echo the request's \field{token}.
-  \item \field{msg_size}: Total size in bytes of the complete message (header +
-    payload). MUST be \(\ge 8\) and MUST NOT exceed the
-    bus's maximum message size.
-  \item \field{payload}: Operation-specific data. Unused trailing bytes (if any
-    introduced by a bus framing) MUST be zero and MUST be
-    ignored by receivers.
+  \item \field{dev_num}: For transport messages, the device number that should
+    receive the message. Bus messages operate on device number 0.
+  \item \field{token}: Requests use non-zero tokens so responses can be matched;
+    event (one-way) messages use token 0 and do not expect a response.
+  \item \field{msg_size}: Total size in bytes of the complete message (header
+    plus payload).
+  \item \field{payload}: Operation-specific data. If a bus introduces extra
+    padding bytes, those bytes are not part of the payload semantics.
 \end{itemize}
 
-All reserved header bits and any unspecified header values MUST be
-sent as zero and MUST be ignored on receive to preserve forward
-compatibility.
+\drivernormative{\paragraph}{Common Header (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Driver}
+\begin{itemize}
+  \item A driver MUST set bits 2..7 of \field{type} to zero and MUST treat them
+        as reserved when parsing received headers.
+  \item A driver MUST ensure \field{msg_size} reflects the total message length
+        (header plus payload) and MUST NOT exceed the maximum message size
+        advertised by the bus instance.
+  \item A driver MUST set \field{token}=0 for event (one-way) messages and MUST
+        assign a non-zero \field{token} for every request that expects a
+        response.
+  \item When sending a transport message, a driver MUST set \field{dev_num} to
+        the intended device number.
+  \item If a driver introduces padding bytes that become part of the transport
+        payload, it MUST set those bytes to zero.
+\end{itemize}
+
+\devicenormative{\paragraph}{Common Header (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Device}
+\begin{itemize}
+  \item A device MUST set bits 2..7 of \field{type} to zero in transmitted
+        messages and MUST ignore those bits on receive.
+  \item A device MUST ensure \field{msg_size} reflects the total message length
+        (header plus payload) and does not exceed the bus's advertised maximum.
+  \item A device MUST set \field{token}=0 for event (one-way) messages it
+        originates and MUST echo the \field{token} received in requests when
+        producing responses.
+  \item When sending a transport message, a device MUST set \field{dev_num} to
+        its own device number.
+  \item A device MUST ignore padding bytes that are documented as bus-specific
+        and MUST zero any such bytes it introduces into the transport payload.
+\end{itemize}
+
+\busnormative{\paragraph}{Common Header (Bus)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Bus}
+\begin{itemize}
+  \item A bus implementation MUST deliver bus messages with \field{dev_num}=0
+        and MUST NOT alter \field{dev_num} for transport messages beyond the
+        routing needed to reach the addressed device.
+  \item A bus implementation MUST set bits 2..7 of \field{type} to zero when
+        generating bus messages and MUST ignore those bits when forwarding
+        transport messages.
+  \item If the bus adds framing or padding bytes around the common header or
+        payload, it MUST set those bytes to zero before delivering the message
+        to the opposite side and MUST present the same zero padding when the
+        opposite side reads a message.
+\end{itemize}
+
+Reserved header bits and unspecified header values MUST be transmitted as zero
+and ignored on receive to preserve forward compatibility.
 
 \subsubsection{Message Correlation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation}
