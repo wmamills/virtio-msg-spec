@@ -424,7 +424,7 @@ struct virtio_msg_header {
     u8       type;      /* request/response + bus/transport */
     u8       msg_id;    /* message id */
     le16     dev_num;   /* device number (0 for bus messages) */
-    le16     token;     /* correlation identifier (0 for events) */
+    le16     token;     /* bus-managed correlation identifier */
     le16     msg_size;  /* total size: header (8) + payload */
     u8       payload[];
 };
@@ -445,8 +445,9 @@ Field semantics:
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
   \item \field{dev_num}: For transport messages, the device number that should
     receive the message. Bus messages operate on device number 0.
-  \item \field{token}: Requests use non-zero tokens so responses can be matched;
-    event (one-way) messages use token 0 and do not expect a response.
+  \item \field{token}: Correlation identifier managed by the bus. Drivers and
+    devices treat this field as opaque; the bus MAY overwrite it to track
+    outstanding requests or maintain ordering.
   \item \field{msg_size}: Total size in bytes of the complete message (header
     plus payload).
   \item \field{payload}: Operation-specific data. If a bus introduces extra
@@ -460,13 +461,12 @@ Field semantics:
   \item A driver MUST ensure \field{msg_size} reflects the total message length
         (header plus payload) and MUST NOT exceed the maximum message size
         advertised by the bus instance.
-  \item A driver MUST set \field{token}=0 for event (one-way) messages and MUST
-        assign a non-zero \field{token} for every request that expects a
-        response.
   \item When sending a transport message, a driver MUST set \field{dev_num} to
         the intended device number.
   \item If a driver introduces padding bytes that become part of the transport
         payload, it MUST set those bytes to zero.
+  \item A driver MUST treat the \field{token} field as opaque and MUST NOT rely
+        on its value when processing received messages.
 \end{itemize}
 
 \devicenormative{\paragraph}{Common Header (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Device}
@@ -475,13 +475,12 @@ Field semantics:
         messages and MUST ignore those bits on receive.
   \item A device MUST ensure \field{msg_size} reflects the total message length
         (header plus payload) and does not exceed the bus's advertised maximum.
-  \item A device MUST set \field{token}=0 for event (one-way) messages it
-        originates and MUST echo the \field{token} received in requests when
-        producing responses.
   \item When sending a transport message, a device MUST set \field{dev_num} to
         its own device number.
   \item A device MUST ignore padding bytes that are documented as bus-specific
         and MUST zero any such bytes it introduces into the transport payload.
+  \item A device MUST treat the \field{token} field as opaque and MUST NOT rely
+        on its value when processing received messages.
 \end{itemize}
 
 \busnormative{\paragraph}{Common Header (Bus)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Bus}
@@ -496,36 +495,30 @@ Field semantics:
         payload, it MUST set those bytes to zero before delivering the message
         to the opposite side and MUST present the same zero padding when the
         opposite side reads a message.
+  \item A bus implementation owns the \field{token} field; it MAY insert or
+        overwrite values for correlation purposes and MUST ensure that any such
+        use is transparent to drivers and devices.
 \end{itemize}
 
 Reserved header bits and unspecified header values MUST be transmitted as zero
 and ignored on receive to preserve forward compatibility.
 
-\subsubsection{Message Correlation}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation}
+\subsubsection{Message Ordering}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering}
 
-Requests expect responses, whereas events are one-way and do not. Correlation is
-based on the tuple (\field{dev_num}, \field{token}) from the message header.
+Transport messages fall into two classes: requests (which expect responses) and
+events (which are one-way). Drivers and devices rely on the bus to preserve the
+relative ordering of request/response pairs for each device number; they do not
+interpret the \field{token} field directly.
 
-\drivernormative{\paragraph}{Message Correlation (Driver)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation / Driver}
+\busnormative{\paragraph}{Message Ordering (Bus)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \begin{itemize}
-  \item A driver MUST assign a non-zero \field{token} for each outstanding
-        request so that the (\field{dev_num}, \field{token}) tuple remains
-        unique among inflight requests.
-  \item A driver MUST set \field{token}=0 when sending event (one-way) messages
-        and MUST ignore any error responses purportedly referencing such events.
-  \item When processing responses, a driver SHOULD discard any response whose
-        correlation tuple does not match an outstanding request.
-\end{itemize}
-
-\devicenormative{\paragraph}{Message Correlation (Device)}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Correlation / Device}
-\begin{itemize}
-  \item A device MUST echo the \field{token} and \field{dev_num} from the
-        corresponding request when generating a response.
-  \item A device MUST set \field{token}=0 when generating event (one-way)
-        messages and MUST NOT send error responses referencing those events.
-  \item A device SHOULD discard responses from the other side that reference a
-        correlation tuple that is unknown or already completed.
+  \item For each device number, a bus implementation MUST deliver responses to
+        the driver in the same order that it forwarded the corresponding
+        requests to the device.
+  \item A bus implementation MUST ensure that every request forwarded to a
+        device results in exactly one response delivered to the driver (unless
+        the request is defined as an event).
 \end{itemize}
 
 \subsection{Device Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Device Discovery}
