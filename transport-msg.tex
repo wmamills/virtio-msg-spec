@@ -810,45 +810,44 @@ these notifications into an out-of-band mechanism or deliver them in-band.
 \subsubsection{Device Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications}
 
-During normal operation, the driver side bus MUST send notifications to
-the driver about configuration changes, device status changes, or the
-completion of buffers in virtqueues using the messages described below.
-These notifications MAY be the result of:
+\msgref{EVENT_CONFIG} and \msgref{EVENT_USED} provide asynchronous notifications
+from the device (or device-side bus) to the driver. The bus may forward these
+messages in-band or synthesize them based on other signals such as interrupts
+or polling.
 
+\devicenormative{\paragraph}{Device Notifications (Device)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Device}
 \begin{itemize}
-    \item The same messages received in-band on the message channel from the
-        device side bus.
-    \item Manufactured by the driver side bus based on reception of an
-        out-of-band (OoB) notification from the device side.  Example OoB
-        notifications include things like specific MSIX or other IRQ signals.
-    \item Manufactured by the device side bus periodically (polling).
-        This option SHOULD be reserved only for situation where nothing else
-        will work.
-  \end{itemize}
-
-\paragraph{EVENT\_CONFIG}
-\begin{itemize}
-  \item Sent by the device when a configuration field or device status changes
-    at runtime.
-  \item Includes the new \emph{Configuration Generation Count}, current device
-    status, and optionally the updated portion of the configuration data.
-  \item If the data is not included, the driver SHOULD issue
-    \msgref{GET_CONFIG} to discover the updated configuration.
+  \item A device (or device-side bus) MUST send \msgref{EVENT_CONFIG} whenever
+        it makes a configuration change or status update that becomes visible to
+        the driver. The message MUST include the new configuration generation
+        count and MAY include the updated configuration data.
+  \item If the configuration data is omitted from \msgref{EVENT_CONFIG}, the
+        device SHOULD include the relevant offsets/lengths so the driver can
+        re-fetch the data via \msgref{GET_CONFIG}.
+  \item A device SHOULD send \msgref{EVENT_USED} to inform the driver when
+        buffers on a virtqueue have been consumed, unless the device relies on
+        an alternative, agreed-upon completion mechanism.
 \end{itemize}
 
-\paragraph{EVENT\_USED}
+\drivernormative{\paragraph}{Device Notifications (Driver)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Driver}
 \begin{itemize}
-  \item Signifies that one or more buffers in a specific virtqueue have been
-    processed or consumed by the device and the buffer has been added to the
-    used ring of the virtqueue.
-  \item The driver uses normal virtio methods (e.g., reading the "used" ring) to
-    identify which buffers are complete.
-  \item If a device does not support sending \msgref{EVENT_USED}, the driver
-     MAY rely on standard virtqueue polling mechanisms to detect
-     completion.
+  \item Upon receiving \msgref{EVENT_CONFIG}, a driver SHOULD update its view of
+        the configuration using the provided data (or by issuing
+        \msgref{GET_CONFIG} if necessary) before resuming normal I/O.
+  \item Upon receiving \msgref{EVENT_USED}, a driver MUST examine the indicated
+        virtqueue (for example, by reading the used ring) to reclaim completed
+        buffers.
 \end{itemize}
 
-These messages enable asynchronous updates from the device.
+\busnormative{\paragraph}{Device Notifications (Bus)}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Bus}
+\begin{itemize}
+  \item A bus implementation MUST forward \msgref{EVENT_CONFIG} and
+        \msgref{EVENT_USED} notifications (or their equivalents) to the driver,
+        either in-band or by synthesizing the appropriate message.
+  \item If a bus implementation relies on polling or other mechanisms instead of
+        direct notifications, it SHOULD limit that mode to scenarios where no
+        other notification method is available.
+\end{itemize}
 
 \subsubsection{Configuration Changes During Operation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates}
