@@ -1041,21 +1041,21 @@ The driver issues \msgref{GET_DEVICE_INFO} to discover static identification
 data and limits for a device. It is the only transport message permitted before
 the device transitions out of the inactive state.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 0 & None \\
-\hline
-Answer & 0 & 4 & Device ID \\
-& 4 & 4 & Vendor ID \\
-& 8 & 4 & Number of feature bits \\
-& 12 & 4 & Configuration size in bytes \\
-& 16 & 4 & Maximum number of virtqueues \\
-& 20 & 2 & Admin virtqueue start index \\
-& 22 & 2 & Admin virtqueue count \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_get_device_info_req {
+        /* no payload */
+};
+
+struct virtio_msg_get_device_info_resp {
+        le32 device_id;        /* virtio device type */
+        le32 vendor_id;        /* implementation-defined vendor ID */
+        le32 num_feature_bits; /* total feature bits (multiples of 32) */
+        le32 config_size;      /* bytes in the device configuration space */
+        le32 max_virtqueues;   /* maximum virtqueues supported */
+        le16 admin_vq_start;   /* index of the first admin virtqueue */
+        le16 admin_vq_count;   /* number of admin virtqueues */
+};
+\end{lstlisting}
 
 \devicenormative{\paragraph}{GET\_DEVICE\_INFO}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Device}
 \begin{itemize}
@@ -1077,18 +1077,18 @@ Drivers retrieve device feature bits in 32-bit blocks via
 \msgref{GET_DEVICE_FEATURES}; the response echoes the requested block index and
 returns one or more 32-bit values with the feature bits in that range.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Feature block index \\
-        & 4 & 4 & Number of feature blocks \\
-\hline
-Answer  & 0 & 4 & Feature block index (echoed) \\
-        & 4 & 4 & Number of feature blocks (echoed) \\
-        & 8 & ... & Feature data (multiples of 32 bits) \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_get_device_features_req {
+        le32 block_index; /* starting block (0 == bits 0-31) */
+        le32 num_blocks;  /* number of 32-bit blocks requested */
+};
+
+struct virtio_msg_get_device_features_resp {
+        le32 block_index; /* echoed starting block */
+        le32 num_blocks;  /* echoed number of blocks */
+        le32 features[];  /* num_blocks entries, zero-padded if needed */
+};
+\end{lstlisting}
 
 \devicenormative{\paragraph}{GET\_DEVICE\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Device}
 \begin{itemize}
@@ -1109,17 +1109,17 @@ Drivers use \msgref{SET_DRIVER_FEATURES} to acknowledge the subset of feature
 bits they wish to enable. The payload mirrors \msgref{GET_DEVICE_FEATURES},
 supplying an index, count, and 32-bit feature data for the selected blocks.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Feature block index \\
-        & 4 & 4 & Number of feature blocks \\
-        & 8 & ... & Feature data \\
-\hline
-Answer  & 0 & 0 & No additional data \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_set_driver_features_req {
+        le32 block_index; /* starting block being acknowledged */
+        le32 num_blocks;  /* number of blocks provided */
+        le32 features[];  /* num_blocks entries with desired bits */
+};
+
+struct virtio_msg_set_driver_features_resp {
+        /* no payload */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{SET\_DRIVER\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Driver}
 \begin{itemize}
@@ -1142,19 +1142,19 @@ Answer  & 0 & 0 & No additional data \\
 specifies the byte offset and length; the response echoes those values, returns
 the data, and includes the current configuration generation count.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Configuration offset \\
-        & 4 & 4 & Number of bytes \\
-\hline
-Answer  & 0 & 4 & Configuration generation count \\
-        & 4 & 4 & Configuration offset (echoed) \\
-        & 8 & 4 & Number of bytes (echoed) \\
-        & 12 & ... & Configuration data \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_get_config_req {
+        le32 offset; /* byte offset into configuration space */
+        le32 length; /* number of bytes requested */
+};
+
+struct virtio_msg_get_config_resp {
+        le32 generation; /* current configuration generation count */
+        le32 offset;     /* echoed offset */
+        le32 length;     /* echoed length */
+        u8   data[];     /* configuration payload */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{GET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Driver}
 \begin{itemize}
@@ -1176,21 +1176,21 @@ The device echoes the offset/length, returns the resulting generation count,
 and may mirror the applied data or set the length to zero if the write was
 rejected.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Configuration generation count \\
-        & 4 & 4 & Configuration offset \\
-        & 8 & 4 & Number of bytes \\
-        & 12 & ... & Configuration data \\
-\hline
-Answer  & 0 & 4 & Updated configuration generation count \\
-        & 4 & 4 & Configuration offset (echoed) \\
-        & 8 & 4 & Number of bytes applied (0 if rejected) \\
-        & 12 & ... & Configuration data (optional) \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_set_config_req {
+        le32 generation; /* driver's view of generation count */
+        le32 offset;     /* byte offset being written */
+        le32 length;     /* number of bytes written */
+        u8   data[];     /* configuration payload */
+};
+
+struct virtio_msg_set_config_resp {
+        le32 generation; /* resulting generation count */
+        le32 offset;     /* echoed offset */
+        le32 length;     /* bytes applied (0 if rejected) */
+        u8   data[];     /* optional echoed data */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{SET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Driver}
 \begin{itemize}
@@ -1212,15 +1212,15 @@ Answer  & 0 & 4 & Updated configuration generation count \\
 DRIVER, DRIVER\_OK, FEATURES\_OK, or DEVICE\_NEEDS\_RESET bits). The request has
 no payload; the response returns the 32-bit status value.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 0 & None \\
-\hline
-Answer  & 0 & 4 & Device status \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_get_device_status_req {
+        /* no payload */
+};
+
+struct virtio_msg_get_device_status_resp {
+        le32 status; /* current device status bits */
+};
+\end{lstlisting}
 
 \devicenormative{\paragraph}{GET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_STATUS / Device}
 \begin{itemize}
@@ -1236,15 +1236,15 @@ progress through the virtio-defined states or to request a reset by writing 0.
 The device responds with its resulting status, which may differ (for example,
 if it refuses FEATURES\_OK or sets DEVICE\_NEEDS\_RESET).
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Device status value \\
-\hline
-Answer  & 0 & 4 & Resulting device status \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_set_device_status_req {
+        le32 status; /* desired device status value */
+};
+
+struct virtio_msg_set_device_status_resp {
+        le32 status; /* resulting device status */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{SET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Driver}
 \begin{itemize}
@@ -1266,21 +1266,21 @@ Answer  & 0 & 4 & Resulting device status \\
 its maximum size, current size, and, if already configured, the descriptor,
 driver, and device area addresses.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Virtqueue index \\
-\hline
-Answer  & 0 & 4 & Virtqueue index (echoed) \\
-        & 4 & 4 & Maximum virtqueue size \\
-        & 8 & 4 & Current virtqueue size (0 if unused) \\
-        & 12 & 4 & Reserved (must be zero) \\
-        & 16 & 8 & Descriptor area address \\
-        & 24 & 8 & Driver area address \\
-        & 32 & 8 & Device area address \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_get_vqueue_req {
+        le32 index; /* virtqueue index */
+};
+
+struct virtio_msg_get_vqueue_resp {
+        le32 index;        /* echoed virtqueue index */
+        le32 max_size;     /* maximum queue size */
+        le32 cur_size;     /* current size (0 if unconfigured) */
+        le32 reserved;     /* must be zero */
+        le64 desc_addr;    /* descriptor area address */
+        le64 driver_addr;  /* driver area address */
+        le64 device_addr;  /* device area address */
+};
+\end{lstlisting}
 
 \devicenormative{\paragraph}{GET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_VQUEUE / Device}
 \begin{itemize}
@@ -1296,21 +1296,21 @@ selects a queue index, supplies the desired size (not exceeding the maximum
 reported via \msgref{GET_VQUEUE}), and provides guest-physical addresses for the
 descriptor, driver, and device areas.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Virtqueue index \\
-        & 4 & 4 & Reserved (must be zero) \\
-        & 8 & 4 & Virtqueue size \\
-        & 12 & 4 & Reserved (must be zero) \\
-        & 16 & 8 & Descriptor address \\
-        & 24 & 8 & Driver address \\
-        & 32 & 8 & Device address \\
-\hline
-Answer  & 0 & 0 & No additional data \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_set_vqueue_req {
+        le32 index;       /* virtqueue index */
+        le32 reserved0;   /* must be zero */
+        le32 size;        /* number of descriptors */
+        le32 reserved1;   /* must be zero */
+        le64 desc_addr;   /* descriptor area address */
+        le64 driver_addr; /* driver area address */
+        le64 device_addr; /* device area address */
+};
+
+struct virtio_msg_set_vqueue_resp {
+        /* no payload */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
 \begin{itemize}
@@ -1332,15 +1332,15 @@ Answer  & 0 & 0 & No additional data \\
 has been negotiated). It requires only the queue index; the device responds
 after the queue has been quiesced.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Virtqueue index \\
-\hline
-Answer  & 0 & 0 & No additional data \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_reset_vqueue_req {
+        le32 index; /* virtqueue index */
+};
+
+struct virtio_msg_reset_vqueue_resp {
+        /* no payload */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{RESET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Driver}
 \begin{itemize}
@@ -1363,17 +1363,17 @@ region. The request carries the region index; the response echoes the index and
 provides the base address and length. A length of zero indicates that the
 specified region does not exist.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Shared memory region index \\
-\hline
-Answer  & 0 & 4 & Shared memory region index (echoed) \\
-        & 4 & 4 & Shared memory region length \\
-        & 8 & 4 & Shared memory region address \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_get_shm_req {
+        le32 index; /* shared memory region index */
+};
+
+struct virtio_msg_get_shm_resp {
+        le32 index;  /* echoed index */
+        le32 length; /* region length (0 if nonexistent) */
+        le32 address;/* region address */
+};
+\end{lstlisting}
 
 \devicenormative{\paragraph}{GET\_SHM}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
 \begin{itemize}
@@ -1390,17 +1390,15 @@ and optionally the updated configuration data (offset plus length). A length of
 zero indicates that the driver should re-fetch the affected range via
 \msgref{GET_CONFIG}.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Device status \\
-        & 4 & 4 & Configuration generation count \\
-        & 8 & 4 & Configuration offset \\
-        & 12 & 4 & Number of bytes (may be zero) \\
-        & 16 & ... & Configuration data (optional) \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_event_config {
+        le32 device_status; /* new device status value */
+        le32 generation;    /* configuration generation count */
+        le32 offset;        /* configuration offset */
+        le32 length;        /* number of bytes (may be zero) */
+        u8   data[];        /* optional configuration data */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{EVENT\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Driver}
 \begin{itemize}
@@ -1423,14 +1421,12 @@ message includes the queue index and, if VIRTIO\_F\_NOTIFICATION\_DATA is
 negotiated, a combined next-offset/next-wrap field so the device can jump
 directly to the updated position. Otherwise that field is zero.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Virtqueue index \\
-        & 4 & 4 & Next offset (31 bits) and wrap (MSB) \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_event_avail {
+        le32 vq_index;    /* virtqueue index */
+        le32 next_offset; /* bits[30:0] offset, bit[31] wrap; zero if unused */
+};
+\end{lstlisting}
 
 \drivernormative{\paragraph}{EVENT\_AVAIL}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Driver}
 \begin{itemize}
@@ -1453,13 +1449,11 @@ Request & 0 & 4 & Virtqueue index \\
 have been consumed. The payload carries only the queue index; the driver uses
 its used ring to determine which descriptors completed.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Virtqueue index \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_msg_event_used {
+        le32 vq_index; /* virtqueue index */
+};
+\end{lstlisting}
 
 \devicenormative{\paragraph}{EVENT\_USED}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Device}
 \begin{itemize}
@@ -1542,19 +1536,19 @@ The driver-side bus uses this request to enumerate device numbers on the
 device-side bus. The response describes a “window” of device numbers and signals
 which entries are present.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 2 & offset: first device number in the window \\
-        & 2 & 2 & count: number of consecutive device numbers covered \\
-\hline
-Answer  & 0 & 2 & offset (echoed) \\
-        & 2 & 2 & count actually returned \\
-        & 4 & 2 & next\_offset: 0 or the start of the recommended next window \\
-        & 6 & count/8 & bitmap: bit $n$ ($0 \le n <$ count) describes device number $(offset + n)$ (0=absent, 1=present) \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_bus_msg_get_devices_req {
+        le16 offset; /* starting device number */
+        le16 count;  /* number of device-number slots (multiple of 8) */
+};
+
+struct virtio_bus_msg_get_devices_resp {
+        le16 offset;      /* echoed starting device number */
+        le16 count;       /* window length actually returned */
+        le16 next_offset; /* 0 or suggested start for next query */
+        u8   bitmap[];    /* count/8 bytes, LSB-first packing */
+};
+\end{lstlisting}
 
 The \textbf{(offset, count)} tuple defines a window of \textbf{count}
 consecutive device numbers beginning at \textbf{offset}. The number of present
@@ -1590,17 +1584,24 @@ a snapshot, advance using \textbf{next_offset}, and confirm candidates via
 \busdef{EVENT_DEVICE}
 
 \busref{EVENT_DEVICE} signals device-level hotplug changes. The driver-side bus
-receives these indications from the device-side bus; READY announces that a
-device is present and REMOVED indicates that it is no longer accessible. Standard
-states use values 0x1–0x2, while higher values (0x3 and above) are reserved for
-future or implementation-specific meanings.
+receives these indications from the device-side bus; the table below lists the
+defined device bus states.
 
-\begin{tabular}{|l|l|l|l|}
+\begin{lstlisting}
+struct virtio_bus_msg_event_device {
+        le16 device_number;
+        le16 device_bus_state; /* see table below */
+};
+\end{lstlisting}
+
+\begin{tabular}{|l|l|p{7cm}|}
 \hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 2 & Device number \\
-        & 2 & 2 & Device bus state \\
+Constant & Value & Meaning \\
+\hline
+DEVICE\_BUS\_STATE\_READY    & 0x0001 & Device is present and ready. \\
+DEVICE\_BUS\_STATE\_REMOVED  & 0x0002 & Device is no longer present. \\
+Reserved                    & 0x0003–0x7FFF & Reserved for standard use. \\
+Implementation-defined      & 0x8000–0xFFFF & MAY be used by the bus implementation. \\
 \hline
 \end{tabular}
 
@@ -1617,15 +1618,15 @@ out-of-order events and MAY rely on additional bus-level monitoring (e.g.,
 \busref{PING} is a simple liveness check that can be sent by either side of the
 bus; the response echoes the 32-bit data value from the request.
 
-\begin{tabular}{|l|l|l|l|}
-\hline
-Type & Offset & Size (bytes) & Content \\
-\hline \hline
-Request & 0 & 4 & Data (arbitrary 32-bit value) \\
-\hline
-Answer  & 0 & 4 & Echoed request data \\
-\hline
-\end{tabular}
+\begin{lstlisting}
+struct virtio_bus_msg_ping_req {
+        le32 data; /* arbitrary value chosen by the sender */
+};
+
+struct virtio_bus_msg_ping_resp {
+        le32 data; /* echoed request data */
+};
+\end{lstlisting}
 
 \paragraph{Intended usage}
 Drivers or bus implementations MAY use \busref{PING} as a keepalive. If a reply
