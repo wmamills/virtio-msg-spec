@@ -1581,6 +1581,32 @@ a snapshot, advance using \textbf{next_offset}, and confirm candidates via
         \textbf{offset} and \textbf{count}.
 \end{itemize}
 
+\busdef{PING}
+
+\busref{PING} is a simple liveness check that can be sent by either side of the
+bus; the response echoes the 32-bit data value from the request.
+
+\begin{lstlisting}
+struct virtio_bus_msg_ping_req {
+        le32 data; /* arbitrary value chosen by the sender */
+};
+
+struct virtio_bus_msg_ping_resp {
+        le32 data; /* echoed request data */
+};
+\end{lstlisting}
+
+\paragraph{Intended usage}
+Drivers or bus implementations MAY use \busref{PING} as a keepalive. If a reply
+is missing or delayed beyond policy, the initiator SHOULD verify device status
+(e.g., via \msgref{GET_DEVICE_STATUS}) and take recovery actions as needed.
+
+\busnormative{\paragraph}{PING}{Virtio Transport Options / Virtio Over Messages / Bus Messages / PING / Bus}
+\begin{itemize}
+  \item The bus-side responder MUST echo the 32-bit data field from the request
+        exactly in the \busref{PING} response.
+\end{itemize}
+
 \busdef{EVENT_DEVICE}
 
 \busref{EVENT_DEVICE} signals device-level hotplug changes. The driver-side bus
@@ -1612,29 +1638,3 @@ DEVICE\_BUS\_STATE\_REMOVED, drivers MUST stop queueing new work, quiesce and
 reset as applicable, and release resources. Drivers SHOULD tolerate duplicate or
 out-of-order events and MAY rely on additional bus-level monitoring (e.g.,
 \busref{PING}) if needed.
-
-\busdef{PING}
-
-\busref{PING} is a simple liveness check that can be sent by either side of the
-bus; the response echoes the 32-bit data value from the request.
-
-\begin{lstlisting}
-struct virtio_bus_msg_ping_req {
-        le32 data; /* arbitrary value chosen by the sender */
-};
-
-struct virtio_bus_msg_ping_resp {
-        le32 data; /* echoed request data */
-};
-\end{lstlisting}
-
-\paragraph{Intended usage}
-Drivers or bus implementations MAY use \busref{PING} as a keepalive. If a reply
-is missing or delayed beyond policy, the initiator SHOULD verify device status
-(e.g., via \msgref{GET_DEVICE_STATUS}) and take recovery actions as needed.
-
-\busnormative{\paragraph}{PING}{Virtio Transport Options / Virtio Over Messages / Bus Messages / PING / Bus}
-\begin{itemize}
-  \item The bus-side responder MUST echo the 32-bit data field from the request
-        exactly in the \busref{PING} response.
-\end{itemize}
