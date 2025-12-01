@@ -297,7 +297,7 @@ driver binding process can begin.
 \end{itemize}
 
 \subsubsection{Configuration Generation Count}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count}
 
 Each device maintains a \textbf{Configuration Generation Count} to prevent
 inconsistent updates. This count is incremented at least once by the device for
@@ -307,7 +307,7 @@ the driver can determine whether its view of the configuration is current. The
 count does not necessarily start at zero and is not automatically reset when
 the device resets.
 
-\devicenormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Device}
+\devicenormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Device}
 \begin{itemize}
   \item A device MUST increment the generation count before it makes a change
         that is visible to the driver and MUST ensure that each
@@ -322,7 +322,7 @@ the device resets.
         request.
 \end{itemize}
 
-\drivernormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Driver}
+\drivernormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Driver}
 \begin{itemize}
   \item A driver MUST track the most recent generation count observed (via
         \msgref{EVENT_CONFIG} or \msgref{GET_CONFIG}) and include it in every
@@ -336,7 +336,7 @@ This mechanism ensures updates are not lost or overwritten due to stale
 information.
 
 \subsubsection{Feature Negotiation Blocks}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Feature Blocks}
 
 The virtio-msg transport organizes feature bits into 32-bit blocks accessed by
 \msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}. Each block
@@ -351,7 +351,7 @@ represents up to 32 feature bits:
         driver-requested) feature bits in the selected blocks.
 \end{itemize}
 
-\devicenormative{\paragraph}{Feature Blocks}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks / Device}
+\devicenormative{\paragraph}{Feature Blocks}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Feature Blocks / Device}
 \begin{itemize}
   \item When \msgref{GET_DEVICE_FEATURES} covers blocks that extend beyond the
         features a device implements, the device MUST return zero for the
@@ -359,7 +359,7 @@ represents up to 32 feature bits:
 \end{itemize}
 
 \subsubsection{Error Signaling}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling}
 
 Transport errors can arise from malformed messages, routing failures inside a
 bus implementation, or device-side faults while processing a valid request.
@@ -367,7 +367,7 @@ Implementations should handle such faults locally where possible, but a bus may
 surface an error to the virtio-msg transport if it cannot deliver a request or
 obtain a response within its policy.
 
-\busnormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Bus}
+\busnormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Bus}
 \begin{itemize}
   \item A bus implementation MAY report a transport-visible failure (for
         example, after exhausting a bounded retry policy) when it cannot deliver
@@ -379,7 +379,7 @@ obtain a response within its policy.
         (one-way) messages.
 \end{itemize}
 
-\devicenormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Device}
+\devicenormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Device}
 \begin{itemize}
   \item A device receiving a malformed or unsupported transport message MUST
         discard it without producing further protocol traffic.
@@ -843,14 +843,14 @@ or polling.
 \end{itemize}
 
 \subsubsection{Configuration Changes During Operation}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation}
 
 Drivers may update configuration fields at runtime using \msgref{SET_CONFIG}
 when features such as device modes or limits need to change. Devices can also
 update configuration data autonomously but must signal those changes via
 \msgref{EVENT_CONFIG}.
 
-\drivernormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Driver}
+\drivernormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation / Driver}
 \begin{itemize}
   \item A driver MAY issue \msgref{SET_CONFIG} after initialization, provided it
         includes the current configuration generation count and follows the same
@@ -860,7 +860,7 @@ update configuration data autonomously but must signal those changes via
         \msgref{GET_CONFIG}) before relying on the updated values.
 \end{itemize}
 
-\devicenormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Device}
+\devicenormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation / Device}
 \begin{itemize}
   \item If a device updates its configuration after initialization, it MUST send
         \msgref{EVENT_CONFIG} to inform the driver of the change and provide the
@@ -868,13 +868,13 @@ update configuration data autonomously but must signal those changes via
 \end{itemize}
 
 \subsubsection{Virtqueue Changes During Operation}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation}
 
 Drivers may provision unused virtqueues later in the device lifetime by issuing
 \msgref{SET_VQUEUE}, and they may reconfigure existing queues if the
 VIRTIO\_F\_RING\_RESET feature has been negotiated.
 
-\drivernormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Driver}
+\drivernormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Driver}
 \begin{itemize}
   \item A driver MAY configure additional virtqueues after initialization using
         \msgref{SET_VQUEUE}, provided it follows the same validation steps
@@ -884,7 +884,7 @@ VIRTIO\_F\_RING\_RESET feature has been negotiated.
         the device.
 \end{itemize}
 
-\devicenormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Device}
+\devicenormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Device}
 \begin{itemize}
   \item A device MUST honor \msgref{SET_VQUEUE} requests issued after
         initialization and update the queue parameters accordingly.

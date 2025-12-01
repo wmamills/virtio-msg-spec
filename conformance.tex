@@ -149,7 +149,8 @@ A Virtio Over Messages driver MUST conform to the following normative statements
 
 \begin{itemize}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Driver Limits}
-\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Driver}
+\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Versioning and Forward Compatibility / Driver}
+\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Initialization / Overview / Driver}
@@ -161,8 +162,8 @@ A Virtio Over Messages driver MUST conform to the following normative statements
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Driver}
-\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Driver}
-\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Driver}
+\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation / Driver}
+\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Driver}
@@ -275,9 +276,10 @@ A Virtio Over Messages device MUST conform to the following normative statements
 
 \begin{itemize}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Device Limits}
-\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ConfigGen / Device}
-\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / FeatureBlocks / Device}
-\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Device}
+\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Versioning and Forward Compatibility / Device}
+\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Device}
+\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Feature Blocks / Device}
+\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
@@ -286,8 +288,8 @@ A Virtio Over Messages device MUST conform to the following normative statements
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Initialization / Finalizing Initialization / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Device}
-\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Operation / ConfigUpdates / Device}
-\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Operation / VQueueUpdates / Device}
+\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation / Device}
+\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Device}
@@ -336,10 +338,13 @@ A bus implementation MUST conform to the relevant bus normative statements.
 A Virtio Over Messages bus implementation MUST conform to the following normative statements:
 
 \begin{itemize}
+\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Relationship between bus and transport / Bus Messages}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Relationship between bus and transport / Transport Message Forwarding}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Advertising Transport Parameters}
+\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Message Size}
+\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Versioning and Forward Compatibility / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Numbers / Assignment}
-\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / ErrorSignaling / Bus}
+\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Device Discovery / Bus}
