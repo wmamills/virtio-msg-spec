@@ -237,9 +237,35 @@ A higher transport revision or additional transport feature bits extend the
 protocol with new messages or capabilities. Implementations are expected to
 remain interoperable across revisions: devices and drivers designed for a newer
 revision still implement the mandatory messages and semantics defined in prior
-revisions. When a bus instance, driver, or device encounters an unsupported
-message or feature, it should reject the request explicitly or ignore it rather
-than exhibit undefined behavior.
+revisions.
+
+\drivernormative{\paragraph}{Revision Compatibility}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Versioning and Forward Compatibility / Driver}
+\begin{itemize}
+  \item A driver that negotiates transport revision $N$ MUST implement all
+        mandatory driver behavior defined for revisions $1$ through $N$.
+  \item If a driver receives a device-originated message or feature indication
+        that requires an unsupported revision or transport feature, it MUST
+        ignore the message (or treat the request as failed) and MUST NOT act on
+        partially understood data.
+\end{itemize}
+
+\devicenormative{\paragraph}{Revision Compatibility}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Versioning and Forward Compatibility / Device}
+\begin{itemize}
+  \item A device that advertises transport revision $N$ MUST implement all
+        mandatory device behavior defined for revisions $1$ through $N$.
+  \item If a device receives a driver request that relies on an unsupported
+        revision or transport feature, it MUST reject the request using the
+        message-specific error mechanism (if any) or silently ignore it.
+\end{itemize}
+
+\busnormative{\paragraph}{Revision Compatibility}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Versioning and Forward Compatibility / Bus}
+\begin{itemize}
+  \item A bus instance that advertises transport revision $N$ MUST satisfy every
+        bus requirement defined for revisions $1$ through $N$.
+  \item If a bus instance cannot forward a message because it requires an
+        unsupported revision or transport feature, it MUST surface a transport
+        error or drop the message without forwarding it.
+\end{itemize}
 
 \subsubsection{Device Numbers and Enumeration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts /
