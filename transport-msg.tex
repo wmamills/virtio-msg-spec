@@ -218,9 +218,18 @@ correspond to a change in the virtio-msg revision.
 The maximum message size is specified from the transport-layer point of view
 and includes the 8-byte common header plus payload. Any extra encapsulation
 imposed by the underlying bus (for example, a framing header) does not count
-against this limit. Today the maximum useful transport payload is expected to
-be 274 bytes, which is sufficient for a GET_CONFIG or SET_CONFIG transfer with
-256 bytes of configuration data.
+against this limit. Today the largest practical transport payload is 256 bytes:
+messages such as GET_CONFIG and SET_CONFIG can carry up to 256 bytes of device
+configuration in one transfer, and larger configuration regions can be accessed
+through multiple exchanges without requiring a larger per-message limit.
+
+\busnormative{\paragraph}{Message Size Bounds}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Message Size}
+\begin{itemize}
+  \item A bus implementation MUST advertise a maximum message size of at least
+        44 bytes.
+  \item A bus implementation SHOULD NOT advertise a maximum message size that
+        exceeds 264 bytes (256-byte payload plus the common header).
+\end{itemize}
 
 \paragraph{Versioning and Forward Compatibility}
 
