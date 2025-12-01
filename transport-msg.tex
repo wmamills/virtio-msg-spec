@@ -999,8 +999,18 @@ Reserved                   & 0x1 & \\
 \hline
 \end{tabular}
 
-IDs 0x00–0x3F are reserved for request/response messages and 0x40–0x7F for
-events. IDs 0x80 and above are reserved for future extensions.
+IDs are grouped as follows; bit 6 distinguishes requests (0) from events (1):
+
+\begin{tabular}{|l|l|p{7cm}|}
+\hline
+Range & Usage & Notes \\
+\hline
+0x00-0x3F & Request/Response & Standard transport requests that expect responses. \\
+0x40-0x7F & Events & Standard transport events (no response). \\
+0x80-0xBF & Implementation-defined Requests & Optional, transport-specific request extensions. \\
+0xC0-0xFF & Implementation-defined Events & Optional, transport-specific event extensions. \\
+\hline
+\end{tabular}
 
 \devicenormative{\paragraph}{Core Messages}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Device}
 \begin{itemize}
@@ -1499,10 +1509,18 @@ Reserved                    & 0x1  &        \\
 \hline
 \end{tabular}
 
-Bus message IDs below 0x40 cover request/response messages and 0x40–0x7F cover
-events. IDs 0x80 and above are reserved for bus-specific extensions; some
-implementations further subdivide that range (for example, IDs below 0xC0 for
-requests and IDs 0xC0 and above for events).
+Bus message IDs are grouped as follows:
+
+\begin{tabular}{|l|l|p{7cm}|}
+\hline
+Range & Usage & Notes \\
+\hline
+0x00-0x3F & Request/Response & Standardized bus request messages. \\
+0x40-0x7F & Events & Standardized bus event messages. \\
+0x80-0xBF & Implementation-defined Requests & Optional, bus-specific request messages. \\
+0xC0-0xFF & Implementation-defined Events & Optional, bus-specific event messages. \\
+\hline
+\end{tabular}
 
 \paragraph{Bus Specific Messages}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Operation / Bus Specific Messages}
