@@ -80,28 +80,22 @@ Spec Functional:
   This effects the {SET,GET}_VQUEUE messages
 
 Spec Editorial:
+* Major restructure to better align with virtio spec
+  * Conformance model now matches
+  * Use C structures to define messages instead of tables
 * Added a section to describe how responses are matched to requests
   This includes the use of the new token field
-* Redefined / better described error handling between to transport and bus
+* Redefined / better described error handling between transport and bus
   layers to eliminate the need for the bus to generate fake response messages
-* Included editorial feedback from Matias
-* Included much of Peter's editorial feedback, some items are still pending
+* Included editorial feedback from RFC2
 
 Eco-system:
 * Add virtio-msg-loopback demo
 * Arm has published the first draft of the virtio-msg over FFA spec
-* virtio-msg over FFA has been demonstrated with both Trusty and OP-TEE 
+* virtio-msg over FFA has been demonstrated with both Trusty and OP-TEE
   secure world
 * QEMU RFCv1 has been sent 
 * LKML RFCs have been sent
-
-This series is a work in progress and we acknowledge at least the following
-issues we need to work on:
-
-* Better conformance documentation
-* Moving the Arm ltd virtio-msg FFA spec from Alpha to at least Beta level
-* Publish virtio-msg-amp data structures and messages somewhere
-* Align implementations to this version and send PATCH v1 (non-rfc)
 
 Background info and work in progress implementations:
 * HVAC project page with intro slides [1]
