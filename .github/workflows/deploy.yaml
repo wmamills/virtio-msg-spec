@@ -14,6 +14,7 @@ jobs:
             apk add file font-liberation make zip
             make local-all
             echo ${{ github.sha }} > Release.txt
+            ls -l *.pdf
 
       - name: Create Draft Release
         id: create_release
@@ -32,6 +33,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: virtio-v1.4-wd01.pdf
+          asset_path: virtio-v1.5-wd01.pdf
           asset_name: ${{github.ref_name}}-${{ github.repository_owner }}-draft-v${{ github.run_number }}.pdf
           asset_content_type: application/pdf
