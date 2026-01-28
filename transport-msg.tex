@@ -281,8 +281,8 @@ mechanisms such as:
         might inform the bus of available device numbers and their properties.
 \end{itemize}
 
-Once a bus confirms that a device number is valid—regardless of the discovery
-method—it normally issues \msgref{GET_DEVICE_INFO} to retrieve the device and
+Once a bus confirms that a device number is valid, regardless of the discovery
+method, it normally issues \msgref{GET_DEVICE_INFO} to retrieve the device and
 vendor IDs before registering the device with the host OS so the usual Virtio
 driver binding process can begin.
 
@@ -292,8 +292,8 @@ driver binding process can begin.
         device on a given bus instance and MUST NOT forward transport messages
         for a device number that has not been validated.
   \item A bus implementation SHOULD provide the driver with sufficient
-        information—either via \busref{GET_DEVICES} or equivalent platform
-        data—to discover each valid device number.
+        information, either via \busref{GET_DEVICES} or equivalent platform
+        data, to discover each valid device number.
 \end{itemize}
 
 \subsubsection{Configuration Generation Count}
@@ -786,7 +786,7 @@ these notifications into an out-of-band mechanism or deliver them in-band.
         virtqueue.
   \item Each \msgref{EVENT_AVAIL} MUST identify the target virtqueue index.
   \item If VIRTIO\_F\_NOTIFICATION\_DATA has been negotiated, the driver MUST
-        populate the “next offset and wrap” fields so the device can locate the
+        populate the "next offset and wrap" fields so the device can locate the
         head of the updated ring; otherwise those fields MUST be zero.
 \end{itemize}
 
@@ -1533,7 +1533,7 @@ usage. Example usage could include:
 \busdef{GET_DEVICES}
 
 The driver-side bus uses this request to enumerate device numbers on the
-device-side bus. The response describes a “window” of device numbers and signals
+device-side bus. The response describes a "window" of device numbers and signals
 which entries are present.
 
 \begin{lstlisting}
@@ -1559,7 +1559,7 @@ reduced window.
 
 Example: a request with \textbf{offset}=0, \textbf{count}=16 might produce
 \textbf{bitmap}=0b00100101 00000000 and \textbf{next_offset}=16. That indicates
-devices 0, 2, and 5 are present within the 0–15 window and suggests continuing
+devices 0, 2, and 5 are present within the 0-15 window and suggests continuing
 at device number 16.
 
 \paragraph{Intended usage}
@@ -1626,8 +1626,8 @@ Constant & Value & Meaning \\
 \hline
 DEVICE\_BUS\_STATE\_READY    & 0x0001 & Device is present and ready. \\
 DEVICE\_BUS\_STATE\_REMOVED  & 0x0002 & Device is no longer present. \\
-Reserved                    & 0x0003–0x7FFF & Reserved for standard use. \\
-Implementation-defined      & 0x8000–0xFFFF & MAY be used by the bus implementation. \\
+Reserved                    & 0x0003-0x7FFF & Reserved for standard use. \\
+Implementation-defined      & 0x8000-0xFFFF & MAY be used by the bus implementation. \\
 \hline
 \end{tabular}
 
