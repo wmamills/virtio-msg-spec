@@ -894,9 +894,6 @@ VIRTIO\_F\_RING\_RESET feature has been negotiated.
   \item A driver MAY configure additional virtqueues after initialization using
         \msgref{SET_VQUEUE}, provided it follows the same validation steps
         (e.g., checking the maximum queue size).
-  \item If VIRTIO\_F\_RING\_RESET is negotiated, the driver SHOULD use
-        \msgref{RESET_VQUEUE} before reprogramming a queue to avoid races with
-        the device.
 \end{itemize}
 
 \devicenormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Device}
