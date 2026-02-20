@@ -418,6 +418,11 @@ This specification does not define a dedicated error-reporting message; it only
 permits implementations to surface failures when silent recovery is not
 feasible.
 
+Some bus implementations may reject requests that violate their local policy
+or that are not valid for the current device state. In such cases, the bus may
+return a bus-specific error indication to the transport, which can then surface
+that failure to the driver.
+
 \subsubsection{Endianness}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Endianness}
 
