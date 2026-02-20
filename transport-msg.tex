@@ -522,7 +522,10 @@ preserve forward compatibility.
 Transport messages fall into two classes: requests (which expect responses) and
 events (which are one-way). Drivers and devices rely on the bus to preserve the
 relative ordering of request/response pairs for each device number; they do not
-interpret the \field{token} field directly.
+interpret the \field{token} field directly. Some response payloads repeat
+request parameters (for example, indices or offsets) to support validation;
+these repeats are informational and do not alter the correlation model
+described here.
 
 \busnormative{\paragraph}{Message Ordering}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \begin{itemize}
