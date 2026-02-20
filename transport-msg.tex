@@ -1634,7 +1634,7 @@ Implementation-defined      & 0x8000–0xFFFF & MAY be used by the bus implement
 \paragraph{Intended usage}
 Upon receiving DEVICE\_BUS\_STATE\_READY, drivers SHOULD probe the device via
 \msgref{GET_DEVICE_INFO} and proceed with initialization if successful. Upon
-DEVICE\_BUS\_STATE\_REMOVED, drivers MUST stop queueing new work, quiesce and
-reset as applicable, and release resources. Drivers SHOULD tolerate duplicate or
-out-of-order events and MAY rely on additional bus-level monitoring (e.g.,
-\busref{PING}) if needed.
+DEVICE\_BUS\_STATE\_REMOVED, drivers MUST stop queueing new work, quiesce the
+device instance, tear down driver-side state, and release resources. Drivers
+SHOULD tolerate duplicate or out-of-order events and MAY rely on additional
+bus-level monitoring (e.g., \busref{PING}) if needed.
