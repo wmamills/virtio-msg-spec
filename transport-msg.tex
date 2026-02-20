@@ -312,8 +312,8 @@ inconsistent updates. This count is incremented at least once by the device for
 every driver-visible change it makes to its configuration data. The current
 count is exposed in \msgref{EVENT_CONFIG} and \msgref{GET_CONFIG} responses so
 the driver can determine whether its view of the configuration is current. The
-count does not necessarily start at zero and is not automatically reset when
-the device resets.
+count does not necessarily start at zero and MAY be reset when the device
+resets or at other device-defined times.
 
 \devicenormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Device}
 \begin{itemize}
@@ -321,6 +321,8 @@ the device resets.
         that is visible to the driver and MUST ensure that each
         \msgref{EVENT_CONFIG} carrying configuration data uses a unique
         generation count.
+  \item A device MAY reset the generation count, including when it resets its
+        internal state.
   \item If updated configuration data cannot fit in a single
         \msgref{EVENT_CONFIG}, the device SHOULD send an \msgref{EVENT_CONFIG}
         with zero data length to advertise the new generation count and MUST
@@ -335,6 +337,8 @@ the device resets.
   \item A driver MUST track the most recent generation count observed (via
         \msgref{EVENT_CONFIG} or \msgref{GET_CONFIG}) and include it in every
         \msgref{SET_CONFIG} request.
+  \item A driver MUST NOT assume the generation count is monotonic or preserved
+        across device resets.
   \item If a \msgref{SET_CONFIG} request is rejected due to a mismatched
         generation count, the driver SHOULD issue \msgref{GET_CONFIG} to obtain
         the latest configuration data and generation count before retrying.
