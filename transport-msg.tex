@@ -1156,8 +1156,6 @@ struct virtio_msg_set_driver_features_resp {
   \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update its
         acknowledged feature set to match the data supplied and MUST report that
         set consistently in subsequent \msgref{GET_DEVICE_FEATURES} responses.
-        If it cannot support the requested set, it MUST clear the FEATURES\_OK
-        bit in the device status.
 \end{itemize}
 
 \msgdef{GET_CONFIG}
