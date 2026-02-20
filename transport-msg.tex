@@ -272,7 +272,9 @@ revisions.
 Device Numbers}
 
 Each virtio-msg bus instance contains one or more \emph{devices}, identified
-by a 16-bit \textbf{device number}. Buses discover these device numbers through
+by a 16-bit \textbf{device number}. The device number is a bus-assigned
+identifier and is distinct from the virtio device ID (device type) returned by
+\msgref{GET_DEVICE_INFO}. Buses discover these device numbers through
 mechanisms such as:
 \begin{itemize}
   \item \textbf{Message-Based Enumeration}: Using \busref{GET_DEVICES} to query
