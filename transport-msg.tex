@@ -325,8 +325,9 @@ resets or at other device-defined times.
         internal state.
   \item If updated configuration data cannot fit in a single
         \msgref{EVENT_CONFIG}, the device SHOULD send an \msgref{EVENT_CONFIG}
-        with zero data length to advertise the new generation count and MUST
-        make the updated data available via \msgref{GET_CONFIG}.
+        without configuration data for the affected range (with offset/length
+        set to that range), and MUST make the updated data available via
+        \msgref{GET_CONFIG}.
   \item If a \msgref{SET_CONFIG} request includes a generation count that does
         not match the device's current count, the device MUST reject the
         request.
@@ -830,11 +831,8 @@ or polling.
 \begin{itemize}
   \item A device (or device-side bus) MUST use \msgref{EVENT_CONFIG} to notify
         the driver of configuration changes or status updates. The message MUST
-        include the new configuration generation count and MAY include the
-        updated configuration data.
-  \item If the configuration data is omitted from \msgref{EVENT_CONFIG}, the
-        device SHOULD include the relevant offsets/lengths so the driver can
-        re-fetch the data via \msgref{GET_CONFIG}.
+        include the new configuration generation count and the affected
+        offset/length, and MAY include the updated configuration data.
   \item A device MUST use \msgref{EVENT_USED} to notify the driver of used
         buffers on a virtqueue, unless the device relies on polling or another
         agreed-upon completion mechanism.
@@ -1404,8 +1402,8 @@ struct virtio_msg_get_shm_resp {
 
 \msgref{EVENT_CONFIG} notifies the driver about configuration or status changes.
 The payload includes the current device status, configuration generation count,
-and optionally the updated configuration data (offset plus length). A length of
-zero indicates that the driver should re-fetch the affected range via
+and the affected configuration offset/length. The configuration data MAY be
+omitted; if it is omitted, the driver should re-fetch the affected range via
 \msgref{GET_CONFIG}.
 
 \begin{lstlisting}
@@ -1413,7 +1411,7 @@ struct virtio_msg_event_config {
         le32 device_status; /* new device status value */
         le32 generation;    /* configuration generation count */
         le32 offset;        /* configuration offset */
-        le32 length;        /* number of bytes (may be zero) */
+        le32 length;        /* number of bytes in affected range */
         u8   data[];        /* optional configuration data */
 };
 \end{lstlisting}
@@ -1421,8 +1419,9 @@ struct virtio_msg_event_config {
 \drivernormative{\paragraph}{EVENT\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Driver}
 \begin{itemize}
   \item When \msgref{EVENT_CONFIG} provides configuration data, the driver
-        SHOULD apply it; otherwise it SHOULD re-read the affected range via
-        \msgref{GET_CONFIG} before proceeding.
+        SHOULD apply it; otherwise it SHOULD re-read the affected range
+        indicated by the offset/length via \msgref{GET_CONFIG} before
+        proceeding.
 \end{itemize}
 
 \devicenormative{\paragraph}{EVENT\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Device}
@@ -1430,6 +1429,8 @@ struct virtio_msg_event_config {
   \item A device MUST send \msgref{EVENT_CONFIG} whenever it changes
         configuration data or status in a way that is visible to the driver,
         including the new configuration generation count.
+  \item A device MUST set the offset/length fields to describe the affected
+        configuration range, whether or not the configuration data is included.
 \end{itemize}
 
 \msgdef{EVENT_AVAIL}
