@@ -502,8 +502,9 @@ Field semantics:
         use is transparent to drivers and devices.
 \end{itemize}
 
-Reserved header bits and unspecified header values MUST be transmitted as zero
-and ignored on receive to preserve forward compatibility.
+A bus implementation MUST transmit reserved header bits and unspecified header
+values as zero, and drivers and devices MUST ignore those bits on receive to
+preserve forward compatibility.
 
 \subsubsection{Message Ordering}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering}
