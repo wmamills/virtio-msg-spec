@@ -1384,9 +1384,10 @@ struct virtio_msg_get_shm_req {
 };
 
 struct virtio_msg_get_shm_resp {
-        le32 index;  /* echoed index */
-        le32 length; /* region length (0 if nonexistent) */
-        le32 address;/* region address */
+        le32 index;     /* echoed index */
+        le32 reserved;  /* must be zero */
+        le64 length;    /* region length (0 if nonexistent) */
+        le64 address;   /* region address */
 };
 \end{lstlisting}
 
@@ -1395,6 +1396,8 @@ struct virtio_msg_get_shm_resp {
   \item A device MUST return zero length if the requested shared memory region
         does not exist and MUST report accurate address/length information for
         regions it supports.
+  \item A device MUST set the \field{reserved} field in \msgref{GET_SHM}
+        responses to zero.
 \end{itemize}
 
 \msgdef{EVENT_CONFIG}
