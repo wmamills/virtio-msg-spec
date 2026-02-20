@@ -657,6 +657,11 @@ current configuration generation count. Writing is performed via
 \msgref{SET_CONFIG}, which carries the same offset/length along with the
 driver's notion of the generation count and the new data.
 
+Configuration space is intended for device control and configuration data.
+When a device can instead expose data through a virtqueue, that mechanism is
+preferred; configuration reads and writes are asynchronous in virtio-msg and
+may require the driver to wait for a response.
+
 \drivernormative{\paragraph}{Device Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Driver}
 \begin{itemize}
   \item A driver MUST ensure that the offset and length in each
