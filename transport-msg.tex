@@ -1064,8 +1064,8 @@ struct virtio_msg_get_device_info_resp {
         le32 num_feature_bits; /* total feature bits (multiples of 32) */
         le32 config_size;      /* bytes in the device configuration space */
         le32 max_virtqueues;   /* maximum virtqueues supported */
-        le16 admin_vq_start;   /* index of the first admin virtqueue */
-        le16 admin_vq_count;   /* number of admin virtqueues */
+        le32 admin_vq_start;   /* index of the first admin virtqueue */
+        le32 admin_vq_count;   /* number of admin virtqueues */
 };
 \end{lstlisting}
 
