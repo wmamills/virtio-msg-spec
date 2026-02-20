@@ -612,9 +612,6 @@ how much configuration space is valid.
 
 \drivernormative{\paragraph}{Device Information}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information / Driver}
 \begin{itemize}
-  \item A driver MUST issue \msgref{GET_DEVICE_INFO} before attempting feature
-        negotiation or queue setup so it can discover the device ID, vendor ID,
-        feature count, configuration size, and virtqueue limits.
   \item A driver MUST use the configuration size reported via
         \msgref{GET_DEVICE_INFO} to bound any offsets and lengths supplied in
         \msgref{GET_CONFIG} and \msgref{SET_CONFIG} requests.
