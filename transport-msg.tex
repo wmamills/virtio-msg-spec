@@ -656,9 +656,9 @@ bit remains set.
         for any requested bits that fall outside the number of feature bits it
         implements.
   \item After receiving \msgref{SET_DRIVER_FEATURES}, a device MUST update its
-        internal feature mask to match the acknowledged set and MUST reflect
-        acceptance or rejection by leaving the FEATURES\_OK bit set or clearing
-        it in the status returned by \msgref{SET_DEVICE_STATUS}.
+        internal feature mask to match the acknowledged set. If the device
+        cannot support the requested set, it MUST clear the FEATURES\_OK bit in
+        the status returned by \msgref{SET_DEVICE_STATUS}.
 \end{itemize}
 
 \subsubsection{Device Configuration}
@@ -1147,7 +1147,7 @@ struct virtio_msg_set_driver_features_resp {
   \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update its
         acknowledged feature set to match the data supplied and MUST report that
         set consistently in subsequent \msgref{GET_DEVICE_FEATURES} responses.
-        If it cannot support the requested set, it SHOULD clear the FEATURES\_OK
+        If it cannot support the requested set, it MUST clear the FEATURES\_OK
         bit in the device status.
 \end{itemize}
 
