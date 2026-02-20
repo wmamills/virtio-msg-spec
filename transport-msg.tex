@@ -385,17 +385,29 @@ obtain a response within its policy.
   \item A bus implementation MAY report a transport-visible failure (for
         example, after exhausting a bounded retry policy) when it cannot deliver
         a request or obtain a response.
-  \item A bus implementation MUST treat malformed headers or unsupported
-        \field{msg_id} values as invalid, MUST discard them without generating
-        additional protocol traffic, and MAY log the condition for diagnostics.
+  \item A bus implementation MUST treat malformed headers or unsupported bus
+        \field{msg_id} values in bus messages as invalid, MUST discard them
+        without generating additional protocol traffic, and MAY log the
+        condition for diagnostics.
+  \item A bus implementation MUST NOT validate transport \field{msg_id} values;
+        unsupported transport \field{msg_id} handling is performed by the
+        transport layer.
   \item A bus implementation MUST NOT generate error responses to event
         (one-way) messages.
 \end{itemize}
 
+\drivernormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Driver}
+\begin{itemize}
+  \item A driver-side transport implementation receiving a malformed or
+        unsupported transport message MUST discard it without producing further
+        protocol traffic.
+\end{itemize}
+
 \devicenormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Device}
 \begin{itemize}
-  \item A device receiving a malformed or unsupported transport message MUST
-        discard it without producing further protocol traffic.
+  \item A device-side transport implementation receiving a malformed or
+        unsupported transport message MUST discard it without producing further
+        protocol traffic.
   \item Recovery actions taken in response to an error (such as retries,
         selective resets, or device removal) MUST follow the normative reset and
         status semantics defined in
