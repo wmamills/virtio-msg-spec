@@ -164,6 +164,10 @@ layer:
         implemented by the bus instance.
 \end{itemize}
 
+Transport feature bits are negotiated by the bus. When both the driver side and
+device side expose transport feature masks, the bus instance presents only the
+common subset to the virtio-msg transport.
+
 The mechanism for obtaining these parameters is implementation-defined and can
 vary between bus instances. Common approaches include:
 \begin{itemize}
@@ -177,6 +181,8 @@ vary between bus instances. Common approaches include:
   \item Each bus instance MUST make its transport revision, maximum message
         size, and transport feature bits available to the virtio-msg transport
         before any transport messages are exchanged for that device.
+  \item A bus instance MUST advertise only the transport feature bits supported
+        by both sides of that bus instance.
   \item A bus instance MUST apply the same limits to both driver-originated and
         device-originated transport messages; if the values change, the bus
         MUST inform the transport layer before accepting additional messages.
