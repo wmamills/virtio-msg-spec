@@ -791,14 +791,14 @@ runtime resets or shutdown sequences.
 \subsubsection{Driver Notifications}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications}
 
-After buffers are made available to a virtqueue, the driver issues
-\msgref{EVENT_AVAIL} to notify the device. A bus implementation may translate
-these notifications into an out-of-band mechanism or deliver them in-band.
+Drivers use \msgref{EVENT_AVAIL} to notify the device of available buffers. A
+bus implementation may translate these notifications into an out-of-band
+mechanism or deliver them in-band.
 
 \drivernormative{\paragraph}{Driver Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Driver}
 \begin{itemize}
-  \item A driver MUST send \msgref{EVENT_AVAIL} when it places new buffers on a
-        virtqueue.
+  \item A driver MUST use \msgref{EVENT_AVAIL} to notify the device of available
+        buffers.
   \item Each \msgref{EVENT_AVAIL} MUST identify the target virtqueue index.
   \item If VIRTIO\_F\_NOTIFICATION\_DATA has been negotiated, the driver MUST
         populate the “next offset and wrap” fields so the device can locate the
@@ -825,16 +825,16 @@ or polling.
 
 \devicenormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Device}
 \begin{itemize}
-  \item A device (or device-side bus) MUST send \msgref{EVENT_CONFIG} whenever
-        it makes a configuration change or status update that becomes visible to
-        the driver. The message MUST include the new configuration generation
-        count and MAY include the updated configuration data.
+  \item A device (or device-side bus) MUST use \msgref{EVENT_CONFIG} to notify
+        the driver of configuration changes or status updates. The message MUST
+        include the new configuration generation count and MAY include the
+        updated configuration data.
   \item If the configuration data is omitted from \msgref{EVENT_CONFIG}, the
         device SHOULD include the relevant offsets/lengths so the driver can
         re-fetch the data via \msgref{GET_CONFIG}.
-  \item A device SHOULD send \msgref{EVENT_USED} to inform the driver when
-        buffers on a virtqueue have been consumed, unless the device relies on
-        an alternative, agreed-upon completion mechanism.
+  \item A device SHOULD use \msgref{EVENT_USED} to notify the driver of used
+        buffers on a virtqueue, unless the device relies on an alternative,
+        agreed-upon completion mechanism.
 \end{itemize}
 
 \drivernormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Driver}
