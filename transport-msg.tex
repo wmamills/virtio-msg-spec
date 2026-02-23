@@ -130,6 +130,8 @@ hotplug when desired.
   \item A bus implementation SHOULD treat transport messages as opaque apart
         from enforcing generic transport limits, such as the advertised maximum
         message size, and SHOULD NOT modify the transport payload.
+  \item If a bus implementation cannot route a transport message to a device
+        number, it MAY drop the message or surface a transport-visible failure.
 \end{itemize}
 
 \subsubsection{System Topology}
@@ -297,8 +299,7 @@ driver binding process can begin.
 \busnormative{\paragraph}{Device Number Assignment}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Numbers / Assignment}
 \begin{itemize}
   \item A bus implementation MUST assign a unique device number to every
-        device on a given bus instance and MUST NOT forward transport messages
-        for a device number that has not been validated.
+        device on a given bus instance.
   \item A bus implementation SHOULD provide the driver with sufficient
         information—either via \busref{GET_DEVICES} or equivalent platform
         data—to discover each valid device number.
