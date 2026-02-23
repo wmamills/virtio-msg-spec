@@ -645,10 +645,10 @@ the baseline for virtio-msg initialization.
 
 Once a device number is confirmed, the driver uses \msgref{GET_DEVICE_INFO} to
 retrieve static identification data (device ID, vendor ID), the number of
-feature bits, configuration space size, maximum virtqueues, shared memory
-segments, and any admin virtqueue details. This information determines which
-virtio driver should bind to the device, how many feature blocks to query, and
-how much configuration space is valid.
+feature bits, configuration space size, maximum virtqueues, and any admin
+virtqueue details. This information determines which virtio driver should bind
+to the device, how many feature blocks to query, and how much configuration
+space is valid.
 
 \drivernormative{\paragraph}{Device Information}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Information / Driver}
 \begin{itemize}
