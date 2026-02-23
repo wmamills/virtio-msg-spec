@@ -320,7 +320,7 @@ resets or at other device-defined times.
   \item A device MUST increment the generation count before it makes a change
         that is visible to the driver and MUST ensure that each
         \msgref{EVENT_CONFIG} carrying configuration data uses a unique
-        generation count.
+        generation count since the most recent generation count reset.
   \item A device MAY reset the generation count, including when it resets its
         internal state.
   \item If updated configuration data cannot fit in a single
