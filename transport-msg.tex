@@ -728,7 +728,7 @@ Drivers query virtqueue parameters with \msgref{GET_VQUEUE}, configure them via
 \msgref{SET_VQUEUE}, and optionally reset them using \msgref{RESET_VQUEUE} (if
 VIRTIO\_F\_RING\_RESET is negotiated). Each queue is typically configured by
 reading its maximum size, provisioning descriptor/available/used buffers, and
-then calling \msgref{SET_VQUEUE} with the chosen size and guest-physical
+then calling \msgref{SET_VQUEUE} with the chosen size and physical
 addresses.
 
 \drivernormative{\paragraph}{Virtqueue Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Driver}
@@ -737,7 +737,7 @@ addresses.
         size and confirm that a queue is inactive before programming it.
   \item A driver MUST ensure the queue size provided in \msgref{SET_VQUEUE} does
         not exceed the maximum reported by the device and MUST supply valid
-        descriptor/driver/device addresses before enabling the queue.
+        descriptor/driver/device physical addresses before enabling the queue.
   \item If VIRTIO\_F\_RING\_RESET has been negotiated and a queue requires
         reinitialization, the driver SHOULD use \msgref{RESET_VQUEUE} before
         reprogramming it.
@@ -747,7 +747,7 @@ addresses.
 \begin{itemize}
   \item A device MUST report accurate maximum queue sizes in \msgref{GET_VQUEUE}
         and MUST persist the parameters supplied via \msgref{SET_VQUEUE} (size,
-        descriptor, driver, and device addresses).
+        descriptor, driver, and device physical addresses).
   \item When \msgref{RESET_VQUEUE} is issued (and VIRTIO\_F\_RING\_RESET is
         negotiated), the device MUST quiesce the queue, release any resources
         associated with it, and allow the driver to reconfigure it.
@@ -1299,7 +1299,7 @@ struct virtio_msg_set_device_status_resp {
 
 \msgref{GET_VQUEUE} returns information about a specific virtqueue, including
 its maximum size, current size, and, if already configured, the descriptor,
-driver, and device area addresses.
+driver, and device area physical addresses.
 
 \begin{lstlisting}
 struct virtio_msg_get_vqueue_req {
@@ -1311,9 +1311,9 @@ struct virtio_msg_get_vqueue_resp {
         le32 max_size;     /* maximum queue size */
         le32 cur_size;     /* current size (0 if unconfigured) */
         le32 reserved;     /* must be zero */
-        le64 desc_addr;    /* descriptor area address */
-        le64 driver_addr;  /* driver area address */
-        le64 device_addr;  /* device area address */
+        le64 desc_addr;    /* descriptor area physical address */
+        le64 driver_addr;  /* driver area physical address */
+        le64 device_addr;  /* device area physical address */
 };
 \end{lstlisting}
 
@@ -1326,10 +1326,10 @@ struct virtio_msg_get_vqueue_resp {
 
 \msgdef{SET_VQUEUE}
 
-\msgref{SET_VQUEUE} programs a virtqueue's size and buffer addresses. The driver
-selects a queue index, supplies the desired size (not exceeding the maximum
-reported via \msgref{GET_VQUEUE}), and provides guest-physical addresses for the
-descriptor, driver, and device areas.
+\msgref{SET_VQUEUE} programs a virtqueue's size and physical addresses. The
+driver selects a queue index, supplies the desired size (not exceeding the
+maximum reported via \msgref{GET_VQUEUE}), and provides physical addresses for
+the descriptor, driver, and device areas.
 
 \begin{lstlisting}
 struct virtio_msg_set_vqueue_req {
@@ -1337,9 +1337,9 @@ struct virtio_msg_set_vqueue_req {
         le32 reserved0;   /* must be zero */
         le32 size;        /* number of descriptors */
         le32 reserved1;   /* must be zero */
-        le64 desc_addr;   /* descriptor area address */
-        le64 driver_addr; /* driver area address */
-        le64 device_addr; /* device area address */
+        le64 desc_addr;   /* descriptor area physical address */
+        le64 driver_addr; /* driver area physical address */
+        le64 device_addr; /* device area physical address */
 };
 
 struct virtio_msg_set_vqueue_resp {
@@ -1351,7 +1351,7 @@ struct virtio_msg_set_vqueue_resp {
 \begin{itemize}
   \item A driver MUST set the virtqueue size field to a value not exceeding the
         maximum reported by \msgref{GET_VQUEUE} and MUST ensure the supplied
-        addresses point to properly aligned memory.
+        physical addresses point to properly aligned memory.
 \end{itemize}
 
 \devicenormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Device}
@@ -1395,8 +1395,8 @@ struct virtio_msg_reset_vqueue_resp {
 
 \msgref{GET_SHM} returns the location and size of a device-owned shared memory
 region. The request carries the region index; the response echoes the index and
-provides the base address and length. A length of zero indicates that the
-specified region does not exist.
+provides the base physical address and length. A length of zero indicates that
+the specified region does not exist.
 
 \begin{lstlisting}
 struct virtio_msg_get_shm_req {
@@ -1407,15 +1407,15 @@ struct virtio_msg_get_shm_resp {
         le32 index;     /* echoed index */
         le32 reserved;  /* must be zero */
         le64 length;    /* region length (0 if nonexistent) */
-        le64 address;   /* region address */
+        le64 address;   /* region physical address */
 };
 \end{lstlisting}
 
 \devicenormative{\paragraph}{GET\_SHM}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
 \begin{itemize}
   \item A device MUST return zero length if the requested shared memory region
-        does not exist and MUST report accurate address/length information for
-        regions it supports.
+        does not exist and MUST report accurate physical address/length
+        information for regions it supports.
   \item A device MUST set the \field{reserved} field in \msgref{GET_SHM}
         responses to zero.
 \end{itemize}
