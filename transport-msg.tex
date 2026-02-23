@@ -530,9 +530,9 @@ Field semantics:
         use is transparent to drivers and devices.
 \end{itemize}
 
-A bus implementation MUST transmit reserved header bits and unspecified header
-values as zero, and drivers and devices MUST ignore those bits on receive to
-preserve forward compatibility.
+A message originator MUST transmit reserved header bits and unspecified header
+values as zero, and receivers MUST ignore those bits on receive to preserve
+forward compatibility.
 
 Virtqueue descriptors and buffer data are exchanged via shared memory or other
 DMA-accessible memory, as with other virtio transports. Transport messages are
