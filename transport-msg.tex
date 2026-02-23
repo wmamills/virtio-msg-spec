@@ -534,6 +534,11 @@ A bus implementation MUST transmit reserved header bits and unspecified header
 values as zero, and drivers and devices MUST ignore those bits on receive to
 preserve forward compatibility.
 
+Virtqueue descriptors and buffer data are exchanged via shared memory or other
+DMA-accessible memory, as with other virtio transports. Transport messages are
+used for control operations, configuration, and notifications, not for
+virtqueue data transfer.
+
 \subsubsection{Message Ordering}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering}
 
