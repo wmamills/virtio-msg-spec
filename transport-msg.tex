@@ -1502,9 +1502,8 @@ struct virtio_msg_event_used {
 \devicenormative{\paragraph}{EVENT\_USED}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Device}
 \begin{itemize}
   \item A device MUST send \msgref{EVENT_USED} (or an equivalent notification)
-        when it processes buffers on a virtqueue unless the driver has
-        explicitly disabled such notifications, or the device relies on polling
-        or another agreed-upon completion mechanism.
+        when it processes buffers on a virtqueue unless the device relies on
+        polling or another agreed-upon completion mechanism.
 \end{itemize}
 
 \drivernormative{\paragraph}{EVENT\_USED}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Driver}
