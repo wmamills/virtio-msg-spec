@@ -1426,7 +1426,8 @@ struct virtio_msg_get_shm_resp {
 The payload includes the current device status, configuration generation count,
 and the affected configuration offset/length. The configuration data MAY be
 omitted; if it is omitted, the driver should re-fetch the affected range via
-\msgref{GET_CONFIG}.
+\msgref{GET_CONFIG}. If the event reports only a status change with no
+configuration update, the device sets the offset and length fields to zero.
 
 \begin{lstlisting}
 struct virtio_msg_event_config {
@@ -1453,6 +1454,8 @@ struct virtio_msg_event_config {
         including the new configuration generation count.
   \item A device MUST set the offset/length fields to describe the affected
         configuration range, whether or not the configuration data is included.
+  \item If \msgref{EVENT_CONFIG} reports only a status change, a device MUST set
+        the offset and length fields to zero.
 \end{itemize}
 
 \msgdef{EVENT_AVAIL}
