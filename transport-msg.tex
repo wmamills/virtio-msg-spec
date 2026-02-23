@@ -550,9 +550,11 @@ described here.
   \item For each device number, a bus implementation MUST deliver responses to
         the driver in the same order that it forwarded the corresponding
         requests to the device.
-  \item A bus implementation MUST ensure that every request forwarded to a
-        device results in exactly one response delivered to the driver (unless
-        the request is defined as an event).
+\end{itemize}
+
+\devicenormative{\paragraph}{Message Ordering}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Device}
+\begin{itemize}
+  \item A device MUST send exactly one response for each request it receives.
 \end{itemize}
 
 \subsection{Device Discovery}\label{sec:Virtio Transport Options / Virtio Over Messages / Device Discovery}
