@@ -735,16 +735,20 @@ Drivers query virtqueue parameters with \msgref{GET_VQUEUE}, configure them via
 \msgref{SET_VQUEUE}, and optionally reset them using \msgref{RESET_VQUEUE} (if
 VIRTIO\_F\_RING\_RESET is negotiated). Each queue is typically configured by
 reading its maximum size, provisioning descriptor/available/used buffers, and
-then calling \msgref{SET_VQUEUE} with the chosen size and physical
-addresses.
+then calling \msgref{SET_VQUEUE} with the chosen size, physical addresses, and
+queue-state operation in \field{flags}.
 
 \drivernormative{\paragraph}{Virtqueue Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Driver}
 \begin{itemize}
   \item A driver MUST use \msgref{GET_VQUEUE} to determine the maximum queue
-        size and confirm that a queue is inactive before programming it.
-  \item A driver MUST ensure the queue size provided in \msgref{SET_VQUEUE} does
-        not exceed the maximum reported by the device and MUST supply valid
-        descriptor/driver/device physical addresses before enabling the queue.
+        size and current queue state before programming it.
+  \item A driver MUST set \msgref{SET_VQUEUE} \field{flags} according to the
+        desired queue-state operation and field-update behavior.
+  \item If a driver updates queue size via \msgref{SET_VQUEUE}, it MUST ensure
+        the requested size does not exceed the maximum reported by the device.
+  \item If a driver updates queue addresses via \msgref{SET_VQUEUE}, it MUST
+        supply valid descriptor/driver/device physical addresses for each
+        updated field.
   \item If VIRTIO\_F\_RING\_RESET has been negotiated and a queue requires
         reinitialization, the driver SHOULD use \msgref{RESET_VQUEUE} before
         reprogramming it.
@@ -753,8 +757,11 @@ addresses.
 \devicenormative{\paragraph}{Virtqueue Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Device}
 \begin{itemize}
   \item A device MUST report accurate maximum queue sizes in \msgref{GET_VQUEUE}
-        and MUST persist the parameters supplied via \msgref{SET_VQUEUE} (size,
-        descriptor, driver, and device physical addresses).
+        and MUST report accurate current queue size and enabled state.
+  \item A device MUST persist the parameters supplied via \msgref{SET_VQUEUE}
+        for fields not marked ignored by \field{flags}.
+  \item A device MUST update queue state according to the
+        \msgref{SET_VQUEUE} \field{flags} state-operation bits.
   \item When \msgref{RESET_VQUEUE} is issued (and VIRTIO\_F\_RING\_RESET is
         negotiated), the device MUST quiesce the queue, release any resources
         associated with it, and allow the driver to reconfigure it.
@@ -919,20 +926,22 @@ update configuration data autonomously but must signal those changes via
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation}
 
 Drivers may provision unused virtqueues later in the device lifetime by issuing
-\msgref{SET_VQUEUE}, and they may reconfigure existing queues if the
+\msgref{SET_VQUEUE}, and they may reconfigure existing queues or update queue
+state if the
 VIRTIO\_F\_RING\_RESET feature has been negotiated.
 
 \drivernormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Driver}
 \begin{itemize}
-  \item A driver MAY configure additional virtqueues after initialization using
-        \msgref{SET_VQUEUE}, provided it follows the same validation steps
-        (e.g., checking the maximum queue size).
+  \item A driver MAY configure additional virtqueues and update selected
+        virtqueue fields after initialization using \msgref{SET_VQUEUE},
+        provided it follows the same validation steps.
 \end{itemize}
 
 \devicenormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Device}
 \begin{itemize}
   \item A device MUST honor \msgref{SET_VQUEUE} requests issued after
-        initialization and update the queue parameters accordingly.
+        initialization and update queue parameters and queue state according to
+        \field{flags}.
   \item When \msgref{RESET_VQUEUE} is received (and VIRTIO\_F\_RING\_RESET is
         negotiated), the device MUST quiesce the queue and allow the driver to
         reconfigure it without processing stale data.
@@ -1326,8 +1335,8 @@ struct virtio_msg_set_device_status_resp {
 \msgdef{GET_VQUEUE}
 
 \msgref{GET_VQUEUE} returns information about a specific virtqueue, including
-its maximum size, current size, and, if already configured, the descriptor,
-driver, and device area physical addresses.
+its maximum size, current size, enabled state, and, if already configured, the
+descriptor, driver, and device area physical addresses.
 
 \begin{lstlisting}
 struct virtio_msg_get_vqueue_req {
@@ -1338,7 +1347,7 @@ struct virtio_msg_get_vqueue_resp {
         le32 index;        /* echoed virtqueue index */
         le32 max_size;     /* maximum queue size */
         le32 cur_size;     /* current size (0 if unconfigured) */
-        le32 reserved;     /* must be zero */
+        le32 flags;        /* bit0: enabled state, bits[31:1] reserved */
         le64 desc_addr;    /* descriptor area physical address */
         le64 driver_addr;  /* driver area physical address */
         le64 device_addr;  /* device area physical address */
@@ -1350,21 +1359,23 @@ struct virtio_msg_get_vqueue_resp {
   \item A device MUST report accurate maxima and current queue sizes for each
         virtqueue and MUST return zero as the current size if the queue has not
         yet been configured.
+  \item A device MUST report queue enabled state in \field{flags} bit 0 and
+        MUST set \field{flags} bits 31:1 to zero.
 \end{itemize}
 
 \msgdef{SET_VQUEUE}
 
-\msgref{SET_VQUEUE} programs a virtqueue's size and physical addresses. The
-driver selects a queue index, supplies the desired size (not exceeding the
-maximum reported via \msgref{GET_VQUEUE}), and provides physical addresses for
-the descriptor, driver, and device areas.
+\msgref{SET_VQUEUE} updates a virtqueue's parameters and queue state. The
+driver selects a queue index and uses \field{flags} to indicate whether queue
+state should be enabled, disabled, or kept unchanged, and which queue fields
+should be ignored versus updated.
 
 \begin{lstlisting}
 struct virtio_msg_set_vqueue_req {
         le32 index;       /* virtqueue index */
-        le32 reserved0;   /* must be zero */
+        le32 flags;       /* state op + ignore bits */
         le32 size;        /* number of descriptors */
-        le32 reserved1;   /* must be zero */
+        le32 reserved;    /* must be zero */
         le64 desc_addr;   /* descriptor area physical address */
         le64 driver_addr; /* driver area physical address */
         le64 device_addr; /* device area physical address */
@@ -1375,18 +1386,57 @@ struct virtio_msg_set_vqueue_resp {
 };
 \end{lstlisting}
 
+\field{flags} is defined as:
+\begin{itemize}
+  \item Bits [1:0] (\textbf{State Operation}):
+    \begin{itemize}
+      \item 0: disable queue.
+      \item 1: enable queue.
+      \item 2: keep current queue state.
+      \item 3: reserved.
+    \end{itemize}
+  \item Bit 2 (\textbf{size\_ignore}): 0=apply \field{size}, 1=ignore.
+  \item Bit 3 (\textbf{desc\_addr\_ignore}): 0=apply \field{desc_addr},
+        1=ignore.
+  \item Bit 4 (\textbf{driver\_addr\_ignore}): 0=apply \field{driver_addr},
+        1=ignore.
+  \item Bit 5 (\textbf{device\_addr\_ignore}): 0=apply \field{device_addr},
+        1=ignore.
+  \item Bits [31:6]: reserved, MUST be zero.
+\end{itemize}
+
+When \field{flags} is zero, \msgref{SET_VQUEUE} uses current behavior:
+the queue is disabled and all queue fields in the request are applied.
+
 \drivernormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
 \begin{itemize}
-  \item A driver MUST set the virtqueue size field to a value not exceeding the
-        maximum reported by \msgref{GET_VQUEUE} and MUST ensure the supplied
-        physical addresses point to properly aligned memory.
+  \item A driver MUST set \field{reserved} to zero and MUST set \field{flags}
+        bits [31:6] to zero.
+  \item A driver MUST NOT use state operation value 3 in \field{flags} bits
+        [1:0].
+  \item If \field{size\_ignore} is 0, a driver MUST set \field{size} to a value
+        not exceeding the maximum reported by \msgref{GET_VQUEUE}.
+  \item If any address ignore bit is 0, a driver MUST ensure the corresponding
+        physical address points to properly aligned memory.
+  \item Because \msgref{SET_VQUEUE} has no response payload, a driver that
+        needs confirmation of acceptance MUST verify the resulting queue
+        parameters and state via \msgref{GET_VQUEUE} before relying on the
+        requested updates.
 \end{itemize}
 
 \devicenormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Device}
 \begin{itemize}
-  \item A device MUST configure the queue using the parameters provided via
-        \msgref{SET_VQUEUE} and treat the queue as inactive until
-        \msgref{SET_VQUEUE} has successfully completed.
+  \item A device MUST reject \msgref{SET_VQUEUE} if \field{reserved} is nonzero,
+        if \field{flags} bits [31:6] are nonzero, or if \field{flags} bits [1:0]
+        use state operation value 3.
+  \item A device MUST process \msgref{SET_VQUEUE} updates atomically: it MUST
+        either apply all requested field updates and queue-state changes, or
+        reject the request without applying any of them.
+  \item If an ignore bit is 0, a device MUST apply the corresponding field from
+        \msgref{SET_VQUEUE}; if an ignore bit is 1, a device MUST keep the
+        current value for that field unchanged.
+  \item A device MUST apply queue state according to \field{flags} bits [1:0]
+        after processing requested field updates.
 \end{itemize}
 
 \msgdef{RESET_VQUEUE}
