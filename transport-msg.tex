@@ -825,8 +825,8 @@ runtime resets or shutdown sequences.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications}
 
 Drivers use \msgref{EVENT_AVAIL} to notify the device of available buffers. A
-bus implementation may translate these notifications into an out-of-band
-mechanism or deliver them in-band.
+bus implementation may use an out-of-band mechanism to signal these
+notifications in addition to the in-band message.
 
 \drivernormative{\paragraph}{Driver Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Driver}
 \begin{itemize}
@@ -840,9 +840,9 @@ mechanism or deliver them in-band.
 
 \busnormative{\paragraph}{Driver Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Bus}
 \begin{itemize}
-  \item A bus implementation MAY convert \msgref{EVENT_AVAIL} into an
-        out-of-band notification but, if it does not, it MUST relay the message
-        over the virtio-msg channel.
+  \item A bus implementation MAY use an out-of-band notification for
+        \msgref{EVENT_AVAIL}, but it MUST also relay the message over the
+        virtio-msg channel.
   \item A bus implementation MUST NOT drop \msgref{EVENT_AVAIL} unless it has
         arranged for the device to detect new buffers through polling or an
         equivalent mechanism.
@@ -852,9 +852,9 @@ mechanism or deliver them in-band.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications}
 
 \msgref{EVENT_CONFIG} and \msgref{EVENT_USED} provide asynchronous notifications
-from the device (or device-side bus) to the driver. The bus may forward these
-messages in-band or synthesize them based on other signals such as interrupts
-or polling.
+from the device (or device-side bus) to the driver. The bus may use other
+signals such as interrupts or polling to trigger delivery and then forward
+the messages in-band or synthesize them.
 
 \devicenormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Device}
 \begin{itemize}
@@ -879,9 +879,9 @@ or polling.
 
 \busnormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Bus}
 \begin{itemize}
-  \item A bus implementation MUST forward \msgref{EVENT_CONFIG} and
-        \msgref{EVENT_USED} notifications (or their equivalents) to the driver,
-        either in-band or by synthesizing the appropriate message.
+  \item A bus implementation MUST deliver \msgref{EVENT_CONFIG} and
+        \msgref{EVENT_USED} to the driver by forwarding the in-band message or
+        by synthesizing the appropriate message based on other signals.
   \item If a bus implementation relies on polling or other mechanisms instead of
         direct notifications, it SHOULD limit that mode to scenarios where no
         other notification method is available.
@@ -1073,8 +1073,20 @@ As described in Sections
 and
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications},
 runtime notifications (\msgref{EVENT_AVAIL}, \msgref{EVENT_USED}, and
-\msgref{EVENT_CONFIG}) may be delivered in-band or via equivalent out-of-band
-mechanisms.
+\msgref{EVENT_CONFIG}) are defined as transport messages and MAY also be
+signaled via equivalent out-of-band mechanisms.
+
+\busnormative{\paragraph}{Runtime Notifications}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Runtime Notifications / Bus}
+\begin{itemize}
+  \item A bus implementation MUST specify whether runtime notifications
+        (\msgref{EVENT_AVAIL}, \msgref{EVENT_USED}, and \msgref{EVENT_CONFIG})
+        use in-band delivery, out-of-band signaling, or both.
+  \item If a bus implementation specifies out-of-band signaling, it MUST
+        document the mechanism and any required configuration to use it.
+  \item If a bus implementation uses out-of-band signaling, it MUST also relay
+        or synthesize the corresponding transport message on the virtio-msg
+        channel.
+\end{itemize}
 
 \msgdef{GET_DEVICE_INFO}
 
