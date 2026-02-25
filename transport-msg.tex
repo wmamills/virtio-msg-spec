@@ -311,65 +311,72 @@ driver binding process can begin.
         data—to discover each valid device number.
 \end{itemize}
 
-\subsubsection{Configuration Generation Count}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count}
+\subsubsection{Configuration Semantics Profiles}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
 
-Configuration generation behavior depends on transport feature negotiation.
-When \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, generation
-count provides stale-write detection for configuration updates. When the
-feature is not negotiated, generation fields in \msgref{GET_CONFIG},
-\msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG} are reserved: senders set them
-to 0 and receivers ignore them.
-
-\devicenormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Device}
+virtio-msg defines two configuration semantics profiles selected by transport
+feature negotiation:
 \begin{itemize}
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MUST increment generation count before it makes a
-        driver-visible configuration change and MUST ensure that each
+  \item \textbf{Baseline profile}: applies when
+        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated.
+  \item \textbf{Strict profile}: applies when
+        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated.
+\end{itemize}
+
+The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
+\msgref{EVENT_CONFIG}.
+
+\drivernormative{\paragraph}{Configuration Semantics Profiles}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles / Driver}
+\begin{itemize}
+  \item A driver MUST determine the active profile before issuing
+        \msgref{SET_CONFIG}.
+  \item In baseline profile, a driver MUST set \field{generation} to 0 in
+        \msgref{SET_CONFIG} requests and MUST ignore \field{generation} in
+        \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
+  \item In baseline profile, upon \msgref{EVENT_CONFIG}, a driver SHOULD refresh
+        required configuration via \msgref{GET_CONFIG} when event data is
+        omitted or when offset/length are zero.
+  \item In strict profile, a driver MUST track generation values from
+        \msgref{GET_CONFIG}/\msgref{EVENT_CONFIG} and MUST include its most
+        recent generation value in \msgref{SET_CONFIG}.
+  \item In strict profile, if a \msgref{SET_CONFIG} request is rejected due to a
+        mismatched generation count, a driver SHOULD issue \msgref{GET_CONFIG}
+        to obtain the latest configuration data and generation count before
+        retrying.
+  \item In strict profile, a driver MUST NOT assume generation count is
+        monotonic or preserved across device resets.
+\end{itemize}
+
+\devicenormative{\paragraph}{Configuration Semantics Profiles}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles / Device}
+\begin{itemize}
+  \item In baseline profile, a device MUST set \field{generation} to 0 in
+        \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
+  \item In baseline profile, a device MUST ignore request \field{generation} in
+        \msgref{SET_CONFIG} and MUST NOT reject \msgref{SET_CONFIG} due to
+        generation mismatch.
+  \item In baseline profile, a device MAY set \field{offset}/\field{length} to
+        zero in \msgref{EVENT_CONFIG} to indicate a generic
+        configuration-change notification.
+  \item In strict profile, a device MUST increment generation count before it
+        makes a driver-visible configuration change and MUST ensure that each
         \msgref{EVENT_CONFIG} carrying configuration data uses a unique
         generation count since the most recent generation count reset.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MAY reset generation count, including when it resets internal
-        state.
+  \item In strict profile, a device MAY reset generation count, including when
+        it resets internal state.
+  \item In strict profile, if a \msgref{SET_CONFIG} request includes a
+        generation count that does not match the device's current count, the
+        device MUST reject the request.
   \item If updated configuration data cannot fit in a single
-        \msgref{EVENT_CONFIG}, the device SHOULD send an \msgref{EVENT_CONFIG}
-        without configuration data. If
-        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, the
-        device SHOULD set offset/length to the affected range; otherwise it MAY
-        set offset/length to zero. The device MUST make updated data available
-        via \msgref{GET_CONFIG}.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated and
-        a \msgref{SET_CONFIG} request includes a generation count that does not
-        match the device's current count, the device MUST reject the request.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST set generation to 0 in \msgref{GET_CONFIG} responses,
-        \msgref{SET_CONFIG} responses, and \msgref{EVENT_CONFIG} messages.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST ignore request generation in \msgref{SET_CONFIG} and MUST
-        NOT reject \msgref{SET_CONFIG} because of generation mismatch.
+        \msgref{EVENT_CONFIG}, a device SHOULD send an \msgref{EVENT_CONFIG}
+        without configuration data and MUST make updated data available via
+        \msgref{GET_CONFIG}. In strict profile, the device SHOULD set
+        \field{offset}/\field{length} to the affected range.
 \end{itemize}
 
-\drivernormative{\paragraph}{Configuration Generation Count}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Generation Count / Driver}
-\begin{itemize}
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        driver MUST track the most recent generation count observed (via
-        \msgref{EVENT_CONFIG} or \msgref{GET_CONFIG}) and include it in every
-        \msgref{SET_CONFIG} request.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        driver MUST NOT assume generation count is monotonic or preserved
-        across device resets.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated and
-        a \msgref{SET_CONFIG} request is rejected due to a mismatched generation
-        count, the driver SHOULD issue \msgref{GET_CONFIG} to obtain the latest
-        configuration data and generation count before retrying.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a driver MUST set request generation to 0 in \msgref{SET_CONFIG} and
-        MUST ignore generation fields in \msgref{GET_CONFIG},
-        \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
-\end{itemize}
-
-This provides strict stale-write detection when negotiated while preserving a
-simpler MMIO-like notification flow when not negotiated.
+Rationale: defining baseline and strict semantics in a single subsection keeps
+the non-strict behavior explicit, reduces duplicated conditional wording across
+message definitions, and aligns baseline behavior with MMIO-like
+configuration-change notification flow.
 
 \subsubsection{Feature Negotiation Blocks}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Feature Blocks}
@@ -394,10 +401,9 @@ Transport-defined feature bits currently include:
 Bit & Name & Meaning \\
 \hline
 0 & \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} &
-Enable strict configuration generation validation for
-\msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}. When this
-feature is not negotiated, generation fields are reserved and MUST be sent as 0
-and ignored on receive. \\
+Select strict configuration semantics profile. When this feature is not
+negotiated, the baseline profile applies. See
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}. \\
 \hline
 \end{tabular}
 
@@ -647,8 +653,9 @@ A typical device initialization flow includes:
     updating the device status.
   \item \textbf{Initialize Configuration Space:}
     Read or write configuration data with
-    \msgref{GET_CONFIG}/\msgref{SET_CONFIG}, using generation validation when
-    \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated.
+    \msgref{GET_CONFIG}/\msgref{SET_CONFIG} using the active configuration
+    semantics profile defined in
+    \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
   \item \textbf{Set Up Virtqueues:}
     Configure each virtqueue via \msgref{SET_VQUEUE} and verify the settings
     with \msgref{GET_VQUEUE}.
@@ -730,9 +737,9 @@ bit remains set.
 Drivers use \msgref{GET_CONFIG} to read portions of the configuration space by
 supplying an offset and length; the device returns the requested data plus the
 configuration generation field. Writing is performed via \msgref{SET_CONFIG},
-which carries the same offset/length plus generation and new data. Generation
-validation applies only when
-\texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated.
+which carries the same offset/length plus generation and new data.
+Generation-field handling follows the active profile defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 
 Configuration space is intended for device control and configuration data.
 When a device can instead expose data through a virtqueue, that mechanism is
@@ -744,30 +751,17 @@ may require the driver to wait for a response.
   \item A driver MUST ensure that the offset and length in each
         \msgref{GET_CONFIG} or \msgref{SET_CONFIG} request stay within the
         configuration size reported by \msgref{GET_DEVICE_INFO}.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        driver MUST include its most recently observed configuration generation
-        count in \msgref{SET_CONFIG} and SHOULD re-read configuration (via
-        \msgref{GET_CONFIG}) if the request is rejected for generation
-        mismatch.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a driver MUST set \field{generation} to 0 in \msgref{SET_CONFIG}.
+  \item A driver MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for generation-field handling in \msgref{GET_CONFIG},
+        \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
 \end{itemize}
 
 \devicenormative{\paragraph}{Device Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Device}
 \begin{itemize}
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MUST reject a \msgref{SET_CONFIG} request whose generation count
-        does not match its current value and MUST indicate rejection in the
-        response.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST ignore request generation and MUST NOT reject
-        \msgref{SET_CONFIG} because of generation mismatch.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MUST return current configuration generation in
-        \msgref{GET_CONFIG} and \msgref{SET_CONFIG} responses.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST return generation as 0 in \msgref{GET_CONFIG} and
-        \msgref{SET_CONFIG} responses.
+  \item A device MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for generation-field handling and \msgref{SET_CONFIG} mismatch behavior.
 \end{itemize}
 
 \subsubsection{Virtqueue Configuration}
@@ -913,14 +907,9 @@ the messages in-band or synthesize them.
 \begin{itemize}
   \item A device (or device-side bus) MUST use \msgref{EVENT_CONFIG} to notify
         the driver of configuration changes or status updates.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated,
-        \msgref{EVENT_CONFIG} MUST include the new configuration generation
-        count and the affected offset/length, and MAY include updated
-        configuration data.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        \msgref{EVENT_CONFIG} generation MUST be 0. The device MAY set
-        offset/length to 0 to indicate a generic configuration-change
-        notification and MAY include updated configuration data.
+  \item A device MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for \msgref{EVENT_CONFIG} generation and offset/length handling.
   \item A device MUST use \msgref{EVENT_USED} to notify the driver of used
         buffers on a virtqueue, unless the device relies on polling or another
         agreed-upon completion mechanism.
@@ -929,10 +918,11 @@ the messages in-band or synthesize them.
 \drivernormative{\paragraph}{Device Notifications}{Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Driver}
 \begin{itemize}
   \item Upon receiving \msgref{EVENT_CONFIG}, a driver SHOULD update its view of
-        the configuration using provided data. If data is not provided, the
-        driver SHOULD re-read the affected range via \msgref{GET_CONFIG}; if
-        offset/length are both zero, the driver SHOULD re-read the required
-        configuration via \msgref{GET_CONFIG} before resuming normal I/O.
+        the configuration using provided data (or by issuing
+        \msgref{GET_CONFIG} if necessary) before resuming normal I/O.
+  \item A driver MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for \msgref{EVENT_CONFIG} generation and offset/length interpretation.
   \item Upon receiving \msgref{EVENT_USED}, a driver MUST examine the indicated
         virtqueue (for example, by reading the used ring) to reclaim completed
         buffers.
@@ -959,10 +949,9 @@ update configuration data autonomously but must signal those changes via
 \drivernormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation / Driver}
 \begin{itemize}
   \item A driver MAY issue \msgref{SET_CONFIG} after initialization, following
-        the same validation rules as during setup. If
-        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, the
-        driver includes current generation count; otherwise it sets generation
-        to 0.
+        the same validation rules as during setup and the active configuration
+        semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
   \item Upon receiving an \msgref{EVENT_CONFIG}, the driver SHOULD refresh its
         view of the configuration (via the data provided or by reissuing
         \msgref{GET_CONFIG}) before relying on the updated values.
@@ -971,10 +960,9 @@ update configuration data autonomously but must signal those changes via
 \devicenormative{\paragraph}{Runtime Configuration}{Virtio Transport Options / Virtio Over Messages / Device Operation / Configuration Changes During Operation / Device}
 \begin{itemize}
   \item If a device updates its configuration after initialization, it MUST send
-        \msgref{EVENT_CONFIG} to inform the driver of the change. If
-        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, the
-        message MUST provide new configuration generation count; otherwise it
-        MUST set generation to 0.
+        \msgref{EVENT_CONFIG} to inform the driver of the change and MUST follow
+        the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 \end{itemize}
 
 \subsubsection{Virtqueue Changes During Operation}
@@ -1270,9 +1258,9 @@ struct virtio_msg_set_driver_features_resp {
 
 \msgref{GET_CONFIG} reads a portion of the configuration space. The request
 specifies the byte offset and length; the response echoes those values, returns
-the data, and includes generation. If
-\texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated, generation
-is reserved and MUST be 0.
+the data, and includes generation. Generation semantics follow the active
+configuration profile defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 
 \begin{lstlisting}
 struct virtio_msg_get_config_req {
@@ -1296,12 +1284,9 @@ struct virtio_msg_get_config_resp {
 
 \devicenormative{\paragraph}{GET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Device}
 \begin{itemize}
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MUST return current configuration generation count with every
-        \msgref{GET_CONFIG} response.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST return \field{generation} as 0 in every
-        \msgref{GET_CONFIG} response.
+  \item A device MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for \field{generation} in every \msgref{GET_CONFIG} response.
 \end{itemize}
 
 \msgdef{SET_CONFIG}
@@ -1310,8 +1295,9 @@ struct virtio_msg_get_config_resp {
 offset, length, the driver's view of the generation count, and the new data.
 The device echoes the offset/length, returns the resulting generation count,
 and may mirror the applied data or set the length to zero if the write was
-rejected. If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not
-negotiated, generation is reserved and MUST be 0.
+rejected. Generation semantics follow the active configuration profile defined
+in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 
 \begin{lstlisting}
 struct virtio_msg_set_config_req {
@@ -1333,26 +1319,17 @@ struct virtio_msg_set_config_resp {
 \begin{itemize}
   \item A driver MUST keep the offset and length within the reported
         configuration size in each \msgref{SET_CONFIG} request.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        driver MUST include its most recent configuration generation count in
-        each \msgref{SET_CONFIG} request.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a driver MUST set \field{generation} to 0 in each \msgref{SET_CONFIG}
-        request.
+  \item A driver MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for \field{generation} handling in \msgref{SET_CONFIG}.
 \end{itemize}
 
 \devicenormative{\paragraph}{SET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Device}
 \begin{itemize}
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MUST reject a \msgref{SET_CONFIG} request if supplied generation
-        does not match its current value and MUST report rejection in the
-        response.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST ignore supplied generation and MUST NOT reject
-        \msgref{SET_CONFIG} due to generation mismatch.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST return \field{generation} as 0 in
-        \msgref{SET_CONFIG} responses.
+  \item A device MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for \field{generation} handling and mismatch behavior in
+        \msgref{SET_CONFIG}.
 \end{itemize}
 
 \msgdef{GET_DEVICE_STATUS}
@@ -1593,10 +1570,11 @@ struct virtio_msg_get_shm_resp {
 \msgref{EVENT_CONFIG} notifies the driver about configuration or status changes.
 The payload includes current device status, generation, and
 configuration offset/length. The configuration data MAY be omitted; if omitted,
-the driver re-fetches via \msgref{GET_CONFIG}. If
-\texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated, generation
-is reserved and MUST be 0. If the event reports only a status change with no
-configuration update, the device sets offset and length to zero.
+the driver re-fetches via \msgref{GET_CONFIG}. Generation and offset/length
+semantics follow the active profile defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
+If the event reports only a status change with no configuration update, the
+device sets offset and length to zero.
 
 \begin{lstlisting}
 struct virtio_msg_event_config {
@@ -1612,23 +1590,20 @@ struct virtio_msg_event_config {
 \begin{itemize}
   \item When \msgref{EVENT_CONFIG} provides configuration data, the driver
         SHOULD apply it; otherwise it SHOULD re-read the affected range
-        indicated by offset/length via \msgref{GET_CONFIG}. If offset/length
-        are both zero, the driver SHOULD re-read required configuration via
-        \msgref{GET_CONFIG} before proceeding.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a driver MUST ignore \field{generation} in \msgref{EVENT_CONFIG}.
+        indicated by offset/length via \msgref{GET_CONFIG} before proceeding.
+  \item A driver MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for generation and offset/length interpretation in
+        \msgref{EVENT_CONFIG}.
 \end{itemize}
 
 \devicenormative{\paragraph}{EVENT\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Device}
 \begin{itemize}
   \item A device MUST send \msgref{EVENT_CONFIG} whenever it changes
         configuration data or status in a way that is visible to the driver.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated, a
-        device MUST include the new configuration generation count and MUST set
-        offset/length to describe the affected configuration range.
-  \item If \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated,
-        a device MUST set \field{generation} to 0 and MAY set offset/length to
-        zero for generic configuration-change notifications.
+  \item A device MUST follow the active configuration semantics profile in
+        \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
+        for generation and offset/length handling in \msgref{EVENT_CONFIG}.
   \item If \msgref{EVENT_CONFIG} reports only a status change, a device MUST set
         the offset and length fields to zero.
 \end{itemize}
