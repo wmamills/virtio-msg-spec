@@ -303,6 +303,9 @@ driver binding process can begin.
 \begin{itemize}
   \item A bus implementation MUST assign a unique device number to every
         device on a given bus instance.
+  \item A bus implementation SHOULD prevent reuse of a device number
+        immediately after a device is removed, to reduce race conditions with
+        delayed messages associated with the removed device.
   \item A bus implementation SHOULD provide the driver with sufficient
         information—either via \busref{GET_DEVICES} or equivalent platform
         data—to discover each valid device number.
