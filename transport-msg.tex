@@ -772,8 +772,8 @@ queue-state operation in \field{flags}.
 
 Drivers query the device status via \msgref{GET_DEVICE_STATUS} to observe
 progress or detect errors, and they drive the Virtio status transitions via
-\msgref{SET_DEVICE_STATUS}. Writing zero to the status field resets the device,
-invalidating any configuration or virtqueue state.
+\msgref{SET_DEVICE_STATUS}. Writing zero to the status field requests a device
+reset, which can complete synchronously or asynchronously.
 
 \drivernormative{\paragraph}{Status Handling}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Driver}
 \begin{itemize}
@@ -788,8 +788,9 @@ invalidating any configuration or virtqueue state.
 \devicenormative{\paragraph}{Status Handling}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Status Information / Device}
 \begin{itemize}
   \item Upon receiving a \msgref{SET_DEVICE_STATUS} write of 0, a device MUST
-        reset its internal state, invalidate existing configuration and
-        virtqueue settings, and present the status field as 0.
+        start reset processing. The device MUST eventually invalidate existing
+        configuration and virtqueue settings, and MUST report status 0 only
+        after reset completion.
   \item A device MUST report its current status accurately via
         \msgref{GET_DEVICE_STATUS}, including whether the FEATURES\_OK bit has
         been accepted or cleared.
@@ -950,16 +951,19 @@ VIRTIO\_F\_RING\_RESET feature has been negotiated.
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
 
-Drivers reset a device by writing 0 to the status field via \msgref{SET_DEVICE_STATUS},
-which forces the device to discard pending operations and return to the initial state.
-A device may also signal that a reset is required by setting DEVICE\_NEEDS\_RESET
-in its status and reporting the updated status to the driver.
+Drivers request a device reset by writing 0 to the status field via
+\msgref{SET_DEVICE_STATUS}. Reset completion can be synchronous or
+asynchronous. A driver confirms completion from a
+\msgref{SET_DEVICE_STATUS} response status of 0 or by polling
+\msgref{GET_DEVICE_STATUS} until status is 0. A device may also signal that a
+reset is required by setting DEVICE\_NEEDS\_RESET in its status and reporting
+the updated status to the driver.
 
 \drivernormative{\paragraph}{Reset and Shutdown}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Driver}
 \begin{itemize}
   \item A driver MAY request a device reset at any time by writing 0 through
-        \msgref{SET_DEVICE_STATUS} and MAY reinitialize the device afterwards if
-        it intends to resume operation.
+        \msgref{SET_DEVICE_STATUS}. If the driver intends to resume operation,
+        it MAY reinitialize the device after reset completion.
   \item If DEVICE\_NEEDS\_RESET is reported in device status, the driver SHOULD
         write 0 to \msgref{SET_DEVICE_STATUS} and reinitialize the device before
         resuming I/O.
@@ -968,8 +972,8 @@ in its status and reporting the updated status to the driver.
 \devicenormative{\paragraph}{Reset and Shutdown}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Device}
 \begin{itemize}
   \item Upon receiving a \msgref{SET_DEVICE_STATUS} write of 0, a device MUST
-        reset its internal state, discard pending virtqueue operations, and
-        present the status field as 0.
+        start reset processing and eventually reset its internal state and
+        discard pending virtqueue operations.
   \item If the device encounters an unrecoverable error that requires driver
         intervention, it SHOULD set DEVICE\_NEEDS\_RESET in its status and
         ensure the updated status is reported to the driver.
@@ -1305,8 +1309,11 @@ struct virtio_msg_get_device_status_resp {
 
 \msgref{SET_DEVICE_STATUS} writes a new device status value. Drivers use it to
 progress through the virtio-defined states or to request a reset by writing 0.
-The device responds with its resulting status, which may differ (for example,
-if it refuses FEATURES\_OK or sets DEVICE\_NEEDS\_RESET).
+The response reports the status value observed when the response is generated.
+For a reset request (\field{status} == 0), a response status of 0 indicates
+reset completion; a non-zero response status indicates that reset completion may
+still be pending. The resulting status may differ from the requested status (for
+example, if the device refuses FEATURES\_OK or sets DEVICE\_NEEDS\_RESET).
 
 \begin{lstlisting}
 struct virtio_msg_set_device_status_req {
@@ -1321,8 +1328,11 @@ struct virtio_msg_set_device_status_resp {
 \drivernormative{\paragraph}{SET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Driver}
 \begin{itemize}
   \item A driver MUST write 0 via \msgref{SET_DEVICE_STATUS} to request a device
-        reset and MUST re-read the status (e.g., via \msgref{GET_DEVICE_STATUS})
-        if it needs to confirm acceptance.
+        reset.
+  \item A driver that needs to confirm reset completion MUST treat a
+        \msgref{SET_DEVICE_STATUS} response status of 0 as completion;
+        otherwise it MUST poll \msgref{GET_DEVICE_STATUS} until the device
+        reports status 0 before reinitializing the device.
 \end{itemize}
 
 \devicenormative{\paragraph}{SET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Device}
@@ -1330,6 +1340,13 @@ struct virtio_msg_set_device_status_resp {
   \item A device MAY clear FEATURES\_OK or set DEVICE\_NEEDS\_RESET in its
         response if it cannot accept the requested status, but it MUST report
         the resulting status accurately.
+  \item Upon receiving \msgref{SET_DEVICE_STATUS} with \field{status} set to 0,
+        a device MUST start reset processing and MUST eventually complete reset
+        by reporting status 0.
+  \item A device MAY complete reset before sending the
+        \msgref{SET_DEVICE_STATUS} response (synchronous completion) or after
+        sending it (asynchronous completion).
+  \item A device MUST NOT report status 0 until reset completion.
 \end{itemize}
 
 \msgdef{GET_VQUEUE}
