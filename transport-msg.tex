@@ -354,9 +354,12 @@ The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
   \item In baseline profile, a device MUST ignore request \field{generation} in
         \msgref{SET_CONFIG} and MUST NOT reject \msgref{SET_CONFIG} due to
         generation mismatch.
-  \item In baseline profile, a device MAY set \field{offset}/\field{length} to
-        zero in \msgref{EVENT_CONFIG} to indicate a generic
-        configuration-change notification.
+  \item In any profile, a device MAY send a generic
+        \msgref{EVENT_CONFIG} notification with \field{offset} and
+        \field{length} set to 0 and no \field{data} when the affected
+        configuration change cannot be represented as a bounded range
+        (for example, when only an equivalent out-of-band notification is
+        available without affected-range details).
   \item In strict profile, a device MUST increment generation count before it
         makes a driver-visible configuration change and MUST ensure that each
         \msgref{EVENT_CONFIG} carrying configuration data uses a unique
@@ -920,6 +923,10 @@ the messages in-band or synthesize them.
   \item Upon receiving \msgref{EVENT_CONFIG}, a driver SHOULD update its view of
         the configuration using provided data (or by issuing
         \msgref{GET_CONFIG} if necessary) before resuming normal I/O.
+  \item If \msgref{EVENT_CONFIG} provides no data and has
+        \field{offset} and \field{length} set to 0, a driver SHOULD treat it as
+        a generic configuration-change notification and refresh required
+        configuration via \msgref{GET_CONFIG}.
   \item A driver MUST follow the active configuration semantics profile in
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
         for \msgref{EVENT_CONFIG} generation and offset/length interpretation.
@@ -1569,7 +1576,7 @@ struct virtio_msg_get_shm_resp {
 
 \msgref{EVENT_CONFIG} notifies the driver about configuration or status changes.
 The payload includes current device status, generation, and
-configuration offset/length. The configuration data MAY be omitted; if omitted,
+configuration offset/length. The configuration data can be omitted; if omitted,
 the driver re-fetches via \msgref{GET_CONFIG}. Generation and offset/length
 semantics follow the active profile defined in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
@@ -1591,6 +1598,8 @@ struct virtio_msg_event_config {
   \item When \msgref{EVENT_CONFIG} provides configuration data, the driver
         SHOULD apply it; otherwise it SHOULD re-read the affected range
         indicated by offset/length via \msgref{GET_CONFIG} before proceeding.
+        If offset/length are both zero and no data is provided, the driver
+        SHOULD re-read required configuration via \msgref{GET_CONFIG}.
   \item A driver MUST follow the active configuration semantics profile in
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
         for generation and offset/length interpretation in
