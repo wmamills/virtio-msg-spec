@@ -216,7 +216,7 @@ The following table lists the currently defined virtio-msg transport revisions:
 \hline
 \field{revision} & \field{maximum size} & \field{features}      & remarks \\
 \hline \hline
-1        & 60-65536    & bit 0 optional: \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION}   & Virtio Message Revision 1 \\
+1        & 60-65535    & bit 0 optional: \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION}   & Virtio Message Revision 1 \\
 \hline
 \end{tabular}
 
@@ -500,7 +500,8 @@ struct virtio_msg_header {
     u8       type;      /* request/response + bus/transport */
     u8       msg_id;    /* message id */
     le16     token;     /* bus-managed correlation identifier */
-    le32     msg_size;  /* total size: header (16) + payload */
+    le16     msg_size;  /* total size: header (16) + payload */
+    le16     reserved;  /* reserved, MUST be zero */
     le64     dev_num;   /* device number (0 for bus messages) */
     u8       payload[];
 };
@@ -524,6 +525,8 @@ Field semantics:
     outstanding requests or maintain ordering.
   \item \field{msg_size}: Total size in bytes of the complete message (header
     plus payload).
+  \item \field{reserved}: Reserved for future use. Transmitters set this field
+    to zero, and receivers ignore it.
   \item \field{dev_num}: For transport messages, the device number that should
     receive the message. Bus messages operate on device number 0.
   \item \field{payload}: Operation-specific data. If a bus introduces extra
@@ -537,6 +540,8 @@ Field semantics:
   \item A driver MUST ensure \field{msg_size} reflects the total message length
         (header plus payload) and MUST NOT exceed the maximum message size
         advertised by the bus instance.
+  \item A driver MUST set \field{reserved} to zero when transmitting and MUST
+        ignore the received \field{reserved} value.
   \item When sending a transport message, a driver MUST set \field{dev_num} to
         the intended device number.
   \item If a driver introduces padding bytes that become part of the transport
@@ -551,6 +556,8 @@ Field semantics:
         messages and MUST ignore those bits on receive.
   \item A device MUST ensure \field{msg_size} reflects the total message length
         (header plus payload) and does not exceed the bus's advertised maximum.
+  \item A device MUST set \field{reserved} to zero when transmitting and MUST
+        ignore the received \field{reserved} value.
   \item When sending a transport message, a device MUST set \field{dev_num} to
         its own device number.
   \item A device MUST ignore padding bytes that are documented as bus-specific
