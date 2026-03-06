@@ -134,6 +134,22 @@ hotplug when desired.
         number, it MAY drop the message or surface a transport-visible failure.
 \end{itemize}
 
+\subsubsection{Known Bus Implementation Examples}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Known Bus Implementation Examples}
+
+This subsubsection lists informative examples of bus implementations and related
+work for virtio-msg.
+
+\begin{itemize}
+  \item \textbf{Virtio Message Bus over FF-A}: specified by Arm DEN0153:
+        \url{https://developer.arm.com/documentation/den0153/latest}.
+  \item \textbf{Virtio Message Bus over PCI for AMP}: under development; proof
+        of concept:
+        \url{https://github.com/wmamills/hvac-demo}.
+  \item \textbf{Virtio Message Bus over Xen grant tables and events}: under
+        discussion.
+\end{itemize}
+
 \subsubsection{System Topology}
 
 A virtio-msg system contains the following elements:
