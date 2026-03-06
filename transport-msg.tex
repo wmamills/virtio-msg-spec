@@ -602,17 +602,23 @@ virtqueue data transfer.
 Transport messages fall into two classes: requests (which expect responses) and
 events (which are one-way). Drivers and devices rely on the bus to preserve the
 relative ordering of request/response pairs for each device number; they do not
-interpret the \field{token} field directly. Events are independent
-notifications and may be delivered out of order with respect to other events.
+interpret the \field{token} field directly. Events are asynchronous
+notifications and MAY be delivered at any time relative to request/response
+traffic. Ordering is defined per device number; messages for different device
+numbers MAY be interleaved by the bus.
 Some response payloads repeat request parameters (for example, indices or
 offsets) to support validation; these repeats are informational and do not
 alter the correlation model described here.
 
 \busnormative{\paragraph}{Message Ordering}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \begin{itemize}
+  \item For each device number, a bus implementation MUST forward requests from
+        the driver to the device in the same order that the driver sends them.
   \item For each device number, a bus implementation MUST deliver responses to
         the driver in the same order that it forwarded the corresponding
         requests to the device.
+  \item A bus implementation MUST NOT delay an event solely to preserve a
+        request-before-event or response-before-event ordering rule.
 \end{itemize}
 
 \devicenormative{\paragraph}{Message Ordering}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Device}
