@@ -1335,7 +1335,8 @@ struct virtio_msg_get_config_resp {
 offset, length, the driver's view of the generation count, and the new data.
 The device echoes the offset/length, returns the resulting generation count,
 and may mirror the applied data or set the length to zero if the write was
-rejected. Generation-mismatch rejection is defined only for strict profile.
+rejected. A rejected response uses \field{length}=0 and no payload bytes.
+Generation-mismatch rejection is defined only for strict profile.
 Generation semantics follow the active configuration profile defined
 in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
@@ -1352,7 +1353,7 @@ struct virtio_msg_set_config_resp {
         le32 generation; /* resulting count, or 0 if not negotiated */
         le32 offset;     /* echoed offset */
         le32 length;     /* bytes applied (0 if rejected) */
-        u8   data[];     /* optional echoed data */
+        u8   data[];     /* echoed data, omitted when length is 0 */
 };
 \end{lstlisting}
 
@@ -1373,6 +1374,9 @@ struct virtio_msg_set_config_resp {
         \msgref{SET_CONFIG}.
   \item A device MUST apply \msgref{SET_CONFIG} generation-mismatch rejection
         only when strict profile is active.
+  \item If a device rejects a \msgref{SET_CONFIG} request, it MUST set
+        response \field{length} to 0 and MUST NOT include response
+        \field{data} bytes.
 \end{itemize}
 
 \msgdef{GET_DEVICE_STATUS}
