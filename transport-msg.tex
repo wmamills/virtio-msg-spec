@@ -1804,23 +1804,24 @@ which entries are present.
 \begin{lstlisting}
 struct virtio_bus_msg_get_devices_req {
         le64 offset; /* starting device number */
-        le16 count;  /* number of device-number slots (multiple of 8) */
+        le16 count;  /* number of device-number slots requested */
 };
 
 struct virtio_bus_msg_get_devices_resp {
         le64 offset;      /* echoed starting device number */
         le64 next_offset; /* 0 or suggested start for next query */
-        le16 count;       /* window length actually returned */
-        u8   bitmap[];    /* count/8 bytes, LSB-first packing */
+        le16 count;       /* number of slots returned */
+        u8   bitmap[];    /* ((count + 7) / 8) bytes, LSB-first packing */
 };
 \end{lstlisting}
 
 The \textbf{(offset, count)} tuple defines a window of \textbf{count}
 consecutive device numbers beginning at \textbf{offset}. The number of present
-devices equals the number of 1-bits in the bitmap. Responders SHOULD return the
-requested \textbf{count} unless constrained (e.g., by maximum message size);
-otherwise they MAY return a smaller value, in which case the bitmap covers the
-reduced window.
+devices equals the number of set bits in the first \textbf{count} bitmap
+positions. The bitmap size in bytes is \textbf{(count + 7) / 8}.
+Responders SHOULD return the requested \textbf{count} unless constrained
+(e.g., by maximum message size); otherwise they MAY return a smaller value, in
+which case the bitmap covers the reduced window.
 
 Example: a request with \textbf{offset}=0, \textbf{count}=16 might produce
 \textbf{bitmap}=0b00100101 00000000 and \textbf{next_offset}=16. That indicates
@@ -1834,12 +1835,15 @@ a snapshot, advance using \textbf{next_offset}, and confirm candidates via
 
 \busnormative{\paragraph}{GET\_DEVICES}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
 \begin{itemize}
-  \item The bus-side responder MUST enforce that \textbf{offset} and
-        \textbf{count} are multiples of 8, and it MUST return a bitmap of length
-        \textbf{count/8} packed least-significant-bit first.
+  \item The bus-side responder MUST interpret \textbf{count} as a number of
+        device-number slots and MUST return a bitmap of length
+        \textbf{(count + 7) / 8} bytes, packed least-significant-bit first.
+  \item If \textbf{count} is not a multiple of 8, the responder MUST set unused
+        bits in the last bitmap byte (positions at or above \textbf{count}) to
+        zero.
   \item \textbf{next\_offset} MUST be 0 (indicating no further windows) or an
-        aligned value $\ge \textbf{offset} + \textbf{count}$ recommending where
-        the driver should query next.
+        value $\ge \textbf{offset} + \textbf{count}$ recommending where the
+        driver should query next.
   \item Responders SHOULD return the requested \textbf{count} unless constrained
         (e.g., by maximum message size); if a smaller count is returned, the
         bitmap MUST still represent the window defined by the echoed
