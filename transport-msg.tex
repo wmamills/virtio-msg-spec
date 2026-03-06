@@ -708,7 +708,7 @@ the baseline for virtio-msg initialization.
 
 Once a device number is confirmed, the driver uses \msgref{GET_DEVICE_INFO} to
 retrieve static identification data (device ID, vendor ID), the number of
-feature bits, configuration space size, maximum virtqueues, and any admin
+feature blocks, configuration space size, maximum virtqueues, and any admin
 virtqueue details. This information determines which virtio driver should bind
 to the device, how many feature blocks to query, and how much configuration
 space is valid.
@@ -743,8 +743,8 @@ bit remains set.
 \devicenormative{\paragraph}{Feature Negotiation}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
 \begin{itemize}
   \item When handling \msgref{GET_DEVICE_FEATURES}, a device MUST return zero
-        for any requested bits that fall outside the number of feature bits it
-        implements.
+        for any requested blocks that fall outside the number of feature blocks
+        it reports.
   \item After receiving \msgref{SET_DRIVER_FEATURES}, a device MUST update its
         internal feature mask to match the acknowledged set. If the device
         cannot support the requested set, it MUST clear the FEATURES\_OK bit in
@@ -1203,7 +1203,7 @@ struct virtio_msg_get_device_info_resp {
         le32 device_id;        /* virtio device type */
         le32 vendor_id;        /* implementation-defined vendor ID */
         u8   device_uuid[16];  /* UUID, or nil UUID if unavailable */
-        le32 num_feature_bits; /* total feature bits (multiples of 32) */
+        le32 num_feature_blocks; /* total number of 32-bit feature blocks */
         le32 config_size;      /* bytes in the device configuration space */
         le32 max_virtqueues;   /* maximum virtqueues supported */
         le32 admin_vq_start;   /* index of the first admin virtqueue */
@@ -1214,8 +1214,8 @@ struct virtio_msg_get_device_info_resp {
 \devicenormative{\paragraph}{GET\_DEVICE\_INFO}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Device}
 \begin{itemize}
   \item A device MUST respond to \msgref{GET_DEVICE_INFO} while inactive and
-        MUST supply consistent values for device ID, vendor ID, feature count (a
-        multiple of 32 bits), configuration size, and virtqueue limits.
+        MUST supply consistent values for device ID, vendor ID, feature-block
+        count, configuration size, and virtqueue limits.
   \item A device MAY set \field{device_uuid} to a UUID value that can be used
         as a unique identifier.
   \item If a device does not support UUID reporting or does not have an
@@ -1225,7 +1225,7 @@ struct virtio_msg_get_device_info_resp {
 \drivernormative{\paragraph}{GET\_DEVICE\_INFO}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_INFO / Driver}
 \begin{itemize}
   \item A driver SHOULD treat the response as the authoritative source for
-        feature count, configuration size, and virtqueue limits before
+        feature-block count, configuration size, and virtqueue limits before
         proceeding with initialization.
   \item A driver MUST interpret a nil UUID in \field{device_uuid} as indicating
         that no UUID is provided.
