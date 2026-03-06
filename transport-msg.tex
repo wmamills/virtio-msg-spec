@@ -352,8 +352,12 @@ The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
   \item In baseline profile, a device MUST set \field{generation} to 0 in
         \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
   \item In baseline profile, a device MUST ignore request \field{generation} in
-        \msgref{SET_CONFIG} and MUST NOT reject \msgref{SET_CONFIG} due to
-        generation mismatch.
+        \msgref{SET_CONFIG}. For requests that are otherwise valid, the device
+        MUST apply the write regardless of request \field{generation} and MUST
+        NOT reject \msgref{SET_CONFIG} due solely to generation mismatch.
+  \item In baseline profile, a device MUST NOT send \msgref{EVENT_CONFIG}
+        solely because a \msgref{SET_CONFIG} request carried a mismatched
+        \field{generation} value.
   \item In any profile, a device MAY send a generic
         \msgref{EVENT_CONFIG} notification with \field{offset} and
         \field{length} set to 0 and no \field{data} when the affected
@@ -1309,7 +1313,8 @@ struct virtio_msg_get_config_resp {
 offset, length, the driver's view of the generation count, and the new data.
 The device echoes the offset/length, returns the resulting generation count,
 and may mirror the applied data or set the length to zero if the write was
-rejected. Generation semantics follow the active configuration profile defined
+rejected. Generation-mismatch rejection is defined only for strict profile.
+Generation semantics follow the active configuration profile defined
 in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 
@@ -1344,6 +1349,8 @@ struct virtio_msg_set_config_resp {
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
         for \field{generation} handling and mismatch behavior in
         \msgref{SET_CONFIG}.
+  \item A device MUST apply \msgref{SET_CONFIG} generation-mismatch rejection
+        only when strict profile is active.
 \end{itemize}
 
 \msgdef{GET_DEVICE_STATUS}
@@ -1620,6 +1627,8 @@ struct virtio_msg_event_config {
   \item A device MUST follow the active configuration semantics profile in
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
         for generation and offset/length handling in \msgref{EVENT_CONFIG}.
+  \item In baseline profile, a device MUST NOT send \msgref{EVENT_CONFIG}
+        solely to report a \msgref{SET_CONFIG} generation mismatch.
   \item If \msgref{EVENT_CONFIG} reports only a status change, a device MUST set
         the offset and length fields to zero.
 \end{itemize}
