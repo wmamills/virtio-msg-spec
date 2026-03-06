@@ -805,9 +805,14 @@ queue-state operation in \field{flags}.
   \item If a driver updates queue addresses via \msgref{SET_VQUEUE}, it MUST
         supply valid descriptor/driver/device physical addresses for each
         updated field.
-  \item If VIRTIO\_F\_RING\_RESET has been negotiated and a queue requires
-        reinitialization, the driver SHOULD use \msgref{RESET_VQUEUE} before
-        reprogramming it.
+  \item A driver MUST reconfigure queue parameters only while the queue is
+        disabled.
+  \item If a queue is enabled and requires reconfiguration, a driver MUST issue
+        \msgref{RESET_VQUEUE} before reprogramming it when
+        VIRTIO\_F\_RING\_RESET is negotiated.
+  \item If a queue is enabled and VIRTIO\_F\_RING\_RESET has not been
+        negotiated, a driver MUST NOT attempt to reconfigure the queue via
+        \msgref{SET_VQUEUE}.
 \end{itemize}
 
 \devicenormative{\paragraph}{Virtqueue Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Virtqueue Configuration / Device}
@@ -815,9 +820,12 @@ queue-state operation in \field{flags}.
   \item A device MUST report accurate maximum queue sizes in \msgref{GET_VQUEUE}
         and MUST report accurate current queue size and enabled state.
   \item A device MUST persist the parameters supplied via \msgref{SET_VQUEUE}
-        for fields not marked ignored by \field{flags}.
+        for fields not marked ignored by \field{flags} while the queue is
+        disabled.
   \item A device MUST update queue state according to the
         \msgref{SET_VQUEUE} \field{flags} state-operation bits.
+  \item A device MUST NOT use \msgref{SET_VQUEUE} to perform an
+        enabled-to-disabled or reset transition for a queue.
   \item When \msgref{RESET_VQUEUE} is issued (and VIRTIO\_F\_RING\_RESET is
         negotiated), the device MUST quiesce the queue, release any resources
         associated with it, and allow the driver to reconfigure it.
@@ -993,22 +1001,30 @@ update configuration data autonomously but must signal those changes via
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation}
 
 Drivers may provision unused virtqueues later in the device lifetime by issuing
-\msgref{SET_VQUEUE}, and they may reconfigure existing queues or update queue
-state if the
-VIRTIO\_F\_RING\_RESET feature has been negotiated.
+\msgref{SET_VQUEUE}. Queue reconfiguration remains constrained to disabled
+queues. If a queue is enabled, the driver first resets that queue via
+\msgref{RESET_VQUEUE} when VIRTIO\_F\_RING\_RESET is negotiated.
 
 \drivernormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Driver}
 \begin{itemize}
   \item A driver MAY configure additional virtqueues and update selected
         virtqueue fields after initialization using \msgref{SET_VQUEUE},
-        provided it follows the same validation steps.
+        provided it follows the same validation steps and updates only disabled
+        queues.
+  \item If an enabled queue requires reconfiguration and
+        VIRTIO\_F\_RING\_RESET is negotiated, a driver MUST issue
+        \msgref{RESET_VQUEUE} before issuing \msgref{SET_VQUEUE} updates for
+        that queue.
 \end{itemize}
 
 \devicenormative{\paragraph}{Runtime Virtqueue Changes}{Virtio Transport Options / Virtio Over Messages / Device Operation / Virtqueue Changes During Operation / Device}
 \begin{itemize}
   \item A device MUST honor \msgref{SET_VQUEUE} requests issued after
-        initialization and update queue parameters and queue state according to
-        \field{flags}.
+        initialization and update queue parameters according to \field{flags}
+        only while the queue is disabled.
+  \item For a queue that is enabled, a device MUST accept only
+        \msgref{SET_VQUEUE} requests that do not modify queue parameters and do
+        not request a disable/reset transition.
   \item When \msgref{RESET_VQUEUE} is received (and VIRTIO\_F\_RING\_RESET is
         negotiated), the device MUST quiesce the queue and allow the driver to
         reconfigure it without processing stale data.
@@ -1461,8 +1477,8 @@ struct virtio_msg_get_vqueue_resp {
 
 \msgref{SET_VQUEUE} updates a virtqueue's parameters and queue state. The
 driver selects a queue index and uses \field{flags} to indicate whether queue
-state should be enabled, disabled, or kept unchanged, and which queue fields
-should be ignored versus updated.
+state should be enabled, kept disabled, or kept unchanged, and which queue
+fields should be ignored versus updated.
 
 \begin{lstlisting}
 struct virtio_msg_set_vqueue_req {
@@ -1484,7 +1500,7 @@ struct virtio_msg_set_vqueue_resp {
 \begin{itemize}
   \item Bits [1:0] (\textbf{State Operation}):
     \begin{itemize}
-      \item 0: disable queue.
+      \item 0: keep queue disabled.
       \item 1: enable queue.
       \item 2: keep current queue state.
       \item 3: reserved.
@@ -1500,7 +1516,8 @@ struct virtio_msg_set_vqueue_resp {
 \end{itemize}
 
 When \field{flags} is zero, \msgref{SET_VQUEUE} uses current behavior:
-the queue is disabled and all queue fields in the request are applied.
+if the queue is disabled, all queue fields in the request are applied and the
+queue remains disabled.
 
 \drivernormative{\paragraph}{SET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
 \begin{itemize}
@@ -1508,10 +1525,16 @@ the queue is disabled and all queue fields in the request are applied.
         bits [31:6] to zero.
   \item A driver MUST NOT use state operation value 3 in \field{flags} bits
         [1:0].
+  \item A driver MUST NOT use state operation value 0 as a request to disable an
+        already enabled queue.
   \item If \field{size\_ignore} is 0, a driver MUST set \field{size} to a value
         not exceeding the maximum reported by \msgref{GET_VQUEUE}.
   \item If any address ignore bit is 0, a driver MUST ensure the corresponding
         physical address points to properly aligned memory.
+  \item A driver MUST NOT attempt to update queue size or queue addresses via
+        \msgref{SET_VQUEUE} while the queue is enabled.
+  \item If a driver needs to reconfigure an enabled queue, it MUST issue
+        \msgref{RESET_VQUEUE} first when VIRTIO\_F\_RING\_RESET is negotiated.
   \item Because \msgref{SET_VQUEUE} has no response payload, a driver that
         needs confirmation of acceptance MUST verify the resulting queue
         parameters and state via \msgref{GET_VQUEUE} before relying on the
@@ -1523,14 +1546,20 @@ the queue is disabled and all queue fields in the request are applied.
   \item A device MUST reject \msgref{SET_VQUEUE} if \field{reserved} is nonzero,
         if \field{flags} bits [31:6] are nonzero, or if \field{flags} bits [1:0]
         use state operation value 3.
+  \item A device MUST reject \msgref{SET_VQUEUE} if \field{flags} requests state
+        operation value 0 for a queue that is currently enabled.
   \item A device MUST process \msgref{SET_VQUEUE} updates atomically: it MUST
         either apply all requested field updates and queue-state changes, or
         reject the request without applying any of them.
   \item If an ignore bit is 0, a device MUST apply the corresponding field from
         \msgref{SET_VQUEUE}; if an ignore bit is 1, a device MUST keep the
         current value for that field unchanged.
+  \item A device MUST reject \msgref{SET_VQUEUE} field updates to
+        \field{size}, \field{desc_addr}, \field{driver_addr}, or
+        \field{device_addr} when the queue is enabled.
   \item A device MUST apply queue state according to \field{flags} bits [1:0]
-        after processing requested field updates.
+        after processing requested field updates, and MUST NOT perform an
+        enabled-to-disabled transition via \msgref{SET_VQUEUE}.
 \end{itemize}
 
 \msgdef{RESET_VQUEUE}
@@ -1551,16 +1580,23 @@ struct virtio_msg_reset_vqueue_resp {
 
 \drivernormative{\paragraph}{RESET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Driver}
 \begin{itemize}
-  \item A driver SHOULD issue \msgref{RESET_VQUEUE} only if
+  \item A driver MUST issue \msgref{RESET_VQUEUE} only if
         VIRTIO\_F\_RING\_RESET has been negotiated and it needs to reconfigure
         or recover a specific queue.
+  \item If an enabled queue requires reconfiguration and
+        VIRTIO\_F\_RING\_RESET is negotiated, a driver MUST wait for
+        \msgref{RESET_VQUEUE} completion before issuing \msgref{SET_VQUEUE}
+        updates for that queue.
 \end{itemize}
 
 \devicenormative{\paragraph}{RESET\_VQUEUE}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Device}
 \begin{itemize}
+  \item If VIRTIO\_F\_RING\_RESET has not been negotiated, a device MUST reject
+        \msgref{RESET_VQUEUE} without changing queue state.
   \item Upon receiving \msgref{RESET_VQUEUE}, a device MUST stop processing the
         indicated queue, reset its internal state for that queue, and allow the
-        driver to reconfigure it via \msgref{SET_VQUEUE}.
+        driver to reconfigure it via \msgref{SET_VQUEUE} while the queue is
+        disabled.
 \end{itemize}
 
 \msgdef{GET_SHM}
