@@ -1835,9 +1835,12 @@ The \textbf{(offset, count)} tuple defines a window of \textbf{count}
 consecutive device numbers beginning at \textbf{offset}. The number of present
 devices equals the number of set bits in the first \textbf{count} bitmap
 positions. The bitmap size in bytes is \textbf{(count + 7) / 8}.
+The response \textbf{count} MUST NOT exceed the request \textbf{count}.
 Responders SHOULD return the requested \textbf{count} unless constrained
-(e.g., by maximum message size); otherwise they MAY return a smaller value, in
-which case the bitmap covers the reduced window.
+(e.g., by maximum message size) or when trailing parts of the requested window
+contain no present device numbers; in those cases they MAY return a smaller
+value, and the bitmap covers the reduced window. If no devices are present in
+the requested window, returning \textbf{count}=0 and an empty bitmap is valid.
 
 Example: a request with \textbf{offset}=0, \textbf{count}=16 might produce
 \textbf{bitmap}=0b00100101 00000000 and \textbf{next_offset}=16. That indicates
@@ -1854,6 +1857,8 @@ a snapshot, advance using \textbf{next_offset}, and confirm candidates via
   \item The bus-side responder MUST interpret \textbf{count} as a number of
         device-number slots and MUST return a bitmap of length
         \textbf{(count + 7) / 8} bytes, packed least-significant-bit first.
+  \item The bus-side responder MUST NOT return a \textbf{count} value greater
+        than the \textbf{count} value from the request.
   \item If \textbf{count} is not a multiple of 8, the responder MUST set unused
         bits in the last bitmap byte (positions at or above \textbf{count}) to
         zero.
@@ -1861,9 +1866,12 @@ a snapshot, advance using \textbf{next_offset}, and confirm candidates via
         value $\ge \textbf{offset} + \textbf{count}$ recommending where the
         driver should query next.
   \item Responders SHOULD return the requested \textbf{count} unless constrained
-        (e.g., by maximum message size); if a smaller count is returned, the
-        bitmap MUST still represent the window defined by the echoed
-        \textbf{offset} and \textbf{count}.
+        (e.g., by maximum message size) or when trailing parts of the requested
+        window contain no present device numbers; if a smaller count is
+        returned, the bitmap MUST still represent the window defined by the
+        echoed \textbf{offset} and \textbf{count}.
+  \item If no devices are present in the requested window, a responder MAY
+        return \textbf{count}=0 with a zero-length bitmap.
 \end{itemize}
 
 \busdef{PING}
