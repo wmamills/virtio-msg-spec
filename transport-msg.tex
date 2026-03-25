@@ -124,14 +124,17 @@ hotplug when desired.
 
 \busnormative{\paragraph}{Transport Message Forwarding}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Relationship between bus and transport / Transport Message Forwarding}
 \begin{itemize}
+  \item A bus implementation MUST validate the device number in each transport
+        message before forwarding it.
   \item A bus implementation MUST relay each transport message to the device
         number identified in the message header, regardless of how it
         discovered or enumerated that device.
   \item A bus implementation SHOULD treat transport messages as opaque apart
         from enforcing generic transport limits, such as the advertised maximum
         message size, and SHOULD NOT modify the transport payload.
-  \item If a bus implementation cannot route a transport message to a device
-        number, it MAY drop the message or surface a transport-visible failure.
+  \item If a bus implementation cannot validate or route a transport message to
+        a device number, it MAY drop the message or surface a
+        transport-visible failure.
 \end{itemize}
 
 \subsubsection{Known Bus Implementation Examples}
@@ -522,7 +525,7 @@ struct virtio_msg_header {
     le16     token;     /* bus-managed correlation identifier */
     le16     msg_size;  /* total size: header (16) + payload */
     le16     reserved;  /* reserved, MUST be zero */
-    le64     dev_num;   /* device number (0 for bus messages) */
+    le64     dev_num;   /* target device number; bus messages MUST use 0 */
     u8       payload[];
 };
 \end{lstlisting}
@@ -548,7 +551,9 @@ Field semantics:
   \item \field{reserved}: Reserved for future use. Transmitters set this field
     to zero, and receivers ignore it.
   \item \field{dev_num}: For transport messages, the device number that should
-    receive the message. Bus messages operate on device number 0.
+    receive the message. Device number 0 is not reserved for transport
+    messages. Bus messages are identified by \field{type} and MUST carry
+    \field{dev_num}=0.
   \item \field{payload}: Operation-specific data. If a bus introduces extra
     padding bytes, those bytes are not part of the payload semantics.
 \end{itemize}
