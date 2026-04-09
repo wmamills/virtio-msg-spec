@@ -81,7 +81,7 @@ virtio-msg operates around two layers:
 
 This subsubsection explains the division of responsibilities: the bus layer is
 the mandatory carrier that moves messages between driver and device endpoints
-(e.g., over IPC, shared memory with signalling or hardware messaging), while
+(e.g., over IPC, shared memory with signaling or hardware messaging), while
 the virtio-msg transport defines the semantics of those messages.
 
 virtio-msg groups messages into two categories:
@@ -462,9 +462,9 @@ The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
         \field{offset}/\field{length} to the affected range.
 \end{itemize}
 
-Rationale: defining baseline and strict semantics in a single subsection keeps
-the baseline and strict behavior explicit and reduces duplicated conditional
-wording across message definitions.
+This subsection defines baseline and strict semantics together so that
+generation and mismatch behavior remains explicit and consistent across message
+definitions.
 
 \subsubsection{Device Feature Blocks}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Feature Blocks}
@@ -506,7 +506,8 @@ negotiation requirements are defined in
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling}
 
 Transport errors can arise from malformed messages, routing failures inside a
-bus implementation, or device-side faults while processing a valid request.
+bus implementation, or faults while processing a valid request in the device
+transport layer.
 Implementations should handle such faults locally where possible. For
 request/response messages that use the existing wire format, the completion
 contract is deterministic:
@@ -551,7 +552,7 @@ contract is deterministic:
 
 \drivernormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Driver}
 \begin{itemize}
-  \item A driver-side transport implementation receiving a malformed or
+  \item A driver transport layer implementation receiving a malformed or
         unsupported transport message MUST discard it without producing further
         protocol traffic.
   \item A driver MUST apply a bounded timeout and retry policy when waiting for
@@ -564,7 +565,7 @@ contract is deterministic:
 
 \devicenormative{\paragraph}{Error Handling}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Error Signaling / Device}
 \begin{itemize}
-  \item A device-side transport implementation receiving a malformed or
+  \item A device transport layer implementation receiving a malformed or
         unsupported transport message MUST discard it without producing further
         protocol traffic.
   \item Recovery actions taken in response to an error (such as retries,
@@ -1912,21 +1913,21 @@ Bus-message ID bit encoding is defined in
 \label{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages / Bus Specific Messages}
 
 A range of message IDs are reserved for use by the specific bus
-implementation. These messages can be used for any implementation specific
+implementation. These messages can be used for any implementation-specific
 usage. Example usage could include:
 
 \begin{itemize}
   \item Configuration of out-of-band notification methods
   \item Setup shared memory regions to be used for buffers or virtqueues
-  \item Declare bus specific error conditions
+  \item Declare bus-specific error conditions
   \item Provide extra debug or logging information
 \end{itemize}
 
 \busdef{GET_DEVICES}
 
-The driver-side bus uses this request to enumerate device numbers on the
-device-side bus. The response describes a “window” of device numbers and signals
-which entries are present.
+A bus implementation uses this request to enumerate device numbers exposed by a
+peer bus instance. The response describes a window of device numbers and
+signals which entries are present.
 
 \begin{lstlisting}
 struct virtio_bus_msg_get_devices_req {
@@ -1971,7 +1972,8 @@ request \field{offset}.
 
 \busnormative{\paragraph}{GET\_DEVICES}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
 \begin{itemize}
-  \item The bus-side responder MUST interpret \field{count} as a number of
+  \item The responding bus implementation MUST interpret \field{count} as a
+        number of
         device-number slots and MUST return a \field{bitmap} of
         \textbf{(\field{count} + 7) / 8} bytes, packed least-significant-bit
         first.
@@ -2013,22 +2015,23 @@ struct virtio_bus_msg_ping_resp {
 };
 \end{lstlisting}
 
-\paragraph{Intended usage}
-Drivers or bus implementations MAY use \busref{PING} as a keepalive. If a reply
-is missing or delayed beyond policy, the initiator SHOULD verify device status
-(e.g., via \msgref{GET_DEVICE_STATUS}) and take recovery actions as needed.
+Drivers or bus implementations can use \busref{PING} as a liveness check. If a
+reply is missing or delayed beyond local policy, the initiator can verify
+device status (for example, with \msgref{GET_DEVICE_STATUS}) and perform
+recovery as needed.
 
 \busnormative{\paragraph}{PING}{Virtio Transport Options / Virtio Over Messages / Bus Messages / PING / Bus}
 \begin{itemize}
-  \item The bus-side responder MUST echo the 32-bit data field from the request
-        exactly in the \busref{PING} response.
+  \item The responding bus implementation MUST echo the 32-bit data field from
+        the request exactly in the \busref{PING} response.
 \end{itemize}
 
 \busdef{EVENT_DEVICE}
 
 \busref{EVENT_DEVICE} signals device-level hotplug changes as a bus-originated
-control-plane event. The driver-side bus receives these indications from the
-device-side bus; the table below lists the defined device bus states.
+control-plane event. The bus instance on the driver side receives these
+indications from the peer bus instance; the table below lists the defined
+device bus states.
 
 \begin{lstlisting}
 struct virtio_bus_msg_event_device {
@@ -2048,13 +2051,12 @@ Implementation-defined      & 0x8000-0xFFFF & MAY be used by the bus implementat
 \hline
 \end{tabular}
 
-\paragraph{Intended usage}
-Upon receiving DEVICE\_BUS\_STATE\_ADDED, drivers SHOULD probe the device via
-\msgref{GET_DEVICE_INFO} and proceed with initialization if successful. Upon
-DEVICE\_BUS\_STATE\_REMOVED, drivers MUST stop queueing new work, quiesce the
-device instance, tear down driver-side state, and release resources. Drivers
-SHOULD tolerate duplicate or out-of-order events and MAY rely on additional
-bus-level monitoring (e.g., \busref{PING}) if needed.
+Upon receiving DEVICE\_BUS\_STATE\_ADDED, drivers typically probe the device
+with \msgref{GET_DEVICE_INFO} before continuing initialization. Upon receiving
+DEVICE\_BUS\_STATE\_REMOVED, drivers typically stop queueing new work, quiesce
+the device instance, tear down local driver state, and release resources.
+Duplicate or out-of-order events can occur and can be handled with additional
+bus-level monitoring, such as \busref{PING}.
 
 \busnormative{\paragraph}{EVENT\_DEVICE}{Virtio Transport Options / Virtio Over Messages / Bus Messages / EVENT_DEVICE / Bus}
 \begin{itemize}
