@@ -67,35 +67,48 @@ First, thank you for the detailed comments and broad interest on v1.
 We tried to address most review feedback in this revision.
 
 Spec Functional / Behavioral:
-* Finalized the common header and addressing model:
+* Finalized the common header, addressing, and forwarding model:
   * Keep a 16-byte common header
   * Use 64-bit device numbers
   * Use 16-bit msg_size plus 16-bit reserved
-  Rationale: support larger device-number spaces while keeping the transport
-  control-plane focused and limiting payload-transfer misuse.
+  * Bus messages are identified by the type field and MUST carry dev_num = 0
+  * Device number 0 is not reserved for transport messages
+  * Bus implementations MUST validate transport-message device numbers before
+    forwarding
+  Rationale: support larger device-number spaces, remove ambiguity in bus-vs-
+  transport addressing, and keep forwarding behavior well-defined.
 * Clarified device-number lifecycle guidance so bus implementations should avoid
   immediate reuse of removed device numbers.
   Rationale: reduce races with delayed messages when devices are removed and
   added again.
-* Added explicit configuration semantics profiles (baseline vs strict) and
-  gated generation-mismatch refusal to strict-profile negotiation.
+* Added explicit configuration semantics profiles (baseline vs strict), tied to
+  VIRTIO_MSG_F_STRICT_CONFIG_GENERATION, and gated generation-mismatch refusal
+  to strict-profile negotiation.
   Rationale: preserve compatibility in baseline mode while allowing stricter
-  behavior when both sides opt in.
+  behavior when both sides opt in, and make the controlling feature
+  negotiation explicit in message semantics.
 * Clarified SET_CONFIG rejection behavior: rejected responses return
   length = 0 with no payload.
   Rationale: remove ambiguity for parser/validation behavior.
-* Clarified ordering baseline: request/response ordering is per-device in-order,
-  while events remain asynchronous and may arrive at any time relative to
-  request/response traffic.
-  Rationale: keep baseline semantics clear without over-constraining event
-  delivery.
+* Clarified ordering and response-association baseline:
+  * Request/response ordering is per-device in-order
+  * Bus implementations own token-based request/response correlation and any
+    reordering compensation
+  * Repeated request parameters in responses may be used for validation but do
+    not define response association
+  * Events remain asynchronous and may arrive at any time relative to
+    request/response traffic
+  Rationale: keep baseline semantics clear while making bus responsibilities
+  for correlation and ordering explicit.
 * Clarified virtqueue state transitions and reconfiguration rules around
   enabled/disabled/reset states.
   Rationale: align with transport expectations and avoid ambiguous queue-state
   behavior.
-* Clarified GET_DEVICE_INFO semantics using number of 32-bit feature blocks and
-  aligned related field descriptions.
-  Rationale: improve consistency and implementation clarity.
+* Clarified GET_DEVICE_INFO semantics using number of 32-bit feature blocks,
+  and added UUID guidance referencing RFC4122 nil-UUID semantics while
+  recommending version 4 UUIDs for non-nil device_uuid values.
+  Rationale: improve consistency and implementation clarity for both feature
+  discovery and device identification.
 * Clarified GET_DEVICES semantics using direct slot/byte units; responders must
   not return count values larger than requested; smaller (including zero) count
   is valid when appropriate.
