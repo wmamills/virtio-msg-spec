@@ -64,60 +64,82 @@ We also anticipate a few more:
 Changes since v1 (virtio-msg-patch1):
 
 First, thank you for the detailed comments and broad interest on v1.
-We tried to address most review feedback in this revision.
+This revision incorporates review feedback from Peter Hilber, Demi Marie
+Obenour, Parav Pandit, Andrei Homescu, Manos Pitsidianakis, Michael S.
+Tsirkin, Bill Mills, and HVAC group discussion.
 
-Spec Functional / Behavioral:
-* Finalized the common header, addressing, and forwarding model:
-  * Keep a 16-byte common header
-  * Use 64-bit device numbers
-  * Use 16-bit msg_size plus 16-bit reserved
-  * Bus messages are identified by the type field and MUST carry dev_num = 0
-  * Device number 0 is not reserved for transport messages
-  * Bus implementations MUST validate transport-message device numbers before
-    forwarding
-  Rationale: support larger device-number spaces, remove ambiguity in bus-vs-
-  transport addressing, and keep forwarding behavior well-defined.
-* Clarified device-number lifecycle guidance so bus implementations should avoid
-  immediate reuse of removed device numbers.
-  Rationale: reduce races with delayed messages when devices are removed and
-  added again.
-* Added explicit configuration semantics profiles (baseline vs strict), tied to
-  VIRTIO_MSG_F_STRICT_CONFIG_GENERATION, and gated generation-mismatch refusal
-  to strict-profile negotiation.
-  Rationale: preserve compatibility in baseline mode while allowing stricter
-  behavior when both sides opt in, and make the controlling feature
-  negotiation explicit in message semantics.
-* Clarified SET_CONFIG rejection behavior: rejected responses return
-  length = 0 with no payload.
-  Rationale: remove ambiguity for parser/validation behavior.
-* Clarified ordering and response-association baseline:
-  * Request/response ordering is per-device in-order
-  * Bus implementations own token-based request/response correlation and any
-    reordering compensation
-  * Repeated request parameters in responses may be used for validation but do
-    not define response association
-  * Events remain asynchronous and may arrive at any time relative to
-    request/response traffic
-  Rationale: keep baseline semantics clear while making bus responsibilities
-  for correlation and ordering explicit.
-* Clarified virtqueue state transitions and reconfiguration rules around
-  enabled/disabled/reset states.
-  Rationale: align with transport expectations and avoid ambiguous queue-state
-  behavior.
-* Clarified GET_DEVICE_INFO semantics using number of 32-bit feature blocks,
-  and added UUID guidance referencing RFC4122 nil-UUID semantics while
-  recommending version 4 UUIDs for non-nil device_uuid values.
-  Rationale: improve consistency and implementation clarity for both feature
-  discovery and device identification.
-* Clarified GET_DEVICES semantics using direct slot/byte units; responders must
-  not return count values larger than requested; smaller (including zero) count
-  is valid when appropriate.
-  Rationale: make enumeration behavior precise while allowing efficient sparse
-  windows.
-* Added an informative known bus implementation examples section, including the
-  FF-A bus specification reference and current implementation examples.
-  Rationale: provide concrete context without constraining architecture choices.
-* Tightened conformance text to match the clarified normative behavior.
+Highlights of the changes since v1:
+
+* Finalized the common transport message model:
+  * keep a 16-byte common header
+  * use 64-bit device numbers and keep a 16-bit msg_size field
+  * clarify common message-ID encoding and validation boundaries
+  * define request completion more precisely: a valid supported request
+    completes with exactly one protocol response or a transport-visible failure
+  * clarify request/response correlation and token handling, including the
+    rule that devices echo the request token while the bus may rewrite tokens
+    internally for correlation
+  * preserve per driver/device request ordering while still allowing
+    bus-correlated out-of-order responses and events
+
+* Clarified bus versus transport responsibilities and enumeration:
+  * keep GET_DEVICE_INFO as a driver-issued transport message, and GET_DEVICES,
+    PING, and EVENT_DEVICE as optional bus messages
+  * require bus messages to use dev_num = 0
+  * bus implementations must expose only validated device numbers, may expose
+    zero devices, and should delay device-number reuse to reduce races
+  * EVENT_DEVICE is defined as a bus-originated ADDED/REMOVED hotplug event
+  * tighten GET_DEVICES enumeration semantics, including empty-bitmap cases and
+    guaranteed forward progress
+
+* Tightened initialization and feature negotiation:
+  * use transport revision terminology consistently
+  * keep GET_DEVICE_INFO as the only transport message used for early discovery
+  * align the rest of initialization with the core virtio flow through reset,
+    status progression, feature negotiation, FEATURES_OK verification, and
+    DRIVER_OK
+  * separate transport-level and device-level feature negotiation semantics
+  * require GET_DEVICE_INFO to report enough feature blocks to cover all
+    offered feature bits and bound max_virtqueues to 65536
+  * define SET_DRIVER_FEATURES as addressed-block updates that may be built up
+    across multiple requests before FEATURES_OK
+  * make GET_SHM mandatory for devices to implement while keeping driver use
+    optional, and align the shared-memory identifier semantics with core virtio
+
+* Aligned configuration, status, and notification behavior with core virtio:
+  * align GET_CONFIG, SET_CONFIG, EVENT_CONFIG, and device status handling more
+    closely with the core virtio model
+  * keep VIRTIO_MSG_F_STRICT_CONFIG_GENERATION only as optional strict-profile
+    SET_CONFIG mismatch enforcement
+  * define nonzero SET_CONFIG writes as all-or-nothing and rejected writes as
+    length = 0 with no payload
+  * limit EVENT_CONFIG status notifications to device-originated asynchronous
+    status changes
+  * make polling-only operation explicit, with EVENT_AVAIL and EVENT_USED used
+    only when the endpoints choose event-driven notification
+  * keep bus-side forwarding, polling, or synthesized notification delivery
+    transparent to the transport-visible model
+
+* Refined virtqueue and reset semantics:
+  * clarify queue-state transitions, SET_VQUEUE update behavior, and invalid
+    reconfiguration cases
+  * make SET_VQUEUE and RESET_VQUEUE reject cases deterministic no-op empty
+    responses
+  * define deterministic GET_VQUEUE zero-sentinel responses for unavailable,
+    unimplemented, and out-of-range queues
+  * define local admin virtqueue field semantics and the EVENT_AVAIL
+    notification-data encoding more precisely
+  * clarify reset-completion checks without duplicating the core virtio reset
+    rules
+
+* Improved document quality:
+  * reworked the chapter to better match existing virtio specification style
+  * removed duplicated or ambiguous requirements
+  * fixed label paths, direct field references, punctuation, and ambiguous
+    wording
+  * added informative known bus implementation examples
+  * completed conformance coverage for driver, device, and bus clauses
+  * normalized punctuation and wording for consistency with the rest of the spec
 
 Open topics and ongoing discussion:
 * Out-of-order/performance extensions:
