@@ -1335,7 +1335,9 @@ struct virtio_msg_get_config_req {
 };
 
 struct virtio_msg_get_config_resp {
-        le32 generation; /* generation count, or 0 if not negotiated */
+        le32 generation; /* generation count, or 0 if
+                          * VIRTIO_MSG_F_STRICT_CONFIG_GENERATION is not
+                          * negotiated */
         le32 offset;     /* echoed offset */
         le32 length;     /* echoed length */
         u8   data[];     /* configuration payload */
@@ -1371,14 +1373,18 @@ in
 
 \begin{lstlisting}
 struct virtio_msg_set_config_req {
-        le32 generation; /* driver's view, or 0 if not negotiated */
+        le32 generation; /* driver's view, or 0 if
+                          * VIRTIO_MSG_F_STRICT_CONFIG_GENERATION is not
+                          * negotiated */
         le32 offset;     /* byte offset being written */
         le32 length;     /* number of bytes written */
         u8   data[];     /* configuration payload */
 };
 
 struct virtio_msg_set_config_resp {
-        le32 generation; /* resulting count, or 0 if not negotiated */
+        le32 generation; /* resulting count, or 0 if
+                          * VIRTIO_MSG_F_STRICT_CONFIG_GENERATION is not
+                          * negotiated */
         le32 offset;     /* echoed offset */
         le32 length;     /* bytes applied (0 if rejected) */
         u8   data[];     /* echoed data, omitted when length is 0 */
@@ -1677,7 +1683,9 @@ device sets \field{offset} and \field{length} to zero.
 \begin{lstlisting}
 struct virtio_msg_event_config {
         le32 device_status; /* new device status value */
-        le32 generation;    /* generation count, or 0 if not negotiated */
+        le32 generation;    /* generation count, or 0 if
+                             * VIRTIO_MSG_F_STRICT_CONFIG_GENERATION is not
+                             * negotiated */
         le32 offset;        /* configuration offset */
         le32 length;        /* number of bytes in affected range */
         u8   data[];        /* optional configuration data */
