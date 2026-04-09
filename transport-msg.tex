@@ -354,7 +354,7 @@ The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
         \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
   \item In baseline profile, upon \msgref{EVENT_CONFIG}, a driver SHOULD refresh
         required configuration via \msgref{GET_CONFIG} when event data is
-        omitted or when offset/length are zero.
+        omitted or when \field{offset} and \field{length} are zero.
   \item In strict profile, a driver MUST track generation values from
         \msgref{GET_CONFIG}/\msgref{EVENT_CONFIG} and MUST include its most
         recent generation value in \msgref{SET_CONFIG}.
@@ -776,9 +776,10 @@ bit remains set.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration}
 
 Drivers use \msgref{GET_CONFIG} to read portions of the configuration space by
-supplying an offset and length; the device returns the requested data plus the
-configuration generation field. Writing is performed via \msgref{SET_CONFIG},
-which carries the same offset/length plus generation and new data.
+supplying \field{offset} and \field{length}; the device returns the requested
+data plus the configuration generation field. Writing is performed via
+\msgref{SET_CONFIG}, which carries the same \field{offset}/\field{length} plus
+generation and new data.
 Generation-field handling follows the active profile defined in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 
@@ -789,7 +790,7 @@ may require the driver to wait for a response.
 
 \drivernormative{\paragraph}{Device Configuration}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Configuration / Driver}
 \begin{itemize}
-  \item A driver MUST ensure that the offset and length in each
+  \item A driver MUST ensure that the \field{offset} and \field{length} in each
         \msgref{GET_CONFIG} or \msgref{SET_CONFIG} request stay within the
         configuration size reported by \msgref{GET_DEVICE_INFO}.
   \item A driver MUST follow the active configuration semantics profile in
@@ -1054,13 +1055,13 @@ queues. If a queue is enabled, the driver first resets that queue via
 \subsubsection{Device Reset and Shutdown}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Operation / Reset}
 
-Drivers request a device reset by writing 0 to the status field via
+Drivers request a device reset by writing 0 to \field{status} via
 \msgref{SET_DEVICE_STATUS}. Reset completion can be synchronous or
 asynchronous. A driver confirms completion from a
-\msgref{SET_DEVICE_STATUS} response status of 0 or by polling
-\msgref{GET_DEVICE_STATUS} until status is 0. A device may also signal that a
-reset is required by setting DEVICE\_NEEDS\_RESET in its status and reporting
-the updated status to the driver.
+\msgref{SET_DEVICE_STATUS} response \field{status} of 0 or by polling
+\msgref{GET_DEVICE_STATUS} until \field{status} is 0. A device may also signal
+that a reset is required by setting DEVICE\_NEEDS\_RESET in its
+\field{status} and reporting the updated \field{status} to the driver.
 
 \drivernormative{\paragraph}{Reset and Shutdown}{Virtio Transport Options / Virtio Over Messages / Device Operation / Reset / Driver}
 \begin{itemize}
@@ -1318,9 +1319,9 @@ struct virtio_msg_set_driver_features_resp {
 \msgdef{GET_CONFIG}
 
 \msgref{GET_CONFIG} reads a portion of the configuration space. The request
-specifies the byte offset and length; the response echoes those values, returns
-the data, and includes generation. Generation semantics follow the active
-configuration profile defined in
+specifies the byte \field{offset} and \field{length}; the response echoes those
+values, returns the data, and includes generation. Generation semantics follow
+the active configuration profile defined in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 
 \begin{lstlisting}
@@ -1339,8 +1340,9 @@ struct virtio_msg_get_config_resp {
 
 \drivernormative{\paragraph}{GET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Driver}
 \begin{itemize}
-  \item A driver MUST ensure the requested offset and length in \msgref{GET_CONFIG}
-        stay within the configuration size reported by \msgref{GET_DEVICE_INFO}.
+  \item A driver MUST ensure the requested \field{offset} and \field{length}
+        in \msgref{GET_CONFIG} stay within the configuration size reported by
+        \msgref{GET_DEVICE_INFO}.
 \end{itemize}
 
 \devicenormative{\paragraph}{GET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Device}
@@ -1353,10 +1355,11 @@ struct virtio_msg_get_config_resp {
 \msgdef{SET_CONFIG}
 
 \msgref{SET_CONFIG} writes a portion of configuration space, supplying the
-offset, length, the driver's view of the generation count, and the new data.
-The device echoes the offset/length, returns the resulting generation count,
-and may mirror the applied data or set the length to zero if the write was
-rejected. A rejected response uses \field{length}=0 and no payload bytes.
+\field{offset}, \field{length}, the driver's view of the generation count, and
+the new data. The device echoes the \field{offset}/\field{length}, returns the
+resulting generation count, and may mirror the applied data or set
+\field{length} to zero if the write was rejected. A rejected response uses
+\field{length}=0 and no payload bytes.
 Generation-mismatch rejection is defined only for strict profile.
 Generation semantics follow the active configuration profile defined
 in
@@ -1380,7 +1383,8 @@ struct virtio_msg_set_config_resp {
 
 \drivernormative{\paragraph}{SET\_CONFIG}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Driver}
 \begin{itemize}
-  \item A driver MUST keep the offset and length within the reported
+  \item A driver MUST keep the \field{offset} and \field{length} within the
+        reported
         configuration size in each \msgref{SET_CONFIG} request.
   \item A driver MUST follow the active configuration semantics profile in
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
@@ -1427,11 +1431,12 @@ struct virtio_msg_get_device_status_resp {
 
 \msgref{SET_DEVICE_STATUS} writes a new device status value. Drivers use it to
 progress through the virtio-defined states or to request a reset by writing 0.
-The response reports the status value observed when the response is generated.
-For a reset request (\field{status} == 0), a response status of 0 indicates
-reset completion; a non-zero response status indicates that reset completion may
-still be pending. The resulting status may differ from the requested status (for
-example, if the device refuses FEATURES\_OK or sets DEVICE\_NEEDS\_RESET).
+The response reports the \field{status} value observed when the response is
+generated. For a reset request (\field{status} == 0), a response
+\field{status} of 0 indicates reset completion; a non-zero \field{status}
+indicates that reset completion may still be pending. The resulting
+\field{status} may differ from the requested \field{status} (for example, if
+the device refuses FEATURES\_OK or sets DEVICE\_NEEDS\_RESET).
 
 \begin{lstlisting}
 struct virtio_msg_set_device_status_req {
@@ -1448,23 +1453,23 @@ struct virtio_msg_set_device_status_resp {
   \item A driver MUST write 0 via \msgref{SET_DEVICE_STATUS} to request a device
         reset.
   \item A driver that needs to confirm reset completion MUST treat a
-        \msgref{SET_DEVICE_STATUS} response status of 0 as completion;
+        \msgref{SET_DEVICE_STATUS} response \field{status} of 0 as completion;
         otherwise it MUST poll \msgref{GET_DEVICE_STATUS} until the device
-        reports status 0 before reinitializing the device.
+        reports \field{status}=0 before reinitializing the device.
 \end{itemize}
 
 \devicenormative{\paragraph}{SET\_DEVICE\_STATUS}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Device}
 \begin{itemize}
   \item A device MAY clear FEATURES\_OK or set DEVICE\_NEEDS\_RESET in its
-        response if it cannot accept the requested status, but it MUST report
-        the resulting status accurately.
+        response if it cannot accept the requested \field{status}, but it MUST
+        report the resulting \field{status} accurately.
   \item Upon receiving \msgref{SET_DEVICE_STATUS} with \field{status} set to 0,
         a device MUST start reset processing and MUST eventually complete reset
-        by reporting status 0.
+        by reporting \field{status}=0.
   \item A device MAY complete reset before sending the
         \msgref{SET_DEVICE_STATUS} response (synchronous completion) or after
         sending it (asynchronous completion).
-  \item A device MUST NOT report status 0 until reset completion.
+  \item A device MUST NOT report \field{status}=0 until reset completion.
 \end{itemize}
 
 \msgdef{GET_VQUEUE}
@@ -1627,9 +1632,10 @@ struct virtio_msg_reset_vqueue_resp {
 \msgdef{GET_SHM}
 
 \msgref{GET_SHM} returns the location and size of a device-owned shared memory
-region. The request carries the region index; the response echoes the index and
-provides the base physical address and length. A length of zero indicates that
-the specified region does not exist.
+region. The request carries the region \field{index}; the response echoes
+\field{index} and provides the base physical \field{address} and
+\field{length}. A
+\field{length} of zero indicates that the specified region does not exist.
 
 \begin{lstlisting}
 struct virtio_msg_get_shm_req {
@@ -1646,9 +1652,9 @@ struct virtio_msg_get_shm_resp {
 
 \devicenormative{\paragraph}{GET\_SHM}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
 \begin{itemize}
-  \item A device MUST return zero length if the requested shared memory region
-        does not exist and MUST report accurate physical address/length
-        information for regions it supports.
+  \item A device MUST return zero \field{length} if the requested shared memory
+        region does not exist and MUST report accurate physical
+        \field{address}/\field{length} information for regions it supports.
   \item A device MUST set the \field{reserved} field in \msgref{GET_SHM}
         responses to zero.
 \end{itemize}
@@ -1657,12 +1663,12 @@ struct virtio_msg_get_shm_resp {
 
 \msgref{EVENT_CONFIG} notifies the driver about configuration or status changes.
 The payload includes current device status, generation, and
-configuration offset/length. The configuration data can be omitted; if omitted,
-the driver re-fetches via \msgref{GET_CONFIG}. Generation and offset/length
-semantics follow the active profile defined in
+configuration \field{offset}/\field{length}. The configuration data can be
+omitted; if omitted, the driver re-fetches via \msgref{GET_CONFIG}. Generation
+and \field{offset}/\field{length} semantics follow the active profile defined in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
 If the event reports only a status change with no configuration update, the
-device sets offset and length to zero.
+device sets \field{offset} and \field{length} to zero.
 
 \begin{lstlisting}
 struct virtio_msg_event_config {
@@ -1678,12 +1684,13 @@ struct virtio_msg_event_config {
 \begin{itemize}
   \item When \msgref{EVENT_CONFIG} provides configuration data, the driver
         SHOULD apply it; otherwise it SHOULD re-read the affected range
-        indicated by offset/length via \msgref{GET_CONFIG} before proceeding.
-        If offset/length are both zero and no data is provided, the driver
-        SHOULD re-read required configuration via \msgref{GET_CONFIG}.
+        indicated by \field{offset}/\field{length} via \msgref{GET_CONFIG}
+        before proceeding. If \field{offset}/\field{length} are both zero and
+        no data is provided, the driver SHOULD re-read required configuration
+        via \msgref{GET_CONFIG}.
   \item A driver MUST follow the active configuration semantics profile in
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
-        for generation and offset/length interpretation in
+        for generation and \field{offset}/\field{length} interpretation in
         \msgref{EVENT_CONFIG}.
 \end{itemize}
 
@@ -1693,11 +1700,12 @@ struct virtio_msg_event_config {
         configuration data or status in a way that is visible to the driver.
   \item A device MUST follow the active configuration semantics profile in
         \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
-        for generation and offset/length handling in \msgref{EVENT_CONFIG}.
+        for generation and \field{offset}/\field{length} handling in
+        \msgref{EVENT_CONFIG}.
   \item In baseline profile, a device MUST NOT send \msgref{EVENT_CONFIG}
         solely to report a \msgref{SET_CONFIG} generation mismatch.
   \item If \msgref{EVENT_CONFIG} reports only a status change, a device MUST set
-        the offset and length fields to zero.
+        the \field{offset} and \field{length} fields to zero.
 \end{itemize}
 
 \msgdef{EVENT_AVAIL}
@@ -1836,47 +1844,50 @@ struct virtio_bus_msg_get_devices_resp {
 };
 \end{lstlisting}
 
-The \textbf{(offset, count)} tuple defines a window of \textbf{count}
-consecutive device numbers beginning at \textbf{offset}. The number of present
-devices equals the number of set bits in the first \textbf{count} bitmap
-positions. The bitmap size in bytes is \textbf{(count + 7) / 8}.
-The response \textbf{count} MUST NOT exceed the request \textbf{count}.
-Responders SHOULD return the requested \textbf{count} unless constrained
+The (\field{offset}, \field{count}) tuple defines a window of \field{count}
+consecutive device numbers beginning at \field{offset}. The number of present
+devices equals the number of set bits in the first \field{count} positions of
+\field{bitmap}. The \field{bitmap} size in bytes is
+\textbf{(\field{count} + 7) / 8}. The response \field{count} MUST NOT exceed
+the request \field{count}. Responders SHOULD return the requested
+\field{count} unless constrained
 (e.g., by maximum message size) or when trailing parts of the requested window
 contain no present device numbers; in those cases they MAY return a smaller
-value, and the bitmap covers the reduced window. If no devices are present in
-the requested window, returning \textbf{count}=0 and an empty bitmap is valid.
+value, and the \field{bitmap} covers the reduced window. If no devices are
+present in the requested window, returning \field{count}=0 and an empty
+\field{bitmap} is valid.
 
-Example: a request with \textbf{offset}=0, \textbf{count}=16 might produce
-\textbf{bitmap}=0b00100101 00000000 and \textbf{next_offset}=16. That indicates
+Example: a request with \field{offset}=0, \field{count}=16 might produce
+\field{bitmap}=0b00100101 00000000 and \field{next_offset}=16. That indicates
 devices 0, 2, and 5 are present within the 0–15 window and suggests continuing
 at device number 16.
 
 \paragraph{Intended usage}
 Drivers MAY use this message to enumerate device numbers. Treat each window as
-a snapshot, advance using \textbf{next_offset}, and confirm candidates via
+a snapshot, advance using \field{next_offset}, and confirm candidates via
 \msgref{GET_DEVICE_INFO} before issuing other transport messages.
 
 \busnormative{\paragraph}{GET\_DEVICES}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
 \begin{itemize}
-  \item The bus-side responder MUST interpret \textbf{count} as a number of
-        device-number slots and MUST return a bitmap of length
-        \textbf{(count + 7) / 8} bytes, packed least-significant-bit first.
-  \item The bus-side responder MUST NOT return a \textbf{count} value greater
-        than the \textbf{count} value from the request.
-  \item If \textbf{count} is not a multiple of 8, the responder MUST set unused
-        bits in the last bitmap byte (positions at or above \textbf{count}) to
-        zero.
-  \item \textbf{next\_offset} MUST be 0 (indicating no further windows) or an
-        value $\ge \textbf{offset} + \textbf{count}$ recommending where the
+  \item The bus-side responder MUST interpret \field{count} as a number of
+        device-number slots and MUST return a \field{bitmap} of
+        \textbf{(\field{count} + 7) / 8} bytes, packed least-significant-bit
+        first.
+  \item The bus-side responder MUST NOT return a \field{count} value greater
+        than the \field{count} value from the request.
+  \item If \field{count} is not a multiple of 8, the responder MUST set unused
+        bits in the last \field{bitmap} byte (positions at or above
+        \field{count}) to zero.
+  \item \field{next\_offset} MUST be 0 (indicating no further windows) or an
+        value $\ge \field{offset} + \field{count}$ recommending where the
         driver should query next.
-  \item Responders SHOULD return the requested \textbf{count} unless constrained
+  \item Responders SHOULD return the requested \field{count} unless constrained
         (e.g., by maximum message size) or when trailing parts of the requested
-        window contain no present device numbers; if a smaller count is
-        returned, the bitmap MUST still represent the window defined by the
-        echoed \textbf{offset} and \textbf{count}.
+        window contain no present device numbers; if a smaller \field{count} is
+        returned, the \field{bitmap} MUST still represent the window defined by
+        the echoed \field{offset} and \field{count}.
   \item If no devices are present in the requested window, a responder MAY
-        return \textbf{count}=0 with a zero-length bitmap.
+        return \field{count}=0 with a zero-\field{length} \field{bitmap}.
 \end{itemize}
 
 \busdef{PING}
