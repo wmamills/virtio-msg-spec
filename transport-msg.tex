@@ -543,9 +543,10 @@ Field semantics:
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Transport Messages}
     and
     \ref{sec:Virtio Transport Options / Virtio Over Messages / Bus Messages}.
-  \item \field{token}: Correlation identifier managed by the bus. Drivers and
-    devices treat this field as opaque; the bus MAY overwrite it to track
-    outstanding requests or maintain ordering.
+  \item \field{token}: Correlation identifier owned and managed by the bus.
+    Drivers and devices treat this field as opaque. A bus implementation MAY
+    insert or overwrite \field{token} values to correlate requests and
+    responses or to compensate for transport-specific reordering.
   \item \field{msg_size}: Total size in bytes of the complete message (header
     plus payload).
   \item \field{reserved}: Reserved for future use. Transmitters set this field
@@ -606,6 +607,9 @@ Field semantics:
   \item A bus implementation owns the \field{token} field; it MAY insert or
         overwrite values for correlation purposes and MUST ensure that any such
         use is transparent to drivers and devices.
+  \item A bus implementation MUST ensure that any use of \field{token} for
+        request/response correlation or to compensate for transport-specific
+        reordering remains transparent to drivers and devices.
 \end{itemize}
 
 A message originator MUST transmit reserved header bits and unspecified header
@@ -628,8 +632,9 @@ notifications and MAY be delivered at any time relative to request/response
 traffic. Ordering is defined per device number; messages for different device
 numbers MAY be interleaved by the bus.
 Some response payloads repeat request parameters (for example, indices or
-offsets) to support validation; these repeats are informational and do not
-alter the correlation model described here.
+offsets). Drivers and devices MAY use these repeated values for validation,
+but request/response association is determined by the bus according to the
+ordering rules described here, not by those repeated values.
 
 \busnormative{\paragraph}{Message Ordering}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \begin{itemize}
