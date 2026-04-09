@@ -1212,9 +1212,10 @@ signaled via equivalent out-of-band mechanisms.
 
 The driver issues \msgref{GET_DEVICE_INFO} to discover static identification
 data and limits for a device. The response includes \field{device_uuid}, a
-16-byte UUID value. The nil UUID (all bytes set to zero) indicates that no
-UUID is provided. \msgref{GET_DEVICE_INFO} is the only transport message
-permitted before the device transitions out of the inactive state.
+16-byte UUID value. The nil UUID defined by
+\hyperref[intro:rfc4122]{[RFC4122]} indicates that no UUID is provided.
+\msgref{GET_DEVICE_INFO} is the only transport message permitted before the
+device transitions out of the inactive state.
 
 \begin{lstlisting}
 struct virtio_msg_get_device_info_req {
@@ -1240,6 +1241,9 @@ struct virtio_msg_get_device_info_resp {
         count, configuration size, and virtqueue limits.
   \item A device MAY set \field{device_uuid} to a UUID value that can be used
         as a unique identifier.
+  \item If a device sets \field{device_uuid} to a non-nil value, it SHOULD use
+        a version 4 UUID as specified by
+        \hyperref[intro:rfc4122]{[RFC4122]}.
   \item If a device does not support UUID reporting or does not have an
         identifier, it MUST set \field{device_uuid} to the nil UUID.
 \end{itemize}
