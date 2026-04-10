@@ -177,12 +177,13 @@ A Virtio Over Messages driver MUST conform to the following normative statements
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_CONFIG / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_CONFIG / Driver}
+\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_STATUS / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DEVICE_STATUS / Driver}
+\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_VQUEUE / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_VQUEUE / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Driver}
 \item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Driver}
-\item \ref{drivernormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Driver}
 \end{itemize}
 
 \input{device-types/net/driver-conformance.tex}
@@ -314,7 +315,6 @@ A Virtio Over Messages device MUST conform to the following normative statements
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_RESET_VQUEUE / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
 \item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_CONFIG / Device}
-\item \ref{devicenormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_USED / Device}
 \end{itemize}
 
 \input{device-types/net/device-conformance.tex}
@@ -360,8 +360,6 @@ A Virtio Over Messages bus implementation MUST conform to the following normativ
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Ordering / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Device Discovery / Bus}
-\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Driver Notifications / Bus}
-\item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Device Notifications / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / Runtime Notifications / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Device Operation / Hotplug and Removal / Bus}
 \item \ref{busnormative:Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_EVENT_AVAIL / Bus}
