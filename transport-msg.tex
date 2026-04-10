@@ -1943,7 +1943,8 @@ struct virtio_bus_msg_get_devices_resp {
 \end{lstlisting}
 
 The (\field{offset}, \field{count}) tuple defines a window of \field{count}
-consecutive device numbers beginning at \field{offset}. The number of present
+consecutive device numbers beginning at \field{offset}. A request with
+\field{count}=0 is valid and requests an empty window. The number of present
 devices equals the number of set bits in the first \field{count} positions of
 \field{bitmap}. The \field{bitmap} size in bytes is
 \textbf{(\field{count} + 7) / 8}. The response \field{count} MUST NOT exceed
@@ -1951,19 +1952,22 @@ the request \field{count}. Responders SHOULD return the requested
 \field{count} unless constrained
 (e.g., by maximum message size) or when trailing parts of the requested window
 contain no present device numbers; in those cases they MAY return a smaller
-value, and the \field{bitmap} covers the reduced window. If no devices are
-present in the requested window, returning \field{count}=0 and an empty
-\field{bitmap} is valid.
+value, and the \field{bitmap} covers the reduced window. A response with
+\field{count}=0 returns an empty \field{bitmap}; this is valid for a request
+with \field{count}=0 and also when no devices are present in the returned
+window.
 
 Example: a request with \field{offset}=0, \field{count}=16 might produce
 \field{bitmap}=0b00100101 00000000 and \field{next_offset}=16. That indicates
 devices 0, 2, and 5 are present within the 0-15 window and suggests continuing
 at device number 16.
 
-\paragraph{Intended usage}
-Drivers MAY use this message to enumerate device numbers. Treat each window as
-a snapshot, advance using \field{next_offset}, and confirm candidates via
-\msgref{GET_DEVICE_INFO} before issuing other transport messages.
+Drivers can use this message to enumerate device numbers. Each window can be
+treated as a snapshot, advanced using \field{next_offset}, and validated with
+\msgref{GET_DEVICE_INFO} before other transport messages are issued. A response
+with \field{next_offset}=0 is terminal. Otherwise, \field{next_offset}
+recommends a later starting device number and advances enumeration beyond the
+request \field{offset}.
 
 \busnormative{\paragraph}{GET\_DEVICES}{Virtio Transport Options / Virtio Over Messages / Bus Messages / GET_DEVICES / Bus}
 \begin{itemize}
@@ -1971,21 +1975,27 @@ a snapshot, advance using \field{next_offset}, and confirm candidates via
         device-number slots and MUST return a \field{bitmap} of
         \textbf{(\field{count} + 7) / 8} bytes, packed least-significant-bit
         first.
-  \item The bus-side responder MUST NOT return a \field{count} value greater
+  \item A request with \field{count}=0 is valid. In response to such a request,
+        the responding bus implementation MUST return \field{count}=0 and an
+        empty \field{bitmap}.
+  \item The responding bus implementation MUST NOT return a \field{count} value
+        greater
         than the \field{count} value from the request.
   \item If \field{count} is not a multiple of 8, the responder MUST set unused
         bits in the last \field{bitmap} byte (positions at or above
         \field{count}) to zero.
-  \item \field{next\_offset} MUST be 0 (indicating no further windows) or an
-        value $\ge \field{offset} + \field{count}$ recommending where the
-        driver should query next.
+  \item For a terminal response, the responding bus implementation MUST set
+        \field{next\_offset} to 0.
+  \item For a nonterminal response, the responding bus implementation MUST set
+        \field{next\_offset} to a value strictly greater than the request
+        \field{offset}.
   \item Responders SHOULD return the requested \field{count} unless constrained
         (e.g., by maximum message size) or when trailing parts of the requested
         window contain no present device numbers; if a smaller \field{count} is
         returned, the \field{bitmap} MUST still represent the window defined by
         the echoed \field{offset} and \field{count}.
   \item If no devices are present in the requested window, a responder MAY
-        return \field{count}=0 with a zero-\field{length} \field{bitmap}.
+        return \field{count}=0 with an empty \field{bitmap}.
 \end{itemize}
 
 \busdef{PING}
