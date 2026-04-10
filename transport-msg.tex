@@ -1294,13 +1294,18 @@ Transport-message ID bit encoding is defined in
         \msgref{GET_DEVICE_FEATURES}, \msgref{SET_DRIVER_FEATURES},
         \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, \msgref{GET_DEVICE_STATUS},
         \msgref{SET_DEVICE_STATUS}, \msgref{GET_VQUEUE}, \msgref{SET_VQUEUE},
-        and \msgref{RESET_VQUEUE}.
+        \msgref{RESET_VQUEUE}, and \msgref{GET_SHM}.
 \end{itemize}
 
 \drivernormative{\paragraph}{Core Messages}{Virtio Transport Options / Virtio Over Messages / Transport Messages / Mandatory / Driver}
 \begin{itemize}
-  \item A driver MUST support sending and interpreting the messages listed
-        above in order to initialize and operate a virtio-msg device.
+  \item A driver MUST support sending and interpreting
+        \msgref{GET_DEVICE_INFO}, \msgref{GET_DEVICE_FEATURES},
+        \msgref{SET_DRIVER_FEATURES}, \msgref{GET_CONFIG},
+        \msgref{SET_CONFIG}, \msgref{GET_DEVICE_STATUS},
+        \msgref{SET_DEVICE_STATUS}, \msgref{GET_VQUEUE},
+        \msgref{SET_VQUEUE}, and \msgref{RESET_VQUEUE} in order to
+        initialize and operate a virtio-msg device.
 \end{itemize}
 
 As described in Sections
@@ -1800,18 +1805,18 @@ struct virtio_msg_reset_vqueue_resp {
 \msgdef{GET_SHM}
 
 \msgref{GET_SHM} returns the location and size of a device-owned shared memory
-region. The request carries the region \field{index}; the response echoes
-\field{index} and provides the base physical \field{address} and
-\field{length}. A
-\field{length} of zero indicates that the specified region does not exist.
+region. The request carries the shared-memory region identifier
+\field{shmid}; the response echoes \field{shmid} and provides the base
+physical \field{address} and \field{length}. A \field{length} of zero
+indicates that the specified \field{shmid} is not supported by the device.
 
 \begin{lstlisting}
 struct virtio_msg_get_shm_req {
-        le32 index; /* shared memory region index */
+        le32 shmid; /* shared memory region identifier */
 };
 
 struct virtio_msg_get_shm_resp {
-        le32 index;     /* echoed index */
+        le32 shmid;     /* echoed region identifier */
         le32 reserved;  /* must be zero */
         le64 length;    /* region length (0 if nonexistent) */
         le64 address;   /* region physical address */
@@ -1820,8 +1825,8 @@ struct virtio_msg_get_shm_resp {
 
 \devicenormative{\paragraph}{GET\_SHM}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_SHM / Device}
 \begin{itemize}
-  \item A device MUST return zero \field{length} if the requested shared memory
-        region does not exist and MUST report accurate physical
+  \item A device MUST return zero \field{length} if the requested
+        \field{shmid} is not supported and MUST report accurate physical
         \field{address}/\field{length} information for regions it supports.
   \item A device MUST set the \field{reserved} field in \msgref{GET_SHM}
         responses to zero.
