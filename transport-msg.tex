@@ -205,6 +205,9 @@ vary between bus instances. Common approaches include:
   \item Each bus instance MUST make its transport revision, maximum message
         size, and transport feature bits available to the virtio-msg transport
         before any transport messages are exchanged for that device.
+  \item A bus instance MUST expose transport feature bits independently of the
+        device feature blocks exchanged by \msgref{GET_DEVICE_FEATURES} and
+        \msgref{SET_DRIVER_FEATURES}.
   \item A bus instance MUST advertise only the transport feature bits supported
         by both sides of that bus instance.
   \item A bus instance MUST apply the same limits to both driver-originated and
@@ -237,13 +240,16 @@ vary between bus instances. Common approaches include:
 
 \paragraph{virtio-msg transport revisions}
 
-The following table lists the currently defined virtio-msg transport revisions:
+The following table lists the currently defined virtio-msg transport revisions
+and their protocol-defined maximum message sizes. Transport feature bits are
+defined separately in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Transport Feature Bits}.
 
-\begin{tabular}{ |l|l|l|l| }
+\begin{tabular}{ |l|l|l| }
 \hline
-\field{revision} & \field{maximum size} & \field{features}      & remarks \\
+\field{revision} & \field{maximum size} & remarks \\
 \hline \hline
-1        & 60-65535    & bit 0 optional: \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION}   & Virtio Message Revision 1 \\
+1        & 60-65535    & Virtio Message Revision 1 \\
 \hline
 \end{tabular}
 
@@ -305,6 +311,28 @@ revisions.
         error or drop the message without forwarding it.
 \end{itemize}
 
+\subsubsection{Transport Feature Bits}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Transport Feature Bits}
+
+Transport feature bits are bus-instance parameters. They are advertised as part
+of the transport parameters described in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions}
+and are not carried in the device feature blocks exchanged by
+\msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}.
+
+The following transport feature bits are defined:
+
+\begin{tabular}{|l|l|l|p{7cm}|}
+\hline
+Bit & Name & Minimum revision & Meaning \\
+\hline
+0 & \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} & 1 &
+Select strict configuration semantics profile. When this feature is not
+advertised for the bus instance, the baseline profile applies. See
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}. \\
+\hline
+\end{tabular}
+
 \subsubsection{Device Numbers and Enumeration}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts /
 Device Numbers}
@@ -341,13 +369,15 @@ device number before other transport operations.
 \subsubsection{Configuration Semantics Profiles}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}
 
-virtio-msg defines two configuration semantics profiles selected by transport
-feature negotiation:
+virtio-msg defines two configuration semantics profiles selected by the
+transport feature bits advertised for the bus instance:
 \begin{itemize}
   \item \textbf{Baseline profile}: applies when
-        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not negotiated.
+        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is not advertised for
+        the bus instance.
   \item \textbf{Strict profile}: applies when
-        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is negotiated.
+        \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} is advertised for the
+        bus instance.
 \end{itemize}
 
 The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
@@ -357,6 +387,13 @@ The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
 \begin{itemize}
   \item A driver MUST determine the active profile before issuing
         \msgref{SET_CONFIG}.
+  \item A driver MUST determine the active profile from the transport feature
+        bits advertised for the target bus instance, not from
+        \msgref{GET_DEVICE_FEATURES}/\msgref{SET_DRIVER_FEATURES}.
+  \item In any profile, a driver SHOULD use generation values from
+        \msgref{GET_CONFIG} and \msgref{EVENT_CONFIG} to detect concurrent
+        configuration changes and SHOULD re-read required configuration until
+        it observes a stable generation value.
   \item In baseline profile, a driver MUST set \field{generation} to 0 in
         \msgref{SET_CONFIG} requests and MUST ignore \field{generation} in
         \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
@@ -378,6 +415,16 @@ The profiles apply to \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and
 \begin{itemize}
   \item In baseline profile, a device MUST set \field{generation} to 0 in
         \msgref{GET_CONFIG}, \msgref{SET_CONFIG}, and \msgref{EVENT_CONFIG}.
+  \item A device MUST apply the configuration semantics profile selected by the
+        transport feature bits advertised for the bus instance that relays its
+        messages.
+  \item In any profile, a device MUST provide its current generation count in
+        \msgref{GET_CONFIG} responses, \msgref{SET_CONFIG} responses, and
+        \msgref{EVENT_CONFIG} messages.
+  \item In any profile, a device MUST change \field{generation} whenever there
+        is a possibility that two accesses to the device configuration space
+        can observe different versions of that space, as described in
+        \ref{sec:Basic Facilities of a Virtio Device / Device Configuration Space}.
   \item In baseline profile, a device MUST ignore request \field{generation} in
         \msgref{SET_CONFIG}. For requests that are otherwise valid, the device
         MUST apply the write regardless of request \field{generation} and MUST
@@ -412,10 +459,10 @@ the non-strict behavior explicit, reduces duplicated conditional wording across
 message definitions, and aligns baseline behavior with MMIO-like
 configuration-change notification flow.
 
-\subsubsection{Feature Negotiation Blocks}
-\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Feature Blocks}
+\subsubsection{Device Feature Blocks}
+\label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Feature Blocks}
 
-The virtio-msg transport organizes feature bits into 32-bit blocks accessed by
+Device feature bits are organized into 32-bit blocks accessed by
 \msgref{GET_DEVICE_FEATURES} and \msgref{SET_DRIVER_FEATURES}. Each block
 represents up to 32 feature bits:
 
@@ -428,29 +475,24 @@ represents up to 32 feature bits:
         driver-requested) feature bits in the selected blocks.
 \end{itemize}
 
-Transport-defined feature bits currently include:
-
-\begin{tabular}{|l|l|p{7cm}|}
-\hline
-Bit & Name & Meaning \\
-\hline
-0 & \texttt{VIRTIO\_MSG\_F\_STRICT\_CONFIG\_GENERATION} &
-Select strict configuration semantics profile. When this feature is not
-negotiated, the baseline profile applies. See
-\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}. \\
-\hline
-\end{tabular}
-
-Virtio-msg feature blocks may also include core virtio feature bits. This
-transport does not support VIRTIO\_F\_NOTIF\_CONFIG\_DATA; transport-specific
-feature negotiation requirements are defined in
+Virtio-msg device feature blocks may include core virtio feature bits. They are
+distinct from the transport feature bits defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Transport Feature Bits}.
+This transport does not support VIRTIO\_F\_NOTIF\_CONFIG\_DATA; device feature
+negotiation requirements are defined in
 \ref{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}.
 
-\devicenormative{\paragraph}{Feature Blocks}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Feature Blocks / Device}
+\devicenormative{\paragraph}{Device Feature Blocks}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Feature Blocks / Device}
 \begin{itemize}
   \item When \msgref{GET_DEVICE_FEATURES} covers blocks that extend beyond the
         features a device implements, the device MUST return zero for the
         feature data in those positions.
+  \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update
+        only the acknowledged feature blocks addressed by that request and MUST
+        leave all other acknowledged feature blocks unchanged.
+  \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST report the
+        resulting acknowledged feature set consistently in subsequent
+        \msgref{GET_DEVICE_FEATURES} responses.
 \end{itemize}
 
 \subsubsection{Error Signaling}
@@ -764,33 +806,39 @@ details the recommended order of operations and the associated messages.
 
 A typical device initialization flow includes:
 \begin{enumerate}
-  \item \textbf{Obtain Device Information:}
-    Query static parameters with \msgref{GET_DEVICE_INFO}.
-  \item \textbf{Negotiate Features:}
-    Read feature blocks via \msgref{GET_DEVICE_FEATURES}, decide which to
-    enable, and write them back with \msgref{SET_DRIVER_FEATURES} before
-    updating the device status.
-  \item \textbf{Initialize Configuration Space:}
+  \item \textbf{Early Discovery Exception:}
+    Query static parameters with \msgref{GET_DEVICE_INFO}. This is the only
+    transport message exception allowed before normal initialization sequencing.
+  \item \textbf{Reset And Baseline Status:}
+    Reset the device and transition status through ACKNOWLEDGE then DRIVER via
+    \msgref{SET_DEVICE_STATUS}.
+  \item \textbf{Negotiate Device Features:}
+    Read device feature blocks via \msgref{GET_DEVICE_FEATURES}, decide which
+    to enable, and acknowledge them via one or more
+    \msgref{SET_DRIVER_FEATURES} requests. Verify FEATURES\_OK via
+    \msgref{SET_DEVICE_STATUS}. Transport feature bits are bus-instance
+    parameters and are determined separately from this per-device exchange.
+  \item \textbf{Device-Specific Setup:}
     Read or write configuration data with
     \msgref{GET_CONFIG}/\msgref{SET_CONFIG} using the active configuration
     semantics profile defined in
-    \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles}.
-  \item \textbf{Set Up Virtqueues:}
-    Configure each virtqueue via \msgref{SET_VQUEUE} and verify the settings
+    \ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Configuration Semantics Profiles},
+    then configure each virtqueue via \msgref{SET_VQUEUE} and verify settings
     with \msgref{GET_VQUEUE}.
-  \item \textbf{Set Device Status:}
-    Use \msgref{SET_DEVICE_STATUS} to drive the device through the standard
-    virtio status states.
+  \item \textbf{Finalize Initialization:}
+    Use \msgref{SET_DEVICE_STATUS} to transition to DRIVER\_OK.
 \end{enumerate}
 
-The exact order may vary slightly across implementations, but these steps form
-the baseline for virtio-msg initialization.
+After \msgref{GET_DEVICE_INFO}, a driver MUST follow the core virtio status
+progression for initialization: reset, ACKNOWLEDGE, DRIVER, feature
+negotiation and FEATURES\_OK verification, device-specific setup, then
+DRIVER\_OK.
 
 \drivernormative{\paragraph}{Initialization Flow}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Overview / Driver}
 \begin{itemize}
   \item A driver MUST issue \msgref{GET_DEVICE_INFO} before attempting feature
         negotiation or queue setup.
-  \item A driver MUST complete feature negotiation via
+  \item A driver MUST complete device feature negotiation via
         \msgref{GET_DEVICE_FEATURES}/\msgref{SET_DRIVER_FEATURES}
         and confirm the FEATURES\_OK state via \msgref{SET_DEVICE_STATUS} before
         enabling virtqueues.
@@ -822,12 +870,16 @@ space is valid.
 \subsubsection{Feature Negotiation}
 \label{sec:Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features}
 
-Drivers read available features in 32-bit blocks using
+Drivers read available device feature bits in 32-bit blocks using
 \msgref{GET_DEVICE_FEATURES}; the device returns the requested bitfields,
-padding with zeros for any out-of-range blocks. To enable selected features, the
-driver writes them back with \msgref{SET_DRIVER_FEATURES} and then updates the
-device status via \msgref{SET_DEVICE_STATUS}, checking whether the FEATURES\_OK
-bit remains set.
+padding with zeros for any out-of-range blocks. To enable selected device
+features, the driver acknowledges the desired blocks with one or more
+\msgref{SET_DRIVER_FEATURES} requests and then updates the device status via
+\msgref{SET_DEVICE_STATUS}, checking whether the FEATURES\_OK bit remains set.
+Transport feature bits are bus-instance
+parameters and are not part of this message exchange. Zero-padding and
+block-scoped update semantics are defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Feature Blocks}.
 
 \drivernormative{\paragraph}{Feature Negotiation}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Driver}
 \begin{itemize}
@@ -842,14 +894,10 @@ bit remains set.
 
 \devicenormative{\paragraph}{Feature Negotiation}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
 \begin{itemize}
-  \item When handling \msgref{GET_DEVICE_FEATURES}, a device MUST return zero
-        for any requested blocks that fall outside the number of feature blocks
-        it reports.
   \item A device MUST NOT offer VIRTIO\_F\_NOTIF\_CONFIG\_DATA.
-  \item After receiving \msgref{SET_DRIVER_FEATURES}, a device MUST update its
-        internal feature mask to match the acknowledged set. If the device
-        cannot support the requested set, it MUST clear the FEATURES\_OK bit in
-        the status returned by \msgref{SET_DEVICE_STATUS}.
+  \item If the device cannot support the resulting acknowledged feature set
+        after processing \msgref{SET_DRIVER_FEATURES}, it MUST clear the
+        FEATURES\_OK bit in the status returned by \msgref{SET_DEVICE_STATUS}.
 \end{itemize}
 
 \subsubsection{Device Configuration}
@@ -1303,8 +1351,14 @@ The driver issues \msgref{GET_DEVICE_INFO} to discover static identification
 data and limits for a device. The response includes \field{device_uuid}, a
 16-byte UUID value. The nil UUID defined by
 \hyperref[intro:rfc4122]{[RFC4122]} indicates that no UUID is provided.
-\msgref{GET_DEVICE_INFO} is the only transport message permitted before the
-device transitions out of the inactive state.
+\field{admin_vq_start} and \field{admin_vq_count} identify a contiguous range
+of administration virtqueues within \field{max_virtqueues}. If
+\field{admin_vq_count} is 0, the device exposes no administration virtqueues
+and \field{admin_vq_start} is 0.
+\msgref{GET_DEVICE_INFO} is the only transport message that may be issued as an
+early-discovery exception before the normal initialization sequence begins.
+After \msgref{GET_DEVICE_INFO}, drivers follow the standard virtio
+initialization sequence and use other transport messages only within that flow.
 
 \begin{lstlisting}
 struct virtio_msg_get_device_info_req {
@@ -1328,6 +1382,16 @@ struct virtio_msg_get_device_info_resp {
   \item A device MUST respond to \msgref{GET_DEVICE_INFO} while inactive and
         MUST supply consistent values for device ID, vendor ID, feature-block
         count, configuration size, and virtqueue limits.
+  \item A device MUST report \field{num_feature_blocks} large enough to cover
+        every feature bit the device offers.
+  \item A device MUST report \field{max_virtqueues} no greater than 65536.
+  \item \field{max_virtqueues} MUST include any administration virtqueues
+        described by \field{admin_vq_start} and \field{admin_vq_count}.
+  \item If \field{admin_vq_count} is 0, a device MUST set
+        \field{admin_vq_start} to 0.
+  \item If \field{admin_vq_count} is greater than 0, a device MUST ensure
+        \field{admin_vq_start} + \field{admin_vq_count} does not exceed
+        \field{max_virtqueues}.
   \item A device MAY set \field{device_uuid} to a UUID value that can be used
         as a unique identifier.
   \item If a device sets \field{device_uuid} to a non-nil value, it SHOULD use
@@ -1365,11 +1429,8 @@ struct virtio_msg_get_device_features_resp {
 };
 \end{lstlisting}
 
-\devicenormative{\paragraph}{GET\_DEVICE\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Device}
-\begin{itemize}
-  \item A device MUST return zero for any feature bits beyond those it
-        implements when responding to \msgref{GET_DEVICE_FEATURES}.
-\end{itemize}
+Zero-padding for out-of-range blocks is defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Feature Blocks}.
 
 \drivernormative{\paragraph}{GET\_DEVICE\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_GET_DEVICE_FEATURES / Driver}
 \begin{itemize}
@@ -1383,6 +1444,10 @@ struct virtio_msg_get_device_features_resp {
 Drivers use \msgref{SET_DRIVER_FEATURES} to acknowledge the subset of feature
 bits they wish to enable. The payload mirrors \msgref{GET_DEVICE_FEATURES},
 supplying an index, count, and 32-bit feature data for the selected blocks.
+Each \msgref{SET_DRIVER_FEATURES} request updates only the addressed blocks;
+blocks outside the addressed range are unchanged. Drivers MAY send multiple
+\msgref{SET_DRIVER_FEATURES} requests at different block offsets before setting
+FEATURES\_OK.
 
 \begin{lstlisting}
 struct virtio_msg_set_driver_features_req {
@@ -1400,14 +1465,13 @@ struct virtio_msg_set_driver_features_resp {
 \begin{itemize}
   \item A driver MUST set only the feature bits it intends to enable in the
         blocks supplied to \msgref{SET_DRIVER_FEATURES}.
+  \item A driver MAY use multiple \msgref{SET_DRIVER_FEATURES} requests with
+        different \field{block_index} values to build the final acknowledged
+        feature set before setting FEATURES\_OK.
 \end{itemize}
 
-\devicenormative{\paragraph}{SET\_DRIVER\_FEATURES}{Virtio Transport Options / Virtio Over Messages / Transport Messages / VIRTIO_MSG_SET_DRIVER_FEATURES / Device}
-\begin{itemize}
-  \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update its
-        acknowledged feature set to match the data supplied and MUST report that
-        set consistently in subsequent \msgref{GET_DEVICE_FEATURES} responses.
-\end{itemize}
+Block-scoped update semantics for \msgref{SET_DRIVER_FEATURES} are defined in
+\ref{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Device Feature Blocks}.
 
 \msgdef{GET_CONFIG}
 
