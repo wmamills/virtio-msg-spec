@@ -34,7 +34,8 @@ standardize a bus level message for that.
 
 We are working on a few reusable bus implementations:
 
-* virtio-msg-ffa based on Arm FF-A interface for use between:
+* virtio-msg-ffa based on Arm's Virtio Message Bus over FF-A specification [6]
+  for use between:
   * normal world and secure world
   * host and VM or VM to VM
   * Can be used w/ or with out a hypervisor
@@ -61,6 +62,9 @@ We also anticipate a few more:
   * Usable on any Xen system (including x86 where FF-A does not exist)
   * Using Xen events and page grants
 
+This series keeps 16-bit dev_num values per bus instance; deployments that need
+more than roughly 65k devices can scale by using multiple bus instances.
+
 Changes since v1 (virtio-msg-patch1):
 
 First, thank you for the detailed comments and broad interest on v1.
@@ -71,8 +75,10 @@ Tsirkin, Bill Mills, and HVAC group discussion.
 Highlights of the changes since v1:
 
 * Finalized the common transport message model:
-  * keep a 16-byte common header
-  * use 64-bit device numbers and keep a 16-bit msg_size field
+  * keep the 8-byte common header
+  * keep 16-bit device numbers per bus instance and a 16-bit msg_size field
+  * note that deployments needing more than roughly 65k devices can scale by
+    using multiple bus instances
   * clarify common message-ID encoding and validation boundaries
   * define request completion more precisely: a valid supported request
     completes with exactly one protocol response or a transport-visible failure
@@ -98,11 +104,16 @@ Highlights of the changes since v1:
   * align the rest of initialization with the core virtio flow through reset,
     status progression, feature negotiation, FEATURES_OK verification, and
     DRIVER_OK
-  * separate transport-level and device-level feature negotiation semantics
+  * keep transport feature bits separate from device feature negotiation
+  * define GET_DEVICE_FEATURES as reporting the feature blocks offered by the
+    device
   * require GET_DEVICE_INFO to report enough feature blocks to cover all
     offered feature bits and bound max_virtqueues to 65536
-  * define SET_DRIVER_FEATURES as addressed-block updates that may be built up
-    across multiple requests before FEATURES_OK
+  * define SET_DRIVER_FEATURES as addressed-block updates carrying the subset
+    chosen by the driver, which may be built up across multiple requests before
+    FEATURES_OK
+  * keep FEATURES_OK as the point where the device accepts or rejects the
+    negotiated set
   * make GET_SHM mandatory for devices to implement while keeping driver use
     optional, and align the shared-memory identifier semantics with core virtio
 
@@ -161,9 +172,8 @@ Open topics and ongoing discussion:
 
 Eco-system:
 * Added virtio-msg-loopback demo
-* Arm has published a second draft of the virtio message bus over FF-A
-  specification (1.0 ALP1), aligned with the virtio-msg v1 proposal [6]
-* virtio-msg over FFA has been demonstrated with both Trusty and OP-TEE
+* Arm has published the Virtio Message Bus over FF-A specification [6]
+* virtio-msg over FF-A has been demonstrated with both Trusty and OP-TEE
   secure world
 * LKML RFC has been sent [7]
 * QEMU RFC has been sent [8]
