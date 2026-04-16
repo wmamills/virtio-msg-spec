@@ -249,32 +249,32 @@ defined separately in
 \hline
 \field{revision} & \field{maximum size} & remarks \\
 \hline \hline
-1        & 60-65535    & Virtio Message Revision 1 \\
+1        & 52-65535    & Virtio Message Revision 1 \\
 \hline
 \end{tabular}
 
 The table reflects the protocol-defined maximum size; the recommended
-advertised maximum remains 272 bytes for interoperability.
+advertised maximum remains 264 bytes for interoperability.
 
 Note that a change in the virtio standard does not necessarily
 correspond to a change in the virtio-msg transport revision.
 
 The maximum message size is specified from the transport-layer point of view
-and includes the 16-byte common header plus payload. Any extra encapsulation
+and includes the 8-byte common header plus payload. Any extra encapsulation
 imposed by the underlying bus (for example, a framing header) does not count
 against this limit. Today the largest practical inline configuration payload is
 244 bytes: messages such as GET_CONFIG and SET_CONFIG use 12 bytes of
 message-specific fields, leaving up to 244 bytes for device configuration data
-in one transfer when the recommended 272-byte maximum message size is used.
+in one transfer when the recommended 264-byte maximum message size is used.
 Larger configuration regions can be accessed through multiple exchanges without
 requiring a larger per-message limit.
 
 \busnormative{\paragraph}{Message Size Bounds}{Virtio Transport Options / Virtio Over Messages / Basic Concepts / Revisions / Message Size}
 \begin{itemize}
   \item A bus implementation MUST advertise a maximum message size of at least
-        60 bytes.
+        52 bytes.
   \item A bus implementation SHOULD NOT advertise a maximum message size that
-        exceeds 272 bytes (256-byte payload plus the common header).
+        exceeds 264 bytes (256-byte payload plus the common header).
 \end{itemize}
 
 \paragraph{Versioning and Forward Compatibility}
@@ -340,7 +340,7 @@ advertised for the bus instance, the baseline profile applies. See
 Device Numbers}
 
 Each virtio-msg bus instance contains zero or more \emph{devices}, identified
-by a 64-bit \textbf{device number}. The device number is a bus-assigned
+by a 16-bit \textbf{device number}. The device number is a bus-assigned
 identifier and is distinct from the virtio device ID (device type) returned by
 \msgref{GET_DEVICE_INFO}. Buses discover these device numbers through
 mechanisms such as:
@@ -350,6 +350,10 @@ mechanisms such as:
   \item \textbf{Platform Data}: A device tree, ACPI tables, or hypervisor calls
         might inform the bus of available device numbers and their properties.
 \end{itemize}
+
+The 16-bit device-number space provides roughly 65k device slots per bus
+instance. Deployments that require more devices can instantiate multiple bus
+instances and distribute devices across those instances.
 
 Once a bus confirms that a device number is valid, regardless of the discovery
 method, it exposes that number to the driver side of the transport. The driver
@@ -605,7 +609,7 @@ little-endian encoding.
 \label{sec:Virtio Transport Options / Virtio Over Messages / Basic Concepts / Common Message Format}
 
 All virtio-msg exchanges, whether \emph{bus messages} or \emph{transport
-messages}, begin with a 16-byte header followed by an optional payload. The
+messages}, begin with an 8-byte header followed by an optional payload. The
 fields below describe the wire format for that header.
 
 The header layout is:
@@ -613,10 +617,9 @@ The header layout is:
 struct virtio_msg_header {
     u8       type;      /* request/response + bus/transport */
     u8       msg_id;    /* message id */
+    le16     dev_num;   /* target device number; bus messages MUST use 0 */
     le16     token;     /* bus-managed correlation identifier */
-    le16     msg_size;  /* total size: header (16) + payload */
-    le16     reserved;  /* reserved, MUST be zero */
-    le64     dev_num;   /* target device number; bus messages MUST use 0 */
+    le16     msg_size;  /* total size: header (8) + payload */
     u8       payload[];
 };
 \end{lstlisting}
@@ -642,6 +645,10 @@ Field semantics:
   \item Bit[6]: 0=request/response message, 1=event.
   \item Bit[7]: 0=standardized message ID, 1=implementation-defined message ID.
     \end{itemize}
+  \item \field{dev_num}: For transport messages, the device number that should
+    receive the message. Device number 0 is not reserved for transport
+    messages. Bus messages are identified by \field{type} and MUST carry
+    \field{dev_num}=0.
   \item \field{token}: Correlation identifier owned and managed by the bus.
     Drivers and devices treat this field as opaque. A bus implementation MAY
     transparently insert or overwrite \field{token} values on the request leg,
@@ -650,12 +657,6 @@ Field semantics:
     \field{token} into the matching response before any bus-side rewrite.
   \item \field{msg_size}: Total size in bytes of the complete message (header
     plus payload).
-  \item \field{reserved}: Reserved for future use. Transmitters set this field
-    to zero, and receivers ignore it.
-  \item \field{dev_num}: For transport messages, the device number that should
-    receive the message. Device number 0 is not reserved for transport
-    messages. Bus messages are identified by \field{type} and MUST carry
-    \field{dev_num}=0.
   \item \field{payload}: Operation-specific data. If a bus introduces extra
     padding bytes, those bytes are not part of the payload semantics.
 \end{itemize}
@@ -667,8 +668,6 @@ Field semantics:
   \item A driver MUST ensure \field{msg_size} reflects the total message length
         (header plus payload) and MUST NOT exceed the maximum message size
         advertised by the bus instance.
-  \item A driver MUST set \field{reserved} to zero when transmitting and MUST
-        ignore the received \field{reserved} value.
   \item When sending a transport message, a driver MUST set \field{dev_num} to
         the intended device number.
   \item If a driver introduces padding bytes that become part of the transport
@@ -683,8 +682,6 @@ Field semantics:
         messages and MUST ignore those bits on receive.
   \item A device MUST ensure \field{msg_size} reflects the total message length
         (header plus payload) and does not exceed the bus's advertised maximum.
-  \item A device MUST set \field{reserved} to zero when transmitting and MUST
-        ignore the received \field{reserved} value.
   \item When sending a transport message, a device MUST set \field{dev_num} to
         its own device number.
   \item A device MUST ignore padding bytes that are documented as bus-specific
@@ -1931,13 +1928,13 @@ signals which entries are present.
 
 \begin{lstlisting}
 struct virtio_bus_msg_get_devices_req {
-        le64 offset; /* starting device number */
+        le16 offset; /* starting device number */
         le16 count;  /* number of device-number slots requested */
 };
 
 struct virtio_bus_msg_get_devices_resp {
-        le64 offset;      /* echoed starting device number */
-        le64 next_offset; /* 0 or suggested start for next query */
+        le16 offset;      /* echoed starting device number */
+        le16 next_offset; /* 0 or suggested start for next query */
         le16 count;       /* number of slots returned */
         u8   bitmap[];    /* ((count + 7) / 8) bytes, LSB-first packing */
 };
@@ -2035,7 +2032,7 @@ device bus states.
 
 \begin{lstlisting}
 struct virtio_bus_msg_event_device {
-        le64 device_number;
+        le16 device_number;
         le16 device_bus_state; /* see table below */
 };
 \end{lstlisting}
