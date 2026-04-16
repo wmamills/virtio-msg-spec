@@ -482,8 +482,9 @@ represents up to 32 feature bits:
         features 0-31, block 1 for features 32-63, etc.).
   \item \textbf{Number of Blocks}: How many blocks the driver wishes to retrieve
         or modify in a single message.
-  \item \textbf{Feature Data}: The 32-bit values representing the supported (or
-        driver-requested) feature bits in the selected blocks.
+  \item \textbf{Feature Data}: The 32-bit values representing either the
+        device-offered feature bits or the driver-selected subset for the
+        selected blocks.
 \end{itemize}
 
 Virtio-msg device feature blocks may include core virtio feature bits. They are
@@ -499,11 +500,11 @@ negotiation requirements are defined in
         features a device implements, the device MUST return zero for the
         feature data in those positions.
   \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST update
-        only the acknowledged feature blocks addressed by that request and MUST
-        leave all other acknowledged feature blocks unchanged.
-  \item After processing \msgref{SET_DRIVER_FEATURES}, a device MUST report the
-        resulting acknowledged feature set consistently in subsequent
-        \msgref{GET_DEVICE_FEATURES} responses.
+        only the driver-selected feature blocks addressed by that request and
+        MUST leave all other driver-selected feature blocks unchanged.
+  \item A device MUST report the device-offered feature set in
+        \msgref{GET_DEVICE_FEATURES} responses and MUST NOT reflect the
+        driver-selected subset in those responses.
 \end{itemize}
 
 \subsubsection{Error Signaling}
@@ -819,7 +820,7 @@ A typical device initialization flow includes:
     \msgref{SET_DEVICE_STATUS}.
   \item \textbf{Negotiate Device Features:}
     Read device feature blocks via \msgref{GET_DEVICE_FEATURES}, decide which
-    to enable, and acknowledge them via one or more
+    to enable, and send the selected subset via one or more
     \msgref{SET_DRIVER_FEATURES} requests. Verify FEATURES\_OK via
     \msgref{SET_DEVICE_STATUS}. Transport feature bits are bus-instance
     parameters and are determined separately from this per-device exchange.
@@ -878,7 +879,7 @@ space is valid.
 Drivers read available device feature bits in 32-bit blocks using
 \msgref{GET_DEVICE_FEATURES}; the device returns the requested bitfields,
 padding with zeros for any out-of-range blocks. To enable selected device
-features, the driver acknowledges the desired blocks with one or more
+features, the driver sends the desired subset with one or more
 \msgref{SET_DRIVER_FEATURES} requests and then updates the device status via
 \msgref{SET_DEVICE_STATUS}, checking whether the FEATURES\_OK bit remains set.
 Transport feature bits are bus-instance
@@ -900,9 +901,9 @@ block-scoped update semantics are defined in
 \devicenormative{\paragraph}{Feature Negotiation}{Virtio Transport Options / Virtio Over Messages / Device Initialization / Device Features / Device}
 \begin{itemize}
   \item A device MUST NOT offer VIRTIO\_F\_NOTIF\_CONFIG\_DATA.
-  \item If the device cannot support the resulting acknowledged feature set
-        after processing \msgref{SET_DRIVER_FEATURES}, it MUST clear the
-        FEATURES\_OK bit in the status returned by \msgref{SET_DEVICE_STATUS}.
+  \item If the device cannot support the driver-selected feature set presented
+        before FEATURES\_OK is processed, it MUST clear the FEATURES\_OK bit in
+        the status returned by \msgref{SET_DEVICE_STATUS}.
 \end{itemize}
 
 \subsubsection{Device Configuration}
@@ -1308,7 +1309,8 @@ struct virtio_msg_get_device_info_resp {
 
 Drivers retrieve device feature bits in 32-bit blocks via
 \msgref{GET_DEVICE_FEATURES}; the response echoes the requested block index and
-returns one or more 32-bit values with the feature bits in that range.
+returns one or more 32-bit values with the device-offered feature bits in that
+range.
 
 \begin{lstlisting}
 struct virtio_msg_get_device_features_req {
@@ -1335,17 +1337,17 @@ Zero-padding for out-of-range blocks is defined in
 
 \msgdef{SET_DRIVER_FEATURES}
 
-Drivers use \msgref{SET_DRIVER_FEATURES} to acknowledge the subset of feature
+Drivers use \msgref{SET_DRIVER_FEATURES} to convey the subset of feature
 bits they wish to enable. The payload mirrors \msgref{GET_DEVICE_FEATURES},
 supplying an index, count, and 32-bit feature data for the selected blocks.
 Each \msgref{SET_DRIVER_FEATURES} request updates only the addressed blocks;
 blocks outside the addressed range are unchanged. Drivers MAY send multiple
 \msgref{SET_DRIVER_FEATURES} requests at different block offsets before setting
-FEATURES\_OK.
+FEATURES\_OK. The response has no payload.
 
 \begin{lstlisting}
 struct virtio_msg_set_driver_features_req {
-        le32 block_index; /* starting block being acknowledged */
+        le32 block_index; /* starting block being selected */
         le32 num_blocks;  /* number of blocks provided */
         le32 features[];  /* num_blocks entries with desired bits */
 };
@@ -1360,7 +1362,7 @@ struct virtio_msg_set_driver_features_resp {
   \item A driver MUST set only the feature bits it intends to enable in the
         blocks supplied to \msgref{SET_DRIVER_FEATURES}.
   \item A driver MAY use multiple \msgref{SET_DRIVER_FEATURES} requests with
-        different \field{block_index} values to build the final acknowledged
+        different \field{block_index} values to build the final driver-selected
         feature set before setting FEATURES\_OK.
 \end{itemize}
 
